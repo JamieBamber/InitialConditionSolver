@@ -29,8 +29,7 @@ extern void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
 
 extern void set_rhs(LevelData<FArrayBox> &a_rhs,
                     LevelData<FArrayBox> &a_multigrid_vars,
-                    const RealVect &a_dx, const PoissonParameters &a_params,
-                    const Real constant_K);
+                    const RealVect &a_dx, const PoissonParameters &a_params);
 
 extern void set_constant_K_integrand(LevelData<FArrayBox> &a_integrand,
                                      LevelData<FArrayBox> &a_multigrid_vars,
@@ -42,14 +41,9 @@ extern void set_regrid_condition(LevelData<FArrayBox> &a_condition,
                                  const RealVect &a_dx,
                                  const PoissonParameters &a_params);
 
-extern void set_m_value(Real &m, Real &V_of_phi, Real &dVdphi, const Real &phi_here,
-                        const PoissonParameters &a_params,
-                        const Real constant_K);
-
 extern void set_a_coef(LevelData<FArrayBox> &a_aCoef,
                        LevelData<FArrayBox> &a_multigrid_vars,
-                       const PoissonParameters &a_params, const RealVect &a_dx,
-                       const Real constant_K);
+                       const PoissonParameters &a_params, const RealVect &a_dx);
 
 extern void set_b_coef(LevelData<FArrayBox> &a_bCoef,
                        const PoissonParameters &a_params, const RealVect &a_dx);
@@ -57,11 +51,11 @@ extern void set_b_coef(LevelData<FArrayBox> &a_bCoef,
 extern void set_update_psi0(LevelData<FArrayBox> &a_multigrid_vars,
                             LevelData<FArrayBox> &a_dpsi,
                             const Copier &a_exchange_copier,
-							const Real max_dpsi);
+                            const Real max_dpsi);
 
 extern void set_output_data(LevelData<FArrayBox> &a_vars,
                             LevelData<FArrayBox> &a_multigrid_vars,
                             const PoissonParameters &a_params,
-                            const RealVect &a_dx, const Real &constant_K);
+                            const RealVect &a_dx);
 
 #endif

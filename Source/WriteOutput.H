@@ -128,8 +128,7 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
                        const Vector<DisjointBoxLayout> &a_grids,
                        const Vector<RealVect> &a_vectDx,
                        const Vector<ProblemDomain> &a_vectDomains,
-                       const PoissonParameters &a_params,
-                       const Real &constant_K)
+                       const PoissonParameters &a_params)
 {
 #ifdef CH_USE_HDF5
 
@@ -182,7 +181,7 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
 
         // Add in the values of the data in the correct form
         set_output_data(*grchombo_vars[level], *a_multigrid_vars[level],
-                        a_params, a_vectDx[level], constant_K);
+                        a_params, a_vectDx[level]);
 
         // Now continue the write out
         char level_str[20];

@@ -147,7 +147,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         if (a_params.periodic[0] == 1)
         {
             // Calculate values for integrand here with K unset
-            pout() << "Computing average K value... " << endl;
+            pout() << "Computing K value... " << endl;
             for (int ilev = 0; ilev < nlevels; ilev++)
             {
                 set_constant_K_integrand(*integrand[ilev],
@@ -173,10 +173,9 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
             set_a_coef(*aCoef[ilev], *multigrid_vars[ilev], a_params,
-                       vectDx[ilev], constant_K);
+                       vectDx[ilev]);
             set_b_coef(*bCoef[ilev], a_params, vectDx[ilev]);
-            set_rhs(*rhs[ilev], *multigrid_vars[ilev], vectDx[ilev], a_params,
-                    constant_K);
+            set_rhs(*rhs[ilev], *multigrid_vars[ilev], vectDx[ilev], a_params);
         }
         // set up solver factory
         RefCountedPtr<AMRLevelOpFactory<LevelData<FArrayBox>>> opFactory =
@@ -218,7 +217,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             }
 
 		}
-		Real max_dpsi = computeMax(dpsi, a_params.refRatio, Interval(0, 0));
+		Real max_dpsi = computeMax(dpsi, a_params.refRatio, Interval(1, 1));
 		pout() << "max dpsi" << max_dpsi << endl;
 		for (int ilev = 0; ilev < nlevels; ilev++)
 		{
@@ -271,8 +270,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
     // now output final data in a form which can be read as a checkpoint file
     // for the GRChombo AMR time dependent runs
-    output_final_data(multigrid_vars, a_grids, vectDx, vectDomains, a_params,
-                      constant_K);
+    output_final_data(multigrid_vars, a_grids, vectDx, vectDomains, a_params);
 
     // clean up data
     for (int level = 0; level < multigrid_vars.size(); level++)
