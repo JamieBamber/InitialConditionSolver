@@ -51,59 +51,23 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
 
             // work out location on the grid
             IntVect iv = bit();
+            RealVect loc(iv + 0.5 * RealVect::Unit);
+            loc *= a_dx;
+            loc -= a_params.domainLength / 2.0;
 
-            // set psi to 1.0 and zero dpsi
             // note that we don't include the singular part of psi
             // for the BHs - this is added at the output data stage
             // and when we calculate psi_0 in the rhs etc
             // as it already satisfies Laplacian(psi) = 0
             multigrid_vars_box(iv, c_psi_0) = a_params.psi_0;
-            dpsi_box(iv, c_psi) = 0.0;
-
-            // JCAurre: initialized the new variables and the linear solutions
-            dpsi_box(iv, c_V0) = 0.0;
-            dpsi_box(iv, c_V1) = 0.0;
-            dpsi_box(iv, c_V2) = 0.0;
-
             multigrid_vars_box(iv, c_V0_0) = 0.0;
             multigrid_vars_box(iv, c_V1_0) = 0.0;
             multigrid_vars_box(iv, c_V2_0) = 0.0;
-        }
 
-        // JCAurre: out of the box loop so that there are no race condition
-        // problems
-        FArrayBox grad_multigrid(b_no_ghosts, 3 * NUM_MULTIGRID_VARS);
-        get_grad(b_no_ghosts, multigrid_vars_box, Interval(c_V0_0, c_V2_0),
-                 a_dx, grad_multigrid, a_params);
-
-        BoxIterator bit_no_ghosts(b_no_ghosts);
-        for (bit_no_ghosts.begin(); bit_no_ghosts.ok(); ++bit_no_ghosts)
-        {
-
-            // work out location on the grid
-            IntVect iv = bit_no_ghosts();
-
-            // set the phi value - need the distance from centre
-            RealVect loc(iv + 0.5 * RealVect::Unit);
-            loc *= a_dx;
-            loc -= a_params.domainLength / 2.0;
-
-            // JCAurre: set Aij from components of vector W
-            // set_Aij_0(multigrid_vars_box, iv, loc, a_dx, a_params,
-            //           grad_multigrid);
-        }
-
-        // reopen the loop
-        for (bit.begin(); bit.ok(); ++bit)
-        {
-
-            // work out location on the grid
-            IntVect iv = bit();
-
-            // set the phi value - need the distance from centre
-            RealVect loc(iv + 0.5 * RealVect::Unit);
-            loc *= a_dx;
-            loc -= a_params.domainLength / 2.0;
+            dpsi_box(iv, c_psi) = 0.0;
+            dpsi_box(iv, c_V0) = 0.0;
+            dpsi_box(iv, c_V1) = 0.0;
+            dpsi_box(iv, c_V2) = 0.0;
 
             // set phi and pi according to user defined function
             multigrid_vars_box(iv, c_phi_0) =
@@ -114,6 +78,53 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
                 my_pi_function(loc, a_params.pi_0, a_params.pi_amplitude,
                                a_params.pi_wavelength, a_params.domainLength);
         }
+
+        // // JCAurre: out of the box loop so that there are no race condition
+        // // problems
+        // FArrayBox grad_multigrid(b_no_ghosts, 3 * NUM_MULTIGRID_VARS);
+        // get_grad(b_no_ghosts, multigrid_vars_box, Interval(c_V0_0, c_V2_0),
+        //          a_dx, grad_multigrid, a_params);
+
+        // BoxIterator bit_no_ghosts(b_no_ghosts);
+        // for (bit_no_ghosts.begin(); bit_no_ghosts.ok(); ++bit_no_ghosts)
+        // {
+
+        //     // work out location on the grid
+        //     IntVect iv = bit_no_ghosts();
+
+        //     // set the phi value - need the distance from centre
+        //     RealVect loc(iv + 0.5 * RealVect::Unit);
+        //     loc *= a_dx;
+        //     loc -= a_params.domainLength / 2.0;
+
+        //     // JCAurre: set Aij from components of vector W
+        //     // set_Aij_0(multigrid_vars_box, iv, loc, a_dx, a_params,
+        //     //           grad_multigrid);
+        // }
+
+        // // reopen the loop
+        // for (bit.begin(); bit.ok(); ++bit)
+        // {
+
+        //     // work out location on the grid
+        //     IntVect iv = bit();
+
+        //     // set the phi value - need the distance from centre
+        //     RealVect loc(iv + 0.5 * RealVect::Unit);
+        //     loc *= a_dx;
+        //     loc -= a_params.domainLength / 2.0;
+
+        //     // set phi and pi according to user defined function
+        //     multigrid_vars_box(iv, c_phi_0) =
+        //         my_phi_function(loc, a_params.phi_0, a_params.phi_amplitude,
+        //                         a_params.phi_wavelength,
+        //                         a_params.domainLength);
+
+        //     multigrid_vars_box(iv, c_pi_0) =
+        //         my_pi_function(loc, a_params.pi_0, a_params.pi_amplitude,
+        //                        a_params.pi_wavelength,
+        //                        a_params.domainLength);
+        // }
     }
 } // end set_initial_conditions
 
@@ -137,12 +148,6 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
         FArrayBox laplace_multigrid(this_box, NUM_CONSTRAINTS_VARS);
         get_laplacian(this_box, multigrid_vars_box, Interval(c_psi, c_V2), a_dx,
                       laplace_multigrid, a_params);
-
-        // calculate the rho contribution from gradients of phi
-        FArrayBox rho_gradient(this_box, 1);
-        FORT_GETRHOGRADPHIF(CHF_FRA1(rho_gradient, 0),
-                            CHF_CONST_FRA1(multigrid_vars_box, c_phi_0),
-                            CHF_CONST_REAL(a_dx[0]), CHF_BOX(this_box));
 
         // calculate gradients for constructing rho and Aij
         FArrayBox grad_multigrid(this_box, 3 * NUM_MULTIGRID_VARS);
@@ -191,6 +196,13 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
 
             set_binary_bh_Aij(multigrid_vars_box, iv, loc, a_params);
 
+            // JCAurre: compute rhograd from gradients of phi
+            Real rho_gradient = 0;
+            for (int i = 0; i < SpaceDim; i++)
+            {
+                rho_gradient += 0.5 * d_phi[i] * d_phi[i];
+            }
+
             // Also \bar  A_ij \bar A^ij
             Real A2 = 0.0;
             for (int i = 0; i < SpaceDim; i++)
@@ -220,7 +232,7 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
                          (pow(pi_0, 2.0) + 2.0 * V_of_phi)) *
                     pow(psi_0, 5.0) -
                 0.125 * A2 *pow(psi_0, -7.0) -
-                2.0 * M_PI *a_params.G_Newton *rho_gradient(iv, 0) * psi_0 -
+                2.0 * M_PI *a_params.G_Newton *rho_gradient *psi_0 -
                 laplace_multigrid(iv, c_psi);
 
             // JCAurre: Added rhs for new constraint variables.
@@ -285,12 +297,6 @@ void set_constant_K_integrand(LevelData<FArrayBox> &a_integrand,
         get_laplacian(this_box, multigrid_vars_box, Interval(c_psi, c_V2), a_dx,
                       laplace_multigrid, a_params);
 
-        // calculate the rho contribution from gradients of phi
-        FArrayBox rho_gradient(this_box, 1);
-        FORT_GETRHOGRADPHIF(CHF_FRA1(rho_gradient, 0),
-                            CHF_CONST_FRA1(multigrid_vars_box, c_phi_0),
-                            CHF_CONST_REAL(a_dx[0]), CHF_BOX(this_box));
-
         // calculate gradients for constructing rho and Aij
         FArrayBox grad_multigrid(this_box, 3 * NUM_MULTIGRID_VARS);
         get_grad(this_box, multigrid_vars_box, Interval(c_psi_0, c_phi_0), a_dx,
@@ -322,6 +328,13 @@ void set_constant_K_integrand(LevelData<FArrayBox> &a_integrand,
                       grad_multigrid);
             set_binary_bh_Aij(multigrid_vars_box, iv, loc, a_params);
 
+            // JCAurre: compute rhograd from gradients of phi
+            Real rho_gradient = 0;
+            for (int i = 0; i < SpaceDim; i++)
+            {
+                rho_gradient += 0.5 * d_phi[i] * d_phi[i];
+            }
+
             // Also \bar  A_ij \bar A^ij
             Real A2 = 0.0;
             for (int i = 0; i < SpaceDim; i++)
@@ -336,7 +349,7 @@ void set_constant_K_integrand(LevelData<FArrayBox> &a_integrand,
                 -1.5 * (0 - 8.0 * M_PI * a_params.G_Newton *
                                 (pow(pi_0, 2.0) + 2.0 * V_of_phi)) +
                 1.5 * A2 * pow(psi_0, -12.0) +
-                24.0 * M_PI * a_params.G_Newton * rho_gradient(iv, 0) *
+                24.0 * M_PI * a_params.G_Newton * rho_gradient *
                     pow(psi_0, -4.0) +
                 12.0 * laplace_multigrid(iv, c_psi) * pow(psi_0, -5.0);
             integrand_box(iv, c_V0) =
@@ -373,12 +386,6 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
         condition_box.setVal(0.0, 0);
         Box this_box = condition_box.box(); // no ghost cells
 
-        // calculate the rho contribution from gradients of phi
-        FArrayBox rho_gradient(this_box, 1);
-        FORT_GETRHOGRADPHIF(CHF_FRA1(rho_gradient, 0),
-                            CHF_CONST_FRA1(multigrid_vars_box, c_phi_0),
-                            CHF_CONST_REAL(a_dx[0]), CHF_BOX(this_box));
-
         // calculate gradients for constructing rho and Aij
         FArrayBox grad_multigrid(this_box, 3 * NUM_MULTIGRID_VARS);
         get_grad(this_box, multigrid_vars_box, Interval(c_psi_0, c_phi_0), a_dx,
@@ -403,11 +410,19 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
             Real K_0 = multigrid_vars_box(iv, c_K_0);
             Real pi_0 = multigrid_vars_box(iv, c_pi_0);
 
+            Real d_phi[3];
+            set_deriv1(d_phi, iv, grad_multigrid, c_phi_0);
             Real Aij[3][3];
             set_Aij_0(Aij, multigrid_vars_box, iv, loc, a_dx, a_params,
                       grad_multigrid);
             set_binary_bh_Aij(multigrid_vars_box, iv, loc, a_params);
 
+            // JCAurre: compute rhograd from gradients of phi
+            Real rho_gradient = 0;
+            for (int i = 0; i < SpaceDim; i++)
+            {
+                rho_gradient += 0.5 * d_phi[i] * d_phi[i];
+            }
             // Also \bar  A_ij \bar A^ij
             Real A2 = 0.0;
             for (int i = 0; i < SpaceDim; i++)
@@ -425,7 +440,7 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
                            8.0 * M_PI * a_params.G_Newton *
                                (pow(pi_0, 2.0) + 2.0 * V_of_phi))) +
                 1.5 * A2 * pow(psi_0, -7.0) +
-                24.0 * M_PI * a_params.G_Newton * abs(rho_gradient(iv, 0)) *
+                24.0 * M_PI * a_params.G_Newton * abs(rho_gradient) *
                     pow(psi_0, 1.0) +
                 log(psi_0);
 
