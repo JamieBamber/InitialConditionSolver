@@ -171,7 +171,7 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
             loc -= a_params.domainLength / 2.0;
 
             // rhs = term/8 psi_0^5 - 2 pi rho_grad psi_0  - laplacian(psi_0)
-            // JCAurre: Potential terms
+            // JCAurre: Calculate potential and derivative
             Real V_of_phi, dVdphi;
             my_potential_function(V_of_phi, dVdphi,
                                   multigrid_vars_box(iv, c_phi_0), a_params);
@@ -310,8 +310,9 @@ void set_constant_K_integrand(LevelData<FArrayBox> &a_integrand,
             loc *= a_dx;
             loc -= a_params.domainLength / 2.0;
 
-            // integrand = -1.5*m + 1.5 * \bar A_ij \bar A^ij psi_0^-12 +
+            // integrand = -1.5*term + 1.5 * \bar A_ij \bar A^ij psi_0^-12 +
             // 24 pi rho_grad psi_0^-4  + 12*laplacian(psi_0)*psi^-5
+            // JCAurre: Calculate potential and derivative
             Real V_of_phi, dVdphi;
             my_potential_function(V_of_phi, dVdphi,
                                   multigrid_vars_box(iv, c_phi_0), a_params);
@@ -399,7 +400,7 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
             loc *= a_dx;
             loc -= a_params.domainLength / 2.0;
 
-            // calculate contributions
+            // JCAurre: Calculate potential and derivative
             Real V_of_phi, dVdphi;
             my_potential_function(V_of_phi, dVdphi,
                                   multigrid_vars_box(iv, c_phi_0), a_params);
