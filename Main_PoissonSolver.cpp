@@ -57,7 +57,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
     Vector<LevelData<FArrayBox> *> dpsi(nlevels, NULL);
     // the solver vars - coefficients and source
     Vector<LevelData<FArrayBox> *> rhs(nlevels, NULL);
-    // the integrand for constant K integrability condition
+    // the integrand for integrability condition
     Vector<LevelData<FArrayBox> *> integrand(nlevels, NULL);
     // the coeff for the I term
     Vector<RefCountedPtr<LevelData<FArrayBox>>> aCoef(nlevels);
@@ -136,36 +136,42 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
     // Iterate linearised Poisson eqn for NL solution
     Real dpsi_norm0 = 0.0;
     Real dpsi_norm1 = 1.0;
-    Real constant_K = 0.0;
     for (int NL_iter = 0; NL_iter < max_NL_iter; NL_iter++)
     {
 
         pout() << "Main Loop Iteration " << (NL_iter + 1) << " out of "
                << max_NL_iter << endl;
 
-        // Set integrability condition on K if periodic
+        // This functions sets K satisfying rhs and also the integrands of the
+        // integrability condition
+        for (int ilev = 0; ilev < nlevels; ilev++)
+        {
+            set_integrability(*integrand[ilev], *multigrid_vars[ilev],
+                              vectDx[ilev], a_params);
+        }
+
+        // Check integrability conditions if periodic
         if (a_params.periodic[0] == 1)
         {
             // Calculate values for integrand here with K unset
-            pout() << "Computing K value... " << endl;
-            for (int ilev = 0; ilev < nlevels; ilev++)
-            {
-                set_constant_K_integrand(*integrand[ilev],
-                                         *multigrid_vars[ilev], vectDx[ilev],
-                                         a_params);
-            }
-            Real integral_S1 = computeSum(integrand, a_params.refRatio,
-                                          a_params.coarsestDx, Interval(1, 1));
-            Real integral_S2 = computeSum(integrand, a_params.refRatio,
-                                          a_params.coarsestDx, Interval(2, 2));
-            Real integral_S3 = computeSum(integrand, a_params.refRatio,
-                                          a_params.coarsestDx, Interval(3, 3));
-            Real volume = a_params.domainLength[0] * a_params.domainLength[1] *
-                          a_params.domainLength[2];
-            constant_K = 0.0; // M_PI * abs(integral) / volume;
-            pout() << "Integral of S1 " << integral_S1 << endl;
-            pout() << "Integral of S2 " << integral_S2 << endl;
-            pout() << "Integral of S3 " << integral_S3 << endl;
+            pout() << "Computing integrability... " << endl;
+
+            Real integral_Ham = computeSum(integrand, a_params.refRatio,
+                                           a_params.coarsestDx, Interval(0, 0));
+            Real integral_Mom1 =
+                computeSum(integrand, a_params.refRatio, a_params.coarsestDx,
+                           Interval(1, 1));
+            Real integral_Mom2 =
+                computeSum(integrand, a_params.refRatio, a_params.coarsestDx,
+                           Interval(2, 2));
+            Real integral_Mom3 =
+                computeSum(integrand, a_params.refRatio, a_params.coarsestDx,
+                           Interval(3, 3));
+                           
+            pout() << "Integral of Ham " << integral_Ham << endl;
+            pout() << "Integral of Mom1 " << integral_Mom1 << endl;
+            pout() << "Integral of Mom2 " << integral_Mom2 << endl;
+            pout() << "Integral of Mom3 " << integral_Mom3 << endl;
         }
 
         // Calculate values for coefficients here - see SetLevelData.cpp

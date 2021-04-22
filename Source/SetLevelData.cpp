@@ -225,10 +225,9 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
 
 // Set the integrand for the integrability condition for constant K
 // when periodic BCs set
-void set_constant_K_integrand(LevelData<FArrayBox> &a_integrand,
-                              LevelData<FArrayBox> &a_multigrid_vars,
-                              const RealVect &a_dx,
-                              const PoissonParameters &a_params)
+void set_integrability(LevelData<FArrayBox> &a_integrand,
+                       LevelData<FArrayBox> &a_multigrid_vars,
+                       const RealVect &a_dx, const PoissonParameters &a_params)
 {
 
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
