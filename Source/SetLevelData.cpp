@@ -489,67 +489,6 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
         {
             aCoef_box.setVal(0.0, iconstraint);
         }
-
-        // JCAurre: Below is the old code, when aCoef was not trivial.
-
-        // FArrayBox &multigrid_vars_box = a_multigrid_vars[dit()];
-        // Box this_box = aCoef_box.box();
-
-        // // calculate the rho contribution from gradients of phi
-        // // FArrayBox rho_gradient(this_box, 1);
-        // FORT_GETRHOGRADPHIF(CHF_FRA1(rho_gradient, 0),
-        //                     CHF_CONST_FRA1(multigrid_vars_box, c_phi_0),
-        //                     CHF_CONST_REAL(a_dx[0]), CHF_BOX(this_box));
-
-        // // calculate gradients for constructing rho and Aij
-        // FArrayBox grad_multigrid(this_box, 3 * NUM_MULTIGRID_VARS);
-        // get_grad(this_box, multigrid_vars_box, Interval(c_psi_0, c_phi_0),
-        // a_dx,
-        //          grad_multigrid, a_params);
-
-        // BoxIterator bit(this_box);
-        // for (bit.begin(); bit.ok(); ++bit)
-        // {
-        //     IntVect iv = bit();
-        // RealVect loc(iv + 0.5 * RealVect::Unit);
-        // loc *= a_dx;
-        // loc -= a_params.domainLength / 2.0;
-
-        // // JCAurre: Potential terms
-        // Real V_of_phi, dVdphi;
-        // my_potential_function(V_of_phi, dVdphi,
-        //                       multigrid_vars_box(iv, c_phi_0), a_params);
-
-        // // JCAurre: new variables for mom
-        // Real pi_0 = multigrid_vars_box(iv, c_pi_0);
-        // set_Aij_0(multigrid_vars_box, iv, loc, a_dx, a_params,
-        //           grad_multigrid);
-        // set_binary_bh_Aij(multigrid_vars_box, iv, loc, a_params);
-
-        // // Also \bar  A_ij \bar A^ij
-        // Real A2 = 0.0;
-        // A2 = pow(multigrid_vars_box(iv, c_A11_0), 2.0) +
-        //      pow(multigrid_vars_box(iv, c_A22_0), 2.0) +
-        //      pow(multigrid_vars_box(iv, c_A33_0), 2.0) +
-        //      2 * pow(multigrid_vars_box(iv, c_A12_0), 2.0) +
-        //      2 * pow(multigrid_vars_box(iv, c_A13_0), 2.0) +
-        //      2 * pow(multigrid_vars_box(iv, c_A23_0), 2.0);
-
-        // Real psi_bh = set_binary_bh_psi(loc, a_params);
-        // Real psi_0 = multigrid_vars_box(iv, c_psi) + psi_bh;
-        // Real K_0 = multigrid_vars_box(iv, c_K_0);
-
-        // aCoef_box(iv, c_psi) = -0.625 *
-        //       (2.0 / 3.0 * K_0 * K_0 -
-        //        8.0 * M_PI * a_params.G_Newton *
-        //            (pow(pi_0, 2.0) + 2.0 * V_of_phi)) *
-        //       pow(psi_0, 4.0) -
-        //   0.875 * A2 * pow(psi_0, -8.0) +
-        //   2.0 * M_PI * a_params.G_Newton * rho_gradient(iv, 0);
-        // aCoef_box(iv, c_V0) = 0.0;
-        // aCoef_box(iv, c_V1) = 0.0;
-        // aCoef_box(iv, c_V2) = 0.0;
-        // }
     }
 }
 
