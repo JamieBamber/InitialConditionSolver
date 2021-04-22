@@ -35,8 +35,8 @@ inline RealVect get_grad(const Box &a_b, const FArrayBox &multigrid_vars_box,
                              a_dx[idir];
 
                 a_grad_of_variable(a_iv, 3 * icomp + idir) = grad[idir];
-                //				pout() << a_grad_of_variable(a_iv,
-                //3*icomp + idir) << endl;
+                //				pout() <<
+                // a_grad_of_variable(a_iv, 3*icomp + idir) << endl;
             }
         }
     }
@@ -172,4 +172,29 @@ inline RealVect get_laplacian(const Box &a_b,
             a_lapl_of_variable(a_iv, icomp) = laplacian_of_psi;
         }
     }
-} // end get_grad
+} // end laplacian
+
+void set_deriv1(Real a_d_phi[3], const IntVect &a_iv,
+                const FArrayBox &a_grad_multigrid, const int icomp)
+{
+
+    a_d_phi[0] = a_grad_multigrid(a_iv, 3 * icomp + 0);
+    a_d_phi[1] = a_grad_multigrid(a_iv, 3 * icomp + 1);
+    a_d_phi[2] = a_grad_multigrid(a_iv, 3 * icomp + 2);
+}
+
+void set_deriv2(Real a_dd_phi[3][3], const IntVect &a_iv,
+                const FArrayBox &a_grad2_multigrid,
+                const FArrayBox &a_mixed_grad2_multigrid, const int icomp)
+{
+
+    a_dd_phi[0][0] = a_grad2_multigrid(a_iv, 3 * icomp + 0);
+    a_dd_phi[1][1] = a_grad2_multigrid(a_iv, 3 * icomp + 1);
+    a_dd_phi[2][2] = a_grad2_multigrid(a_iv, 3 * icomp + 2);
+    a_dd_phi[0][1] = a_mixed_grad2_multigrid(a_iv, 3 * icomp + 0);
+    a_dd_phi[0][2] = a_mixed_grad2_multigrid(a_iv, 3 * icomp + 1);
+    a_dd_phi[1][2] = a_mixed_grad2_multigrid(a_iv, 3 * icomp + 2);
+    a_dd_phi[1][0] = a_dd_phi[0][1];
+    a_dd_phi[2][0] = a_dd_phi[0][2];
+    a_dd_phi[2][1] = a_dd_phi[1][2];
+}

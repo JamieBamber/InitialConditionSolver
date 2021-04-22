@@ -135,7 +135,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
     // Iterate linearised Poisson eqn for NL solution
     Real dpsi_norm0 = 0.0;
-	Real dpsi_norm1 = 1.0;
+    Real dpsi_norm1 = 1.0;
     Real constant_K = 0.0;
     for (int NL_iter = 0; NL_iter < max_NL_iter; NL_iter++)
     {
@@ -155,14 +155,14 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
                                          a_params);
             }
             Real integral_S1 = computeSum(integrand, a_params.refRatio,
-                                       a_params.coarsestDx, Interval(1, 1));
+                                          a_params.coarsestDx, Interval(1, 1));
             Real integral_S2 = computeSum(integrand, a_params.refRatio,
-                                       a_params.coarsestDx, Interval(2, 2));
+                                          a_params.coarsestDx, Interval(2, 2));
             Real integral_S3 = computeSum(integrand, a_params.refRatio,
-                                       a_params.coarsestDx, Interval(3, 3));
+                                          a_params.coarsestDx, Interval(3, 3));
             Real volume = a_params.domainLength[0] * a_params.domainLength[1] *
                           a_params.domainLength[2];
-            constant_K = 0.0;//M_PI * abs(integral) / volume;
+            constant_K = 0.0; // M_PI * abs(integral) / volume;
             pout() << "Integral of S1 " << integral_S1 << endl;
             pout() << "Integral of S2 " << integral_S2 << endl;
             pout() << "Integral of S3 " << integral_S3 << endl;
@@ -215,12 +215,10 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
                                      NUM_CONSTRAINTS_VARS, vectDomains[ilev]);
                 quadCFI.coarseFineInterp(*dpsi[ilev], *dpsi[ilev - 1]);
             }
+        }
 
-		}
-		Real max_dpsi = computeMax(dpsi, a_params.refRatio, Interval(1, 1));
-		pout() << "max dpsi" << max_dpsi << endl;
-		for (int ilev = 0; ilev < nlevels; ilev++)
-		{
+        for (int ilev = 0; ilev < nlevels; ilev++)
+        {
             // For intralevel ghosts - this is done in set_update_phi0
             // but need the exchange copier object to do this
             Copier exchange_copier;
@@ -228,14 +226,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
             // now the update
             set_update_psi0(*multigrid_vars[ilev], *dpsi[ilev],
-                            exchange_copier, 0*max_dpsi);
-
-// removed for now
-//            set_constant_K_integrand(*integrand[ilev],
-//                                         *multigrid_vars[ilev], vectDx[ilev],
-//                                         a_params);
-//            set_rhs(*rhs[ilev], *multigrid_vars[ilev], vectDx[ilev], a_params,
-//                    constant_K);
+                            exchange_copier);
         }
 
         // check if converged or diverging and if so exit NL iteration for loop
@@ -249,18 +240,21 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
                << dpsi_norm0 << endl;
         pout() << "The norm of rhs Mom after step " << NL_iter + 1 << " is "
                << dpsi_norm1 << endl;
- 
-		if ((dpsi_norm0 < tolerance  && dpsi_norm1 < tolerance ) || dpsi_norm0 > 1e5 || dpsi_norm1 > 1e5)
+
+        if ((dpsi_norm0 < tolerance && dpsi_norm1 < tolerance) ||
+            dpsi_norm0 > 1e5 || dpsi_norm1 > 1e5)
         {
             break;
         }
 
     } // end NL iteration loop
 
-    pout() << "The norm of rhs Ham at the final step was " << dpsi_norm0 << endl;
-    pout() << "The norm of rhs Mom at the final step was " << dpsi_norm1 << endl;
+    pout() << "The norm of rhs Ham at the final step was " << dpsi_norm0
+           << endl;
+    pout() << "The norm of rhs Mom at the final step was " << dpsi_norm1
+           << endl;
 
-	// Mayday if result not converged at all - using a fairly generous threshold
+    // Mayday if result not converged at all - using a fairly generous threshold
     // for this as usually non convergence means everything goes nuts
     if (dpsi_norm0 > 1e-1 || dpsi_norm1 > 1e-1)
     {

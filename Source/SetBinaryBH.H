@@ -105,47 +105,62 @@ Real set_binary_bh_psi(const RealVect &loc, const PoissonParameters &a_params)
     return m1 / rbh1 + m2 / rbh2;
 }
 
-void set_Aij_0(FArrayBox &multigrid_vars_box, const IntVect &iv,
+void set_Aij_0(Real Aij[3][3], FArrayBox &multigrid_vars_box, const IntVect &iv,
                const RealVect &loc, const RealVect &a_dx,
                const PoissonParameters &a_params,
                const FArrayBox &a_grad_multigrid)
 {
 
-    Real trace =     (a_grad_multigrid(iv, 3 * c_V0_0 + 0) +
-                      a_grad_multigrid(iv, 3 * c_V1_0 + 1) +
-                      a_grad_multigrid(iv, 3 * c_V2_0 + 2));
+    Real trace = (a_grad_multigrid(iv, 3 * c_V0_0 + 0) +
+                  a_grad_multigrid(iv, 3 * c_V1_0 + 1) +
+                  a_grad_multigrid(iv, 3 * c_V2_0 + 2));
 
-	multigrid_vars_box(iv, c_A11_0) = 3. / 4. * 
-			(a_grad_multigrid(iv, 3 * c_V0_0 + 0)
-			 + a_grad_multigrid(iv, 3 * c_V0_0 + 0)) - 1. / 2. * trace;
+    multigrid_vars_box(iv, c_A11_0) =
+        3. / 4. *
+            (a_grad_multigrid(iv, 3 * c_V0_0 + 0) +
+             a_grad_multigrid(iv, 3 * c_V0_0 + 0)) -
+        1. / 2. * trace;
 
-	multigrid_vars_box(iv, c_A22_0) = 3. / 4. * 
-            (a_grad_multigrid(iv, 3 * c_V1_0 + 1)
-             + a_grad_multigrid(iv, 3 * c_V1_0 + 1)) - 1. / 2. * trace;
+    multigrid_vars_box(iv, c_A22_0) =
+        3. / 4. *
+            (a_grad_multigrid(iv, 3 * c_V1_0 + 1) +
+             a_grad_multigrid(iv, 3 * c_V1_0 + 1)) -
+        1. / 2. * trace;
 
-	multigrid_vars_box(iv, c_A33_0) = 3. / 4. * 
-            (a_grad_multigrid(iv, 3 * c_V2_0 + 2)
-             + a_grad_multigrid(iv, 3 * c_V2_0 + 2)) - 1. / 2. * trace;
+    multigrid_vars_box(iv, c_A33_0) =
+        3. / 4. *
+            (a_grad_multigrid(iv, 3 * c_V2_0 + 2) +
+             a_grad_multigrid(iv, 3 * c_V2_0 + 2)) -
+        1. / 2. * trace;
 
-	multigrid_vars_box(iv, c_A12_0) = 3. / 4. * 
-            (a_grad_multigrid(iv, 3 * c_V0_0 + 1)
-             + a_grad_multigrid(iv, 3 * c_V1_0 + 0));
+    multigrid_vars_box(iv, c_A12_0) = 3. / 4. *
+                                      (a_grad_multigrid(iv, 3 * c_V0_0 + 1) +
+                                       a_grad_multigrid(iv, 3 * c_V1_0 + 0));
 
-	multigrid_vars_box(iv, c_A13_0) = 3. / 4. * 
-            (a_grad_multigrid(iv, 3 * c_V0_0 + 2)
-             + a_grad_multigrid(iv, 3 * c_V2_0 + 0));
+    multigrid_vars_box(iv, c_A13_0) = 3. / 4. *
+                                      (a_grad_multigrid(iv, 3 * c_V0_0 + 2) +
+                                       a_grad_multigrid(iv, 3 * c_V2_0 + 0));
 
-	multigrid_vars_box(iv, c_A23_0) = 3. / 4. * 
-            (a_grad_multigrid(iv, 3 * c_V2_0 + 1)
-             + a_grad_multigrid(iv, 3 * c_V1_0 + 2));
+    multigrid_vars_box(iv, c_A23_0) = 3. / 4. *
+                                      (a_grad_multigrid(iv, 3 * c_V2_0 + 1) +
+                                       a_grad_multigrid(iv, 3 * c_V1_0 + 2));
+
+    Aij[0][0] = multigrid_vars_box(iv, c_A11_0);
+    Aij[1][1] = multigrid_vars_box(iv, c_A22_0);
+    Aij[2][2] = multigrid_vars_box(iv, c_A33_0);
+    Aij[0][1] = multigrid_vars_box(iv, c_A12_0);
+    Aij[0][2] = multigrid_vars_box(iv, c_A13_0);
+    Aij[1][2] = multigrid_vars_box(iv, c_A23_0);
+    Aij[1][0] = Aij[0][1];
+    Aij[2][0] = Aij[0][2];
+    Aij[2][1] = Aij[1][2];
 }
 
-
-void set_deriv_Aij_0(Real d_Aij[3][3][3], FArrayBox &multigrid_vars_box, const IntVect &iv,
-               const RealVect &loc, const RealVect &a_dx,
-               const PoissonParameters &a_params,
-               const FArrayBox &a_grad2_multigrid,
-               const FArrayBox &a_mixed_grad2_multigrid)
+void set_deriv_Aij_0(Real d_Aij[3][3][3], FArrayBox &multigrid_vars_box,
+                     const IntVect &iv, const RealVect &loc,
+                     const RealVect &a_dx, const PoissonParameters &a_params,
+                     const FArrayBox &a_grad2_multigrid,
+                     const FArrayBox &a_mixed_grad2_multigrid)
 {
 
     Real d2_V[3][3][3];
@@ -157,7 +172,7 @@ void set_deriv_Aij_0(Real d_Aij[3][3][3], FArrayBox &multigrid_vars_box, const I
     d2_V[1][0][0] = a_grad2_multigrid(iv, 3 * c_V1_0 + 0);
     d2_V[1][1][1] = a_grad2_multigrid(iv, 3 * c_V1_0 + 1);
     d2_V[1][2][2] = a_grad2_multigrid(iv, 3 * c_V1_0 + 2);
-    
+
     d2_V[2][0][0] = a_grad2_multigrid(iv, 3 * c_V2_0 + 0);
     d2_V[2][1][1] = a_grad2_multigrid(iv, 3 * c_V2_0 + 1);
     d2_V[2][2][2] = a_grad2_multigrid(iv, 3 * c_V2_0 + 2);
@@ -203,14 +218,13 @@ void set_deriv_Aij_0(Real d_Aij[3][3][3], FArrayBox &multigrid_vars_box, const I
             for (int k = 0; k < SpaceDim; k++)
             {
                 d_Aij[i][j][k] = 0.75 * (d2_V[j][i][k] + d2_V[i][j][k]);
-                
+
                 for (int l = 0; l < SpaceDim; l++)
                 {
-                    d_Aij[i][j][k] += - 0.5 * delta[i][j] * d2_V[l][l][k];
+                    d_Aij[i][j][k] += -0.5 * delta[i][j] * d2_V[l][l][k];
                 }
             }
         }
     }
-
 }
 #endif /* SETBINARYBH_HPP */
