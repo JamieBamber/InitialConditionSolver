@@ -61,7 +61,6 @@ class PoissonParameters
     Real bh2_momentum;
     Real bh1_offset;
     Real bh2_offset;
-	string inflation_model;
 	Real pot_Lambda;
 	Real pot_mu;
 	Real psi_0;

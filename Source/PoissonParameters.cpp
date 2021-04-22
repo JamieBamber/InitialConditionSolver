@@ -44,7 +44,6 @@ void getPoissonParameters(PoissonParameters &a_params)
     pp.get("pi_wavelength", a_params.pi_wavelength);
 
 	// Potential parameters
-	pp.get("inflation_model", a_params.inflation_model);	
 	pp.get("pot_Lambda", a_params.pot_Lambda);
 	pp.get("pot_mu", a_params.pot_mu);
 
