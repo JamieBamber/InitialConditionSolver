@@ -34,6 +34,16 @@ void getPoissonParameters(PoissonParameters &a_params)
     pout() << "alpha, beta = " << a_params.alpha << ", " << a_params.beta
            << endl;
 
+	// Read from hdf5 file
+    if (pp.contains("read_from_file"))
+    {
+        pp.get("read_from_file", a_params.read_from_file);
+    }
+    else
+    {
+        a_params.read_from_file = "none";
+    }
+
     // Initial conditions for the scalar field
     pp.get("G_Newton", a_params.G_Newton);
 	pp.get("phi_0", a_params.phi_0);

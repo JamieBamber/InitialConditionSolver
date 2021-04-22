@@ -64,6 +64,7 @@ class PoissonParameters
 	Real pot_Lambda;
 	Real pot_mu;
 	Real psi_0;
+	std::string read_from_file;
 };
 
 /// get stuff from input file

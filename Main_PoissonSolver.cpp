@@ -14,6 +14,7 @@
 #include "MultilevelLinearOp.H"
 #include "ParmParse.H"
 #include "PoissonParameters.H"
+#include "ReadHDF5.H"
 #include "SetBCs.H"
 #include "SetGrids.H"
 #include "SetLevelData.H"
@@ -99,6 +100,11 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         // and values for other multigrid sources - phi and Aij
         set_initial_conditions(*multigrid_vars[ilev], *dpsi[ilev], vectDx[ilev],
                                a_params);
+                               
+        if (a_params.read_from_file != "none")
+        {
+            readHDF5(*multigrid_vars[ilev], a_grids, a_params, ilev, ghosts);
+        }
 
         // prepare temp dx, domain vars for next level
         dxLev /= a_params.refRatio[ilev];
@@ -329,7 +335,14 @@ int main(int argc, char *argv[])
 
         // set up the grids, using the rhs for tagging to decide
         // where needs additional levels
-        set_grids(grids, params);
+        if (params.read_from_file == "none")
+        {
+            set_grids(grids, params);
+        }
+        else
+        {
+            readgrids(grids, params);
+        }
 
         // Solve the equations!
         status = poissonSolve(grids, params);
