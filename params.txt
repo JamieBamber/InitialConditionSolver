@@ -18,7 +18,7 @@ N = 64 64 64
 # number of AMR refinement levels is max_level + 1
 max_level    = 1
 # Threshold for AMR refinement, based on magnitude of rhs
-refine_threshold = 0.86
+refine_threshold = 0.5
 #min box size
 block_factor = 8
 #max box size
@@ -44,7 +44,7 @@ coefficient_average_type = harmonic
 
 # Boundary conditions for domain-boundary faces 
 # 0 for non periodic, 1 for periodic (enforces same for all)
-is_periodic = 1
+is_periodic = 0
 # if not periodic, then what?
 # 1 -> const Neumann (gradient), 0 -> const Dirichlet (value)
 bc_lo       = 0 0 0
@@ -63,7 +63,7 @@ G_Newton = 1.0
 phi_0 = 0 #-2.19329
 phi_amplitude = 1e-2
 phi_wavelength = 1
-pi_0 = 1e-1
+pi_0 = 0
 pi_amplitude = 1e-2
 pi_wavelength = 1
 
