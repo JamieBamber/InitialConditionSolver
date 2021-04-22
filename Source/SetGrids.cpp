@@ -142,7 +142,13 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids, PoissonParameters &a_params)
 
         // figure out whether we need another pass through grid generation
         if ((topLevel < maxLevel) && (topLevel > oldTopLevel))
+        {
             moreLevels = true;
+        }
+        else
+        {
+            break;
+        }
 
     } // end while moreLevels loop
 
