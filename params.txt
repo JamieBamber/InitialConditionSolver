@@ -58,9 +58,10 @@ G_Newton = 1.0
 
 # Read from hdf5 file?
 #read_from_file = InitialConditionsFinal.3d.hdf5
+
 # scalar field input params
 phi_0 = -2.19329
-phi_amplitude = 0.0
+phi_amplitude = 1e-2
 phi_wavelength = 1
 pi_0 = 0.2
 pi_amplitude = 0.1

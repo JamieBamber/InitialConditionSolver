@@ -15,7 +15,7 @@
 #include "MyPhiFunction.H"
 #include "MyPotentialFunction.H"
 #include "PoissonParameters.H"
-#include "SetBinaryBH.H"
+#include "SetAij.H"
 #include "SetLevelDataCpp.H"
 #include "SetLevelDataF_F.H"
 #include "VariableCoeffPoissonOperatorFactory.H"
