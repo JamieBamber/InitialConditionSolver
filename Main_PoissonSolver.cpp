@@ -142,8 +142,8 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         pout() << "Main Loop Iteration " << (NL_iter + 1) << " out of "
                << max_NL_iter << endl;
 
-        // This functions sets K satisfying rhs and also the integrands of the
-        // integrability condition
+        // This function sets K satisfying rhs and hence also the integrability
+        // condition of Ham for periodic domain
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
             set_integrability(*integrand[ilev], *multigrid_vars[ilev],
@@ -167,7 +167,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             Real integral_Mom3 =
                 computeSum(integrand, a_params.refRatio, a_params.coarsestDx,
                            Interval(3, 3));
-                           
+
             pout() << "Integral of Ham " << integral_Ham << endl;
             pout() << "Integral of Mom1 " << integral_Mom1 << endl;
             pout() << "Integral of Mom2 " << integral_Mom2 << endl;

@@ -57,7 +57,7 @@ bc_value = 0.0
 G_Newton = 1.0 
 
 # scalar field input params
-phi_0 = 0 #-2.19329
+phi_0 = -2.19329
 phi_amplitude = 0.0
 phi_wavelength = 1
 pi_0 = 0.2
@@ -65,10 +65,10 @@ pi_amplitude = 0.1
 pi_wavelength = 1
 
 # potential params
-inflation_model = starobinsky
-pot_Lambda = 0 #0.000131198
+pot_Lambda = 0.000131198
 pot_mu = 0.767495
 
+# initial scale factor a0 = psi_0**2
 psi_0 = 1.0
 
 # initial conditions for Binary BH spacetimes
