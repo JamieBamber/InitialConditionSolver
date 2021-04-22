@@ -74,53 +74,6 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
 
             multigrid_vars_box(iv, c_pi_0) = my_pi_function(loc, a_params);
         }
-
-        // // JCAurre: out of the box loop so that there are no race condition
-        // // problems
-        // FArrayBox grad_multigrid(b_no_ghosts, 3 * NUM_MULTIGRID_VARS);
-        // get_grad(b_no_ghosts, multigrid_vars_box, Interval(c_V0_0, c_V2_0),
-        //          a_dx, grad_multigrid, a_params);
-
-        // BoxIterator bit_no_ghosts(b_no_ghosts);
-        // for (bit_no_ghosts.begin(); bit_no_ghosts.ok(); ++bit_no_ghosts)
-        // {
-
-        //     // work out location on the grid
-        //     IntVect iv = bit_no_ghosts();
-
-        //     // set the phi value - need the distance from centre
-        //     RealVect loc(iv + 0.5 * RealVect::Unit);
-        //     loc *= a_dx;
-        //     loc -= a_params.domainLength / 2.0;
-
-        //     // JCAurre: set Aij from components of vector W
-        //     // set_Aij_0(multigrid_vars_box, iv, loc, a_dx, a_params,
-        //     //           grad_multigrid);
-        // }
-
-        // // reopen the loop
-        // for (bit.begin(); bit.ok(); ++bit)
-        // {
-
-        //     // work out location on the grid
-        //     IntVect iv = bit();
-
-        //     // set the phi value - need the distance from centre
-        //     RealVect loc(iv + 0.5 * RealVect::Unit);
-        //     loc *= a_dx;
-        //     loc -= a_params.domainLength / 2.0;
-
-        //     // set phi and pi according to user defined function
-        //     multigrid_vars_box(iv, c_phi_0) =
-        //         my_phi_function(loc, a_params.phi_0, a_params.phi_amplitude,
-        //                         a_params.phi_wavelength,
-        //                         a_params.domainLength);
-
-        //     multigrid_vars_box(iv, c_pi_0) =
-        //         my_pi_function(loc, a_params.pi_0, a_params.pi_amplitude,
-        //                        a_params.pi_wavelength,
-        //                        a_params.domainLength);
-        // }
     }
 } // end set_initial_conditions
 
