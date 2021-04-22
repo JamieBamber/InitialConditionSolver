@@ -70,13 +70,9 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
             dpsi_box(iv, c_V2) = 0.0;
 
             // set phi and pi according to user defined function
-            multigrid_vars_box(iv, c_phi_0) =
-                my_phi_function(loc, a_params.phi_0, a_params.phi_amplitude,
-                                a_params.phi_wavelength, a_params.domainLength);
+            multigrid_vars_box(iv, c_phi_0) = my_phi_function(loc, a_params);
 
-            multigrid_vars_box(iv, c_pi_0) =
-                my_pi_function(loc, a_params.pi_0, a_params.pi_amplitude,
-                               a_params.pi_wavelength, a_params.domainLength);
+            multigrid_vars_box(iv, c_pi_0) = my_pi_function(loc, a_params);
         }
 
         // // JCAurre: out of the box loop so that there are no race condition
