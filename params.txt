@@ -56,6 +56,8 @@ bc_value = 0.0
 # Q: "Simple, change the gravitational constant of the Universe"
 G_Newton = 1.0 
 
+# Read from hdf5 file?
+#read_from_file = InitialConditionsFinal.3d.hdf5
 # scalar field input params
 phi_0 = -2.19329
 phi_amplitude = 0.0
