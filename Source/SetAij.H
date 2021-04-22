@@ -3,8 +3,8 @@
  * Please refer to LICENSE in GRChombo's root directory.
  */
 
-#ifndef SETBINARYBH_HPP
-#define SETBINARYBH_HPP
+#ifndef SETAIJ_HPP
+#define SETAIJ_HPP
 
 #include "PoissonParameters.H"
 
@@ -227,4 +227,4 @@ void set_deriv_Aij_0(Real d_Aij[3][3][3], FArrayBox &multigrid_vars_box,
         }
     }
 }
-#endif /* SETBINARYBH_HPP */
+#endif /* SETAIJ_HPP */
