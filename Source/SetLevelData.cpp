@@ -161,13 +161,13 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
         }
       }
 
-      rhs_box(iv, c_psi) = 0;
-      0.125 *
+      rhs_box(iv, c_psi) =
+          0.125 *
               (2.0 / 3.0 * K_0 * K_0 - 8.0 * M_PI * a_params.G_Newton *
                                            (pow(pi_0, 2.0) + 2.0 * V_of_phi)) *
               pow(psi_0, 5.0) -
-          0.125 * A2 *pow(psi_0, -7.0) -
-          2.0 * M_PI *a_params.G_Newton *rho_gradient *psi_0 -
+          0.125 * A2 * pow(psi_0, -7.0) -
+          2.0 * M_PI * a_params.G_Newton * rho_gradient * psi_0 -
           laplace_multigrid(iv, c_psi);
 
       // JCAurre: Added rhs for new constraint variables.
@@ -186,8 +186,10 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
         }
       }
 
-	  Real min_K_0 = -1.e-15;
-	  if (abs(K_0) < abs(min_K_0)){ K_0 = min_K_0;}
+      Real min_K_0 = -1.e-15;
+      if (abs(K_0) < abs(min_K_0)) {
+        K_0 = min_K_0;
+      }
 
       RealVect gradK;
       for (int i = 0; i < SpaceDim; i++) {
