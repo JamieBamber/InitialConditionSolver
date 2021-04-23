@@ -186,6 +186,9 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
         }
       }
 
+	  Real min_K_0 = -1.e-15;
+	  if (abs(K_0) < abs(min_K_0)){ K_0 = min_K_0;}
+
       RealVect gradK;
       for (int i = 0; i < SpaceDim; i++) {
         gradK[i] =
