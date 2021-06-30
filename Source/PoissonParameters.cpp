@@ -44,6 +44,15 @@ void getPoissonParameters(PoissonParameters &a_params)
         a_params.read_from_file = "none";
     }
 
+    if (pp.contains("output_path"))
+    { 
+        pp.get("output_path", a_params.output_path);
+    }
+    else
+    {
+        a_params.output_path = "";
+    }
+
     // Initial conditions for the scalar field
     pp.get("G_Newton", a_params.G_Newton);
 	pp.get("phi_0", a_params.phi_0);
@@ -151,15 +160,14 @@ void getPoissonParameters(PoissonParameters &a_params)
 
     // Periodicity - for the moment enforce same in all directions
     ProblemDomain crseDom(crseDomBox);
-    int is_periodic;
-    pp.get("is_periodic", is_periodic);
+    pp.get("is_periodic", a_params.is_periodic);
     a_params.periodic.resize(SpaceDim);
-    a_params.periodic.assign(is_periodic);
+    a_params.periodic.assign(a_params.is_periodic);
     for (int dir = 0; dir < SpaceDim; dir++)
     {
-        crseDom.setPeriodic(dir, is_periodic);
+        crseDom.setPeriodic(dir, a_params.is_periodic);
     }
     a_params.coarsestDomain = crseDom;
 
-    pout() << "periodicity = " << is_periodic << endl;
+    pout() << "periodicity = " << a_params.is_periodic << endl;
 }

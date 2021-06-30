@@ -56,14 +56,16 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
 #ifdef CH_USE_HDF5
 
 #if CH_SPACEDIM == 2
-    string fileName("vcPoissonOut.2d");
+    string filename(a_params.output_path);
+    filename += "vcPoissonOut.2d";
 #else
-    string fileName("vcPoissonOut.3d");
+    string filename(a_params.output_path);
+    filename += "vcPoissonOut.3d";
 #endif
 
     char suffix[30];
     sprintf(suffix, "_%d.hdf5", iter);
-    fileName += suffix;
+    filename += suffix;
 
     int ndpsiComp = a_dpsi[0]->nComp();
     int nRhsComp = a_rhs[0]->nComp();
@@ -109,7 +111,7 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
     }
     Real fakeTime = iter * 1.0;
     Real fakeDt = 1.0;
-    WriteAMRHierarchyHDF5(fileName, a_grids, tempData, variable_names,
+    WriteAMRHierarchyHDF5(filename, a_grids, tempData, variable_names,
                           a_params.coarsestDomain.domainBox(),
                           a_params.coarsestDx, fakeDt, fakeTime,
                           a_params.refRatio, a_params.numLevels);
@@ -133,9 +135,11 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
 #ifdef CH_USE_HDF5
 
 #if CH_SPACEDIM == 2
-    string filename("InitialConditionsFinal.2d.hdf5");
+    string filename(a_params.output_path);
+    filename += "InitialConditionsFinal.2d.hdf5";
 #else
-    string filename("InitialConditionsFinal.3d.hdf5");
+    string filename(a_params.output_path);
+    filename += "InitialConditionsFinal.3d.hdf5";
 #endif
 
     // set up full data and write to hdf5 file ready for GRChombo

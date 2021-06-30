@@ -34,6 +34,7 @@ class PoissonParameters
     Real refineThresh;
     int coefficient_average_type;
     int verbosity;
+    int is_periodic;
     Vector<int> periodic;
     int domBcType;
     int maxLevel;
@@ -65,6 +66,7 @@ class PoissonParameters
 	Real pot_mu;
 	Real psi_0;
 	std::string read_from_file;
+	std::string output_path;
 };
 
 /// get stuff from input file
