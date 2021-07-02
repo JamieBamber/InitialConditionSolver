@@ -365,7 +365,7 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
       // the condition is similar to the rhs but we take abs
       // value of the contributions and add in BH criteria
       condition_box(iv, 0) =
-          1.5 * abs((2.0 / 3.0 * K_0 * K_0 -
+          1.5 * abs((2.0 / 3.0 * K_0 * K_0 +
                      8.0 * M_PI * a_params.G_Newton *
                          (pow(pi_0, 2.0) + 2.0 * V_of_phi))) +
           1.5 * A2 * pow(psi_0, -7.0) +
@@ -375,9 +375,9 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
 
       // JCAurre: Maybe one wants to add regridding in the momentum
       // constraints
-      condition_box(iv, c_V0) = 0.;
-      condition_box(iv, c_V1) = 0.;
-      condition_box(iv, c_V2) = 0.;
+     // condition_box(iv, c_V0) = 0.;
+     // condition_box(iv, c_V1) = 0.;
+     // condition_box(iv, c_V2) = 0.;
     }
   }
 } // end set_regrid_condition
