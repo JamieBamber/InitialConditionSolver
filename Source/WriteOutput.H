@@ -77,6 +77,7 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
     Vector<string> variable_names(totalComp);
     variable_names[0] =
         "dpsi0"; // JCAurre: name for the rhs and linear solution of constraints
+    // TODO: Why 5 rhs not 4?
     variable_names[1] = "dpsi1";
     variable_names[2] = "dpsi2";
     variable_names[3] = "dpsi3";
@@ -111,6 +112,7 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
     }
     Real fakeTime = iter * 1.0;
     Real fakeDt = 1.0;
+    // TODO: Does this write ghosts?
     WriteAMRHierarchyHDF5(filename, a_grids, tempData, variable_names,
                           a_params.coarsestDomain.domainBox(),
                           a_params.coarsestDx, fakeDt, fakeTime,
@@ -204,6 +206,7 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
 
         // Setup the periodicity info - for GRChombo we always treat it as
         // periodic
+        // TODO: fix this?
         for (int dir = 0; dir < SpaceDim; ++dir)
         {
             char dir_str[20];
@@ -215,7 +218,7 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
 
         level_header.writeToFile(handle);
         write(handle, a_grids[level]);
-        write(handle, *grchombo_vars[level], "data");
+        write(handle, *grchombo_vars[level], "data"); // TODO: is this writing ghosts?
     }
 
     // shut the file

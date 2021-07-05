@@ -156,7 +156,39 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
                               vectDx[ilev], a_params);
         }
 
-        // Check integrability conditions if periodic
+        // need to fill interlevel and intralevel ghosts first in multigrid_vars
+        // after imposing integrability
+        for (int ilev = 0; ilev < nlevels; ilev++)
+        {
+            // For intralevel ghosts of K
+            Copier exchange_copier;
+            exchange_copier.exchangeDefine(a_grids[ilev], ghosts);
+            multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(), exchange_copier);
+        }
+
+        for (int ilev = 0; ilev < nlevels; ilev++)
+        {
+
+            // For interlevel ghosts in multigrid vars
+            if (ilev > 0)
+            {
+                QuadCFInterp quadCFI(a_grids[ilev], &a_grids[ilev - 1],
+                                     vectDx[ilev][0], a_params.refRatio[ilev],
+                                     NUM_MULTIGRID_VARS, vectDomains[ilev]);
+                quadCFI.coarseFineInterp(*multigrid_vars[ilev], *multigrid_vars[ilev - 1]);
+            }
+        }
+
+        for (int ilev = 0; ilev < nlevels; ilev++)
+        {
+            // For intralevel ghosts of K
+            Copier exchange_copier;
+            exchange_copier.exchangeDefine(a_grids[ilev], ghosts);
+            multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(), exchange_copier);
+        }
+
+
+      // Check integrability conditions if periodic
         if (a_params.periodic[0] == 1)
         {
             // Calculate values for integrand here with K unset
@@ -219,7 +251,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
 
-            // For interlevel ghosts
+            // For interlevel ghosts in dpsi and multigrid_vars
             if (ilev > 0)
             {
                 QuadCFInterp quadCFI(a_grids[ilev], &a_grids[ilev - 1],
@@ -239,6 +271,34 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             // now the update
             set_update_psi0(*multigrid_vars[ilev], *dpsi[ilev],
                             exchange_copier);
+        }
+
+        for (int ilev = 0; ilev < nlevels; ilev++)
+        {
+            // For intralevel ghosts
+            Copier exchange_copier;
+            exchange_copier.exchangeDefine(a_grids[ilev], ghosts);
+            multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(), exchange_copier);
+        }
+
+        for (int ilev = 0; ilev < nlevels; ilev++)
+        {
+            // For interlevel ghosts in multigrid_vars - for V_i etc
+            if (ilev > 0)
+            {
+                QuadCFInterp quadCFI(a_grids[ilev], &a_grids[ilev - 1],
+                                     vectDx[ilev][0], a_params.refRatio[ilev],
+                                     NUM_MULTIGRID_VARS, vectDomains[ilev]);
+                quadCFI.coarseFineInterp(*multigrid_vars[ilev], *multigrid_vars[ilev - 1]);
+            }
+        }
+
+        for (int ilev = 0; ilev < nlevels; ilev++)
+        {
+            // For intralevel ghosts
+            Copier exchange_copier;
+            exchange_copier.exchangeDefine(a_grids[ilev], ghosts);
+            multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(), exchange_copier);
         }
 
         // check if converged or diverging and if so exit NL iteration for loop
@@ -268,11 +328,11 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
     // Mayday if result not converged at all - using a fairly generous threshold
     // for this as usually non convergence means everything goes nuts
-    if (dpsi_norm0 > 1e-1 || dpsi_norm1 > 1e-1)
-    {
-        MayDay::Error(
-            "NL iterations did not converge - may need a better initial guess");
-    }
+//    if (dpsi_norm0 > 1e-1 || dpsi_norm1 > 1e-1)
+//    {
+//        MayDay::Error(
+//            "NL iterations did not converge - may need a better initial guess");
+//    }
 
     // now output final data in a form which can be read as a checkpoint file
     // for the GRChombo AMR time dependent runs
