@@ -34,7 +34,7 @@ void getPoissonParameters(PoissonParameters &a_params)
     pout() << "alpha, beta = " << a_params.alpha << ", " << a_params.beta
            << endl;
 
-	// Read from hdf5 file
+    // Read from hdf5 file
     if (pp.contains("read_from_file"))
     {
         pp.get("read_from_file", a_params.read_from_file);
@@ -45,7 +45,7 @@ void getPoissonParameters(PoissonParameters &a_params)
     }
 
     if (pp.contains("output_path"))
-    { 
+    {
         pp.get("output_path", a_params.output_path);
     }
     else
@@ -55,19 +55,18 @@ void getPoissonParameters(PoissonParameters &a_params)
 
     // Initial conditions for the scalar field
     pp.get("G_Newton", a_params.G_Newton);
-	pp.get("phi_0", a_params.phi_0);
-	pp.get("phi_amplitude", a_params.phi_amplitude);
+    pp.get("phi_0", a_params.phi_0);
+    pp.get("phi_amplitude", a_params.phi_amplitude);
     pp.get("phi_wavelength", a_params.phi_wavelength);
-	pp.get("pi_0", a_params.pi_0);
+    pp.get("pi_0", a_params.pi_0);
     pp.get("pi_amplitude", a_params.pi_amplitude);
     pp.get("pi_wavelength", a_params.pi_wavelength);
 
-	// Potential parameters
-	pp.get("pot_Lambda", a_params.pot_Lambda);
-	pp.get("pot_mu", a_params.pot_mu);
+    // Potential parameters
+    pp.get("pot_Lambda", a_params.pot_Lambda);
+    pp.get("pot_mu", a_params.pot_mu);
 
-	pp.get("psi_0", a_params.psi_0);
-
+    pp.get("psi_0", a_params.psi_0);
 
     if (abs(a_params.phi_amplitude) > 0.0)
     {

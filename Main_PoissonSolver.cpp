@@ -100,7 +100,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         // and values for other multigrid sources - phi and Aij
         set_initial_conditions(*multigrid_vars[ilev], *dpsi[ilev], vectDx[ilev],
                                a_params);
-                               
+
         if (a_params.read_from_file != "none")
         {
             readHDF5(*multigrid_vars[ilev], a_grids, a_params, ilev, ghosts);
@@ -163,7 +163,8 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             // For intralevel ghosts of K
             Copier exchange_copier;
             exchange_copier.exchangeDefine(a_grids[ilev], ghosts);
-            multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(), exchange_copier);
+            multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(),
+                                           exchange_copier);
         }
 
         for (int ilev = 0; ilev < nlevels; ilev++)
@@ -175,7 +176,8 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
                 QuadCFInterp quadCFI(a_grids[ilev], &a_grids[ilev - 1],
                                      vectDx[ilev][0], a_params.refRatio[ilev],
                                      NUM_MULTIGRID_VARS, vectDomains[ilev]);
-                quadCFI.coarseFineInterp(*multigrid_vars[ilev], *multigrid_vars[ilev - 1]);
+                quadCFI.coarseFineInterp(*multigrid_vars[ilev],
+                                         *multigrid_vars[ilev - 1]);
             }
         }
 
@@ -184,11 +186,11 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             // For intralevel ghosts of K
             Copier exchange_copier;
             exchange_copier.exchangeDefine(a_grids[ilev], ghosts);
-            multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(), exchange_copier);
+            multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(),
+                                           exchange_copier);
         }
 
-
-      // Check integrability conditions if periodic
+        // Check integrability conditions if periodic
         if (a_params.periodic[0] == 1)
         {
             // Calculate values for integrand here with K unset
@@ -278,7 +280,8 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             // For intralevel ghosts
             Copier exchange_copier;
             exchange_copier.exchangeDefine(a_grids[ilev], ghosts);
-            multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(), exchange_copier);
+            multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(),
+                                           exchange_copier);
         }
 
         for (int ilev = 0; ilev < nlevels; ilev++)
@@ -289,7 +292,8 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
                 QuadCFInterp quadCFI(a_grids[ilev], &a_grids[ilev - 1],
                                      vectDx[ilev][0], a_params.refRatio[ilev],
                                      NUM_MULTIGRID_VARS, vectDomains[ilev]);
-                quadCFI.coarseFineInterp(*multigrid_vars[ilev], *multigrid_vars[ilev - 1]);
+                quadCFI.coarseFineInterp(*multigrid_vars[ilev],
+                                         *multigrid_vars[ilev - 1]);
             }
         }
 
@@ -298,7 +302,8 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             // For intralevel ghosts
             Copier exchange_copier;
             exchange_copier.exchangeDefine(a_grids[ilev], ghosts);
-            multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(), exchange_copier);
+            multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(),
+                                           exchange_copier);
         }
 
         // check if converged or diverging and if so exit NL iteration for loop
@@ -328,11 +333,12 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
     // Mayday if result not converged at all - using a fairly generous threshold
     // for this as usually non convergence means everything goes nuts
-//    if (dpsi_norm0 > 1e-1 || dpsi_norm1 > 1e-1)
-//    {
-//        MayDay::Error(
-//            "NL iterations did not converge - may need a better initial guess");
-//    }
+    //    if (dpsi_norm0 > 1e-1 || dpsi_norm1 > 1e-1)
+    //    {
+    //        MayDay::Error(
+    //            "NL iterations did not converge - may need a better initial
+    //            guess");
+    //    }
 
     // now output final data in a form which can be read as a checkpoint file
     // for the GRChombo AMR time dependent runs

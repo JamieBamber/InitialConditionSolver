@@ -78,8 +78,8 @@ void VariableCoeffPoissonOperatorFactory::define(
 
     m_bc = a_bc;
 
-	CH_assert(a_aCoef[0]->nComp() == a_bCoef[0]->nComp());
-	m_nComp = a_aCoef[0]->nComp();
+    CH_assert(a_aCoef[0]->nComp() == a_bCoef[0]->nComp());
+    m_nComp = a_aCoef[0]->nComp();
 
     m_dx.resize(a_grids.size());
     m_dx[0] = a_coarsedx;
@@ -112,7 +112,6 @@ void VariableCoeffPoissonOperatorFactory::define(
 
     m_beta = a_beta;
     m_bCoef = a_bCoef;
-
 }
 //-----------------------------------------------------------------------
 
@@ -129,7 +128,7 @@ void VariableCoeffPoissonOperatorFactory::define(
     Vector<RefCountedPtr<LevelData<FArrayBox>>> aCoef(a_grids.size());
     Vector<RefCountedPtr<LevelData<FArrayBox>>> bCoef(a_grids.size());
 
-	cout << "Im here" << endl;
+    cout << "Im here" << endl;
     for (int i = 0; i < a_grids.size(); ++i)
     {
         aCoef[i] = RefCountedPtr<LevelData<FArrayBox>>(
@@ -296,7 +295,7 @@ VariableCoeffPoissonOperatorFactory::AMRnewOp(const ProblemDomain &a_indexSpace)
             int refToFiner = m_refRatios[0]; // actual refinement ratio
             newOp->define(m_boxes[0], m_boxes[1], m_dx[0], dummyRat, refToFiner,
                           a_indexSpace, m_bc, m_exchangeCopiers[0],
-                          m_cfregion[0],m_nComp);
+                          m_cfregion[0], m_nComp);
         }
     }
     else if (ref == m_domains.size() - 1)
@@ -306,7 +305,7 @@ VariableCoeffPoissonOperatorFactory::AMRnewOp(const ProblemDomain &a_indexSpace)
         // finest AMR level
         newOp->define(m_boxes[ref], m_boxes[ref - 1], m_dx[ref],
                       m_refRatios[ref - 1], a_indexSpace, m_bc,
-                      m_exchangeCopiers[ref], m_cfregion[ref],m_nComp);
+                      m_exchangeCopiers[ref], m_cfregion[ref], m_nComp);
     }
     else if (ref == m_domains.size())
     {
@@ -321,7 +320,7 @@ VariableCoeffPoissonOperatorFactory::AMRnewOp(const ProblemDomain &a_indexSpace)
         newOp->define(m_boxes[ref], m_boxes[ref + 1], m_boxes[ref - 1],
                       m_dx[ref], m_refRatios[ref - 1], m_refRatios[ref],
                       a_indexSpace, m_bc, m_exchangeCopiers[ref],
-                      m_cfregion[ref],m_nComp);
+                      m_cfregion[ref], m_nComp);
     }
 
     newOp->m_alpha = m_alpha;
