@@ -92,6 +92,7 @@ void set_binary_bh_Aij(Real Aij[3][3], const IntVect &iv,
     Aij[2][1] = Aij[1][2];
 }
 
+// The Brill Lindquist part of psi
 Real set_binary_bh_psi(const RealVect &loc, const PoissonParameters &a_params)
 {
     // the Bowen York params
@@ -108,7 +109,8 @@ Real set_binary_bh_psi(const RealVect &loc, const PoissonParameters &a_params)
     return m1 / rbh1 + m2 / rbh2;
 }
 
-void set_Aij_0(Real Aij[3][3], FArrayBox &multigrid_vars_box, const IntVect &iv,
+// The part of Aij excluding the Brill Lindquist BH Aij
+void set_Aij_reg(Real Aij[3][3], FArrayBox &multigrid_vars_box, const IntVect &iv,
                const RealVect &loc, const RealVect &a_dx,
                const PoissonParameters &a_params,
                const FArrayBox &a_grad_multigrid)
@@ -149,6 +151,7 @@ void set_Aij_0(Real Aij[3][3], FArrayBox &multigrid_vars_box, const IntVect &iv,
     Aij[2][1] = Aij[1][2];
 }
 
+/*
 void set_deriv_Aij_0(Real d_Aij[3][3][3], FArrayBox &multigrid_vars_box,
                      const IntVect &iv, const RealVect &loc,
                      const RealVect &a_dx, const PoissonParameters &a_params,
@@ -219,4 +222,6 @@ void set_deriv_Aij_0(Real d_Aij[3][3][3], FArrayBox &multigrid_vars_box,
         }
     }
 }
+*/
+
 #endif /* SETAIJ_HPP */

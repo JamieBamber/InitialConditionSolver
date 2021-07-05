@@ -83,17 +83,17 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         multigrid_vars[ilev] =
             new LevelData<FArrayBox>(a_grids[ilev], NUM_MULTIGRID_VARS, ghosts);
         dpsi[ilev] = new LevelData<FArrayBox>(a_grids[ilev],
-                                              NUM_CONSTRAINTS_VARS, ghosts);
-        rhs[ilev] = new LevelData<FArrayBox>(
-            a_grids[ilev], NUM_CONSTRAINTS_VARS, IntVect::Zero);
+                                              NUM_CONSTRAINT_VARS, ghosts);
+        rhs[ilev] = new LevelData<FArrayBox>(a_grids[ilev], NUM_CONSTRAINT_VARS,
+                                             IntVect::Zero);
         integrand[ilev] = new LevelData<FArrayBox>(
-            a_grids[ilev], NUM_CONSTRAINTS_VARS, IntVect::Zero);
+            a_grids[ilev], NUM_CONSTRAINT_VARS, IntVect::Zero);
         aCoef[ilev] =
             RefCountedPtr<LevelData<FArrayBox>>(new LevelData<FArrayBox>(
-                a_grids[ilev], NUM_CONSTRAINTS_VARS, IntVect::Zero));
+                a_grids[ilev], NUM_CONSTRAINT_VARS, IntVect::Zero));
         bCoef[ilev] =
             RefCountedPtr<LevelData<FArrayBox>>(new LevelData<FArrayBox>(
-                a_grids[ilev], NUM_CONSTRAINTS_VARS, IntVect::Zero));
+                a_grids[ilev], NUM_CONSTRAINT_VARS, IntVect::Zero));
         vectDomains[ilev] = domLev;
         vectDx[ilev] = dxLev;
         // set initial guess for psi and zero dpsi
@@ -149,15 +149,14 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
                << max_NL_iter << endl;
 
         // This function sets K satisfying rhs and hence also the integrability
-        // condition of Ham for periodic domain
+        // condition of Ham for periodic domains
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
-            set_integrability(*integrand[ilev], *multigrid_vars[ilev],
-                              vectDx[ilev], a_params);
+            set_K_and_integrability(*integrand[ilev], *multigrid_vars[ilev],
+                                    vectDx[ilev], a_params);
         }
 
         // need to fill interlevel and intralevel ghosts first in multigrid_vars
-        // after imposing integrability
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
             // For intralevel ghosts of K
@@ -169,7 +168,6 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
-
             // For interlevel ghosts in multigrid vars
             if (ilev > 0)
             {
@@ -258,7 +256,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             {
                 QuadCFInterp quadCFI(a_grids[ilev], &a_grids[ilev - 1],
                                      vectDx[ilev][0], a_params.refRatio[ilev],
-                                     NUM_CONSTRAINTS_VARS, vectDomains[ilev]);
+                                     NUM_CONSTRAINT_VARS, vectDomains[ilev]);
                 quadCFI.coarseFineInterp(*dpsi[ilev], *dpsi[ilev - 1]);
             }
         }

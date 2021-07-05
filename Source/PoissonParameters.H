@@ -48,10 +48,10 @@ class PoissonParameters
     Real alpha;
     Real beta;
     Real G_Newton;
-	Real phi_0;
-	Real phi_amplitude;
+    Real phi_0;
+    Real phi_amplitude;
     Real phi_wavelength;
-	Real pi_0;
+    Real pi_0;
     Real pi_amplitude;
     Real pi_wavelength;
     Real bh1_bare_mass;
@@ -62,11 +62,11 @@ class PoissonParameters
     Real bh2_momentum;
     Real bh1_offset;
     Real bh2_offset;
-	Real pot_Lambda;
-	Real pot_mu;
-	Real psi_0;
-	std::string read_from_file;
-	std::string output_path;
+    Real pot_Lambda;
+    Real pot_mu;
+    Real psi_reg;
+    std::string read_from_file;
+    std::string output_path;
 };
 
 /// get stuff from input file

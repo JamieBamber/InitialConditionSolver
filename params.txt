@@ -73,8 +73,9 @@ pi_wavelength = 4
 pot_Lambda = 0
 pot_mu = 0.5
 
-# initial scale factor a0 = psi_0**2
-psi_0 = 1.0
+# in asymptotically flat space set
+# initial scale factor a0 = psi_reg**2
+psi_reg = 1.0
 
 # initial conditions for Binary BH spacetimes
 # (can be with or without periodic BCs, 

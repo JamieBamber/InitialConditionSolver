@@ -66,13 +66,13 @@ void getPoissonParameters(PoissonParameters &a_params)
     pp.get("pot_Lambda", a_params.pot_Lambda);
     pp.get("pot_mu", a_params.pot_mu);
 
-    pp.get("psi_0", a_params.psi_0);
-
     if (abs(a_params.phi_amplitude) > 0.0)
     {
         pout() << "Spacetime contains scalar field of amplitude "
                << a_params.phi_amplitude << endl;
     }
+
+    pp.get("psi_reg", a_params.psi_reg);
 
     // Initial conditions for the black holes
     pp.get("bh1_bare_mass", a_params.bh1_bare_mass);

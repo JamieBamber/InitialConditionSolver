@@ -71,13 +71,12 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
     int nRhsComp = a_rhs[0]->nComp();
     int nMGComp = a_multigrid_vars[0]->nComp();
     int totalComp = ndpsiComp + nRhsComp + nMGComp;
-    CH_assert(totalComp == 2 * NUM_CONSTRAINTS_VARS + NUM_MULTIGRID_VARS);
+    CH_assert(totalComp == 2 * NUM_CONSTRAINT_VARS + NUM_MULTIGRID_VARS);
 
     // set names
     Vector<string> variable_names(totalComp);
     variable_names[0] =
         "dpsi0"; // JCAurre: name for the rhs and linear solution of constraints
-    // TODO: Why 5 rhs not 4?
     variable_names[1] = "dpsi1";
     variable_names[2] = "dpsi2";
     variable_names[3] = "dpsi3";
@@ -85,10 +84,10 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
     variable_names[5] = "rhs1";
     variable_names[6] = "rhs2";
     variable_names[7] = "rhs3";
-    variable_names[8] = "rhs4";
+
     for (int icomp = 0; icomp < NUM_MULTIGRID_VARS; icomp++)
     {
-        variable_names[2 * NUM_CONSTRAINTS_VARS + icomp] =
+        variable_names[2 * NUM_CONSTRAINT_VARS + icomp] =
             MultigridUserVariables::variable_names[icomp];
     }
     // check the domain sizes are the same
@@ -99,10 +98,10 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
     for (int level = 0; level < a_dpsi.size(); level++)
     {
         tempData[level] = new LevelData<FArrayBox>(a_grids[level], totalComp);
-        Interval dpsiComps(0, NUM_CONSTRAINTS_VARS - 1);
-        Interval rhsComps(NUM_CONSTRAINTS_VARS, 2 * NUM_CONSTRAINTS_VARS - 1);
-        Interval mgComps(2 * NUM_CONSTRAINTS_VARS,
-                         2 * NUM_CONSTRAINTS_VARS + NUM_MULTIGRID_VARS - 1);
+        Interval dpsiComps(0, NUM_CONSTRAINT_VARS - 1);
+        Interval rhsComps(NUM_CONSTRAINT_VARS, 2 * NUM_CONSTRAINT_VARS - 1);
+        Interval mgComps(2 * NUM_CONSTRAINT_VARS,
+                         2 * NUM_CONSTRAINT_VARS + NUM_MULTIGRID_VARS - 1);
         a_dpsi[level]->copyTo(a_dpsi[level]->interval(), *tempData[level],
                               dpsiComps);
         a_rhs[level]->copyTo(a_rhs[level]->interval(), *tempData[level],
@@ -112,7 +111,6 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
     }
     Real fakeTime = iter * 1.0;
     Real fakeDt = 1.0;
-    // TODO: Does this write ghosts?
     WriteAMRHierarchyHDF5(filename, a_grids, tempData, variable_names,
                           a_params.coarsestDomain.domainBox(),
                           a_params.coarsestDx, fakeDt, fakeTime,
@@ -206,7 +204,7 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
 
         // Setup the periodicity info - for GRChombo we always treat it as
         // periodic
-        // TODO: fix this?
+        // TODO: fix this to include boundary data?
         for (int dir = 0; dir < SpaceDim; ++dir)
         {
             char dir_str[20];
@@ -218,7 +216,8 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
 
         level_header.writeToFile(handle);
         write(handle, a_grids[level]);
-        write(handle, *grchombo_vars[level], "data"); // TODO: is this writing ghosts?
+        write(handle, *grchombo_vars[level], "data"); 
+        // TODO: is this writing ghosts - will need to for some boundary cases
     }
 
     // shut the file
