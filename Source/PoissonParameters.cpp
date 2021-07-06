@@ -73,6 +73,7 @@ void getPoissonParameters(PoissonParameters &a_params)
     }
 
     pp.get("psi_reg", a_params.psi_reg);
+    pp.get("sign_of_K", a_params.sign_of_K);
 
     // Initial conditions for the black holes
     pp.get("bh1_bare_mass", a_params.bh1_bare_mass);

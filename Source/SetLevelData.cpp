@@ -150,8 +150,8 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
             }
 
             // Also \bar  A_ij \bar A^ij (factors of psi introduced below)
-            Real A2_bh = 0.0;
             Real A2_0 = 0.0;
+            Real A2_bh = 0.0;
             for (int i = 0; i < SpaceDim; i++)
             {
                 for (int j = 0; j < SpaceDim; j++)
@@ -161,15 +161,28 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
                     A2_bh += Aij_bh[i][j] * Aij_bh[i][j];
                 }
             }
-            Real A2_matter = A2_0 - A2_bh; // May want to use instead?
 
-            Real K_0_sq =
-                1.5 * 8.0 * M_PI * a_params.G_Newton *
-                    (pow(Pi_0, 2.0) + 2.0 * V_of_phi) +
-                1.5 * A2_0 * pow(psi_0, -12.0) +
-                24.0 * M_PI * a_params.G_Newton * rho_gradient *
-                    pow(psi_0, -4.0) +
-                12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
+            Real K_0_sq = 0.0;
+            if (a_params.is_periodic)
+            {
+                K_0_sq =
+                    1.5 * 8.0 * M_PI * a_params.G_Newton *
+                        (pow(Pi_0, 2.0) + 2.0 * V_of_phi) +
+                    1.5 * A2_0 * pow(psi_0, -12.0) +
+                    24.0 * M_PI * a_params.G_Newton * rho_gradient *
+                        pow(psi_0, -4.0) +
+                    12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
+            }
+            else // with BHs try only cancelling out the matter term and not Aij?
+            {
+                K_0_sq =
+                    1.5 * 8.0 * M_PI * a_params.G_Newton *
+                        (pow(Pi_0, 2.0) + 2.0 * V_of_phi) +
+                    //                1.5 * A2_0 * pow(psi_0, -12.0) +
+                    24.0 * M_PI * a_params.G_Newton * rho_gradient *
+                        pow(psi_0, -4.0) +
+                    12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
+            }
 
             integrand_box(iv, c_psi) =
                 -1.5 * (2.0 / 3.0 * K_0_sq -
@@ -194,8 +207,8 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
 
             // Set value for K
             multigrid_vars_box(iv, c_K_0) =
-                -sqrt(K_0_sq); // be careful when K=0, maybe discontinuity
-            // TODO: Allow sign to be chosen by user for expansion or collapse
+                a_params.sign_of_K *
+                sqrt(K_0_sq); // be careful when K=0, maybe discontinuity
 
             // set values for Aij_0
             multigrid_vars_box(iv, c_A11_0) = Aij_reg[0][0] + Aij_bh[0][0];
@@ -439,7 +452,6 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
                 LevelData<FArrayBox> &a_multigrid_vars,
                 const PoissonParameters &a_params, const RealVect &a_dx)
 {
-
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
 
     DataIterator dit = a_aCoef.dataIterator();
@@ -447,16 +459,59 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
     {
         FArrayBox &aCoef_box = a_aCoef[dit()];
 
-        // JCAurre: aCoef is now set to zero as Ham is algebraic
-        // equation and Mom is linear
+        // JCAurre: aCoef is now set to zero for periodic
+        // and Mom is linear
         for (int iconstraint = 0; iconstraint < NUM_CONSTRAINT_VARS;
              iconstraint++)
         {
             aCoef_box.setVal(0.0, iconstraint);
         }
+
+        // KC: Trying to add back some non trivial psi for the Aij part
+        // but this doesn't seem to help...
+        if (!a_params.is_periodic)
+        {
+            FArrayBox &multigrid_vars_box = a_multigrid_vars[dit()];
+            Box unghosted_box = aCoef_box.box();
+            // calculate gradients for constructing rho and Aij
+            FArrayBox grad_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
+            get_grad(unghosted_box, multigrid_vars_box,
+                     Interval(c_psi_reg, c_phi_0), a_dx, grad_multigrid,
+                     a_params);
+
+            BoxIterator bit(unghosted_box);
+            for (bit.begin(); bit.ok(); ++bit)
+            {
+                IntVect iv = bit();
+                RealVect loc(iv + 0.5 * RealVect::Unit);
+                loc *= a_dx;
+                loc -= a_params.domainLength / 2.0;
+
+                // Calculate useful quantities
+                Real psi_bh = set_binary_bh_psi(loc, a_params);
+                Real psi_0 = multigrid_vars_box(iv, c_psi_reg) + psi_bh;
+
+                Real Aij_reg[3][3];
+                Real Aij_bh[3][3];
+                set_Aij_reg(Aij_reg, multigrid_vars_box, iv, loc, a_dx,
+                            a_params, grad_multigrid);
+                set_binary_bh_Aij(Aij_bh, iv, loc, a_params);
+                // Also \bar  A_ij \bar A^ij
+                Real A2_0 = 0.0;
+                for (int i = 0; i < SpaceDim; i++)
+                {
+                    for (int j = 0; j < SpaceDim; j++)
+                    {
+                        A2_0 += (Aij_reg[i][j] + Aij_bh[i][j]) *
+                                (Aij_reg[i][j] + Aij_bh[i][j]);
+                    }
+                }
+                aCoef_box(iv, c_psi) = -0.875 * A2_0 * pow(psi_0, -8.0);
+                // assume that other terms are set to zero with choice of K
+            }
+        }
     }
 }
-
 // The coefficient of the Laplacian operator, for now set to constant 1
 // Note that beta = -1 so this sets the sign
 // the rhs source of the Poisson eqn
@@ -524,8 +579,8 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
             grchombo_vars_box(iv, c_chi) = chi;
             Real factor = pow(chi, 1.5);
 
-            // Copy phi and Aij across - note this is now \tilde Aij not \bar
-            // Aij
+            // Copy phi and Aij across - note this is now \tilde Aij not
+            // \bar Aij
             grchombo_vars_box(iv, c_phi) = multigrid_vars_box(iv, c_phi_0);
             grchombo_vars_box(iv, c_Pi) = multigrid_vars_box(iv, c_Pi_0);
 

@@ -39,6 +39,7 @@ class PoissonParameters
     int domBcType;
     int maxLevel;
     int numLevels;
+    int sign_of_K;
     Vector<int> refRatio;
     ProblemDomain coarsestDomain;
     Real coarsestDx;
