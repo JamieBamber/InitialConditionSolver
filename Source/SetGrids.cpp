@@ -44,9 +44,8 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids, PoissonParameters &a_params)
     Vector<Vector<Box>> newBoxes(numlevels);
     Vector<Vector<Box>> oldBoxes(numlevels);
 
-    // determine grids dynamically, based on grad(RHS)
-    // will need temp storage for RHS
-    Vector<LevelData<FArrayBox> *> vectRHS(maxLevel + 1, NULL);
+    // determine grids dynamically, based on the tagging criteria
+    Vector<LevelData<FArrayBox> *> vect_tagging_criterion(maxLevel + 1, NULL);
 
     // define base level first
     Vector<Vector<int>> procAssign(maxLevel + 1);
@@ -55,7 +54,7 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids, PoissonParameters &a_params)
     procAssign[0].resize(oldBoxes[0].size());
     LoadBalance(procAssign[0], oldBoxes[0]);
     vectGrids[0].define(oldBoxes[0], procAssign[0], vectDomain[0]);
-    vectRHS[0] = new LevelData<FArrayBox>(vectGrids[0], NUM_CONSTRAINT_VARS,
+    vect_tagging_criterion[0] = new LevelData<FArrayBox>(vectGrids[0], 1, // only one value in this array
                                           IntVect::Zero);
 
     int topLevel = 0;
@@ -77,7 +76,7 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids, PoissonParameters &a_params)
         int baseLevel = 0;
         int oldTopLevel = topLevel;
 
-        // now initialize RHS for this existing hierarchy
+        // now initialize tagging criterion for this existing hierarchy
         for (int level = 0; level <= topLevel; level++)
         {
             RealVect dxLevel = vectDx[level] * RealVect::Unit;
@@ -95,7 +94,7 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids, PoissonParameters &a_params)
 
             // set condition for regrid - use the integrability condition
             // integral
-            set_regrid_condition(*vectRHS[level], *temp_multigrid_vars, dxLevel,
+            set_regrid_condition(*vect_tagging_criterion[level], *temp_multigrid_vars, dxLevel,
                                  a_params);
 
             if (temp_multigrid_vars != NULL)
@@ -112,7 +111,7 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids, PoissonParameters &a_params)
 
         Vector<IntVectSet> tagVect(topLevel + 1);
         int tags_grow = 2;
-        set_tag_cells(vectRHS, tagVect, vectDx, vectDomain,
+        set_tag_cells(vect_tagging_criterion, tagVect, vectDx, vectDomain,
                       a_params.refineThresh, tags_grow, baseLevel,
                       topLevel + 1);
 
@@ -135,9 +134,9 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids, PoissonParameters &a_params)
             const DisjointBoxLayout newDBL(newBoxes[lev], procAssign[lev],
                                            vectDomain[lev]);
             vectGrids[lev] = newDBL;
-            delete vectRHS[lev];
-            vectRHS[lev] = new LevelData<FArrayBox>(
-                vectGrids[lev], NUM_CONSTRAINT_VARS, IntVect::Zero);
+            delete vect_tagging_criterion[lev];
+            vect_tagging_criterion[lev] = new LevelData<FArrayBox>(
+                vectGrids[lev], 1, IntVect::Zero); // again only one entry
         } // end loop over levels for initialization
 
         // figure out whether we need another pass through grid generation
@@ -145,20 +144,20 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids, PoissonParameters &a_params)
         {
             moreLevels = true;
         }
-        else
-        {
-            break;
-        }
-
+        // doesn't break anything but redundant I think
+        //else
+        //{
+        //    break;
+        //}
     } // end while moreLevels loop
 
     // clean up temp storage
-    for (int ilev = 0; ilev < vectRHS.size(); ilev++)
+    for (int ilev = 0; ilev < vect_tagging_criterion.size(); ilev++)
     {
-        if (vectRHS[ilev] != NULL)
+        if (vect_tagging_criterion[ilev] != NULL)
         {
-            delete vectRHS[ilev];
-            vectRHS[ilev] = NULL;
+            delete vect_tagging_criterion[ilev];
+            vect_tagging_criterion[ilev] = NULL;
         }
     }
 
@@ -187,9 +186,9 @@ void set_domains_and_dx(Vector<ProblemDomain> &vectDomain, Vector<Real> &vectDx,
 }
 
 /*
-  tag cells for refinement based on magnitude(RHS)
+  tag cells for refinement based on magnitude(tagging_criterion)
 */
-void set_tag_cells(Vector<LevelData<FArrayBox> *> &vectRHS,
+void set_tag_cells(Vector<LevelData<FArrayBox> *> &vect_tagging_criterion,
                    Vector<IntVectSet> &tagVect, Vector<Real> &vectDx,
                    Vector<ProblemDomain> &vectDomain, const Real refine_thresh,
                    const int tags_grow, const int baseLevel, int numLevels)
@@ -197,27 +196,26 @@ void set_tag_cells(Vector<LevelData<FArrayBox> *> &vectRHS,
     for (int lev = baseLevel; lev != numLevels; lev++)
     {
         IntVectSet local_tags;
-        LevelData<FArrayBox> &levelRhs = *vectRHS[lev];
-        DisjointBoxLayout level_domain = levelRhs.getBoxes();
-        DataIterator dit = levelRhs.dataIterator();
+        LevelData<FArrayBox> &level_tagging_criterion = *vect_tagging_criterion[lev];
+        DisjointBoxLayout level_domain = level_tagging_criterion.getBoxes();
+        DataIterator dit = level_tagging_criterion.dataIterator();
 
-        Real maxRHS = 0;
+        // KC: this seems an odd way to refine - would expect theshold to 
+        // decrease with higher levels. It seems to work ok so leave it for now.
+        Real max_tagging_criterion = 0;
+        max_tagging_criterion = norm(level_tagging_criterion, level_tagging_criterion.interval(), 0);
+        Real tagVal = max_tagging_criterion * refine_thresh;
 
-        maxRHS = norm(levelRhs, levelRhs.interval(), 0);
-
-	// --> taking norm of vectRHS here
-        Real tagVal = maxRHS * refine_thresh;
-
-        // now loop through grids and tag cells where RHS > tagVal
+        // now loop through grids and tag cells where tagging crierion > tagVal
         for (dit.reset(); dit.ok(); ++dit)
         {
             const Box thisBox = level_domain.get(dit());
-            const FArrayBox &thisRhs = levelRhs[dit()];
+            const FArrayBox &this_tagging_criterion = level_tagging_criterion[dit()];
             BoxIterator bit(thisBox);
             for (bit.begin(); bit.ok(); ++bit)
             {
                 const IntVect &iv = bit();
-                if (abs(thisRhs(iv)) >= tagVal)
+                if (abs(this_tagging_criterion(iv)) >= tagVal)
                     local_tags |= iv;
             }
         } // end loop over grids on this level
