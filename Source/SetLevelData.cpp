@@ -66,6 +66,8 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
             // for the BHs - this is added at the output data stage
             // and when we calculate psi_reg in the rhs etc
             // as it already satisfies Laplacian(psi) = 0
+	    // ---
+	    // JB: so psi = psi_reg + psi_bh
             multigrid_vars_box(iv, c_psi_reg) = a_params.psi_reg;
 
             // set phi and pi according to user defined function
@@ -84,6 +86,7 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
                              const RealVect &a_dx,
                              const PoissonParameters &a_params)
 {
+    // JB: check number of variables is correct
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
 
     DataIterator dit = a_integrand.dataIterator();
@@ -119,9 +122,16 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
             loc *= a_dx;
             loc -= a_params.domainLength / 2.0;
 
+	    // JB: Should have 
+	    /* 
+		K^2 = - 1.5 Rbar psi^-4 + 1.5 * \bar A_ij \bar A^ij psi^-12 
+			24 pi rho + 6 psi^-5 laplacian(psi)  
+	    */
+
             // integrand = -1.5*term + 1.5 * \bar A_ij \bar A^ij psi_0^-12 +
             // 24 pi rho_grad psi_0^-4  + 12*laplacian(psi_0)*psi^-5
-            // JCAurre: Calculate potential and derivative
+        
+	    // JCAurre: Calculate potential and derivative
             Real V_of_phi, dVdphi;
             my_potential_function(V_of_phi, dVdphi,
                                   multigrid_vars_box(iv, c_phi_0), a_params);
@@ -137,12 +147,21 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
             set_deriv1(d_phi, iv, grad_multigrid, c_phi_0);
             Real Aij_reg[3][3];
             Real Aij_bh[3][3];
+
+// ***      JB: Note, how are we setting the Aij?
             set_Aij_reg(Aij_reg, multigrid_vars_box, iv, loc, a_dx, a_params,
                         grad_multigrid);
             set_binary_bh_Aij(Aij_bh, iv, loc, a_params);
 
             // Compute rhograd from gradients of phi, factors of psi_0
             // accounted for below
+
+	    // JB: Note that the Eulerian density rho is given by 
+	    /* 
+		rho = 0.5 * Pi^2 + 0.5 * psi^-4 bar gamma^ij d_i phi d_j phi + V(phi)
+	    */
+	    // If bar gamma^ij = delta^ij we obtain the rho_gradient calculated below
+
             Real rho_gradient = 0;
             for (int i = 0; i < SpaceDim; i++)
             {
@@ -156,6 +175,7 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
             {
                 for (int j = 0; j < SpaceDim; j++)
                 {
+		    // A2_0 contains both the reg and bh contributions, A2_bh is just the bh contribution
                     A2_0 += (Aij_reg[i][j] + Aij_bh[i][j]) *
                             (Aij_reg[i][j] + Aij_bh[i][j]);
                     A2_bh += Aij_bh[i][j] * Aij_bh[i][j];
@@ -165,8 +185,9 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
             Real K_0_sq = 0.0;
             if (a_params.is_periodic)
             {
+ 		// correct if bar gamma^ij = delta^ij so bar R = 0
                 K_0_sq =
-                    1.5 * 8.0 * M_PI * a_params.G_Newton *
+                    24.0 * M_PI * a_params.G_Newton *
                         (pow(Pi_0, 2.0) + 2.0 * V_of_phi) +
                     1.5 * A2_0 * pow(psi_0, -12.0) +
                     24.0 * M_PI * a_params.G_Newton * rho_gradient *
@@ -174,9 +195,10 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
                     12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
             }
             else // with BHs try only cancelling out the matter term and not Aij?
+// ***      JB: so with non-periodic BCs we neglect any initial Aij?
             {
                 K_0_sq =
-                    1.5 * 8.0 * M_PI * a_params.G_Newton *
+                    24.0 * M_PI * a_params.G_Newton *
                         (pow(Pi_0, 2.0) + 2.0 * V_of_phi) +
                     //                1.5 * A2_0 * pow(psi_0, -12.0) +
                     24.0 * M_PI * a_params.G_Newton * rho_gradient *
@@ -184,8 +206,9 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
                     12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
             }
 
+	    // JB: so this should be zero?
             integrand_box(iv, c_psi) =
-                -1.5 * (2.0 / 3.0 * K_0_sq -
+            -1.5 * (2.0 / 3.0 * K_0_sq -
                         8.0 * M_PI * a_params.G_Newton *
                             (pow(Pi_0, 2.0) + 2.0 * V_of_phi)) +
                 1.5 * A2_0 * pow(psi_0, -12.0) +
@@ -193,6 +216,8 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
                     pow(psi_0, -4.0) +
                 12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
 
+	    //  This corresponds to 
+	    // integrand_box(iv, c_Vi) = (1/3) barD^i barD_j V + barD_j barM^ij - 2/3 psi^6 barD^i K
             integrand_box(iv, c_V0) =
                 -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[0] -
                 laplace_multigrid(iv, c_V0_0);
@@ -211,6 +236,7 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
                 sqrt(K_0_sq); // be careful when K=0, maybe discontinuity
 
             // set values for Aij_0
+	    // JB: why only these components?
             multigrid_vars_box(iv, c_A11_0) = Aij_reg[0][0] + Aij_bh[0][0];
             multigrid_vars_box(iv, c_A22_0) = Aij_reg[1][1] + Aij_bh[1][1];
             multigrid_vars_box(iv, c_A33_0) = Aij_reg[2][2] + Aij_bh[2][2];
@@ -424,6 +450,7 @@ void set_update_psi0(LevelData<FArrayBox> &a_multigrid_vars,
 {
     // first exchange ghost cells for dpsi so they are filled with the correct
     // values
+    // *** potential source of error?
     a_dpsi.exchange(a_dpsi.interval(), a_exchange_copier);
 
     DataIterator dit = a_multigrid_vars.dataIterator();
@@ -512,6 +539,10 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
         }
     }
 }
+// JB: this bit adds a term from RHS(psi_0 + dphi) = RHS(psi_0) + dphi * RHS'(psi_0) + ...
+// i.e. the order dpsi bit from the A_ij term. ??? What exactly it is added to ...
+
+
 // The coefficient of the Laplacian operator, for now set to constant 1
 // Note that beta = -1 so this sets the sign
 // the rhs source of the Poisson eqn

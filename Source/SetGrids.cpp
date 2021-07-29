@@ -205,6 +205,7 @@ void set_tag_cells(Vector<LevelData<FArrayBox> *> &vectRHS,
 
         maxRHS = norm(levelRhs, levelRhs.interval(), 0);
 
+	// --> taking norm of vectRHS here
         Real tagVal = maxRHS * refine_thresh;
 
         // now loop through grids and tag cells where RHS > tagVal

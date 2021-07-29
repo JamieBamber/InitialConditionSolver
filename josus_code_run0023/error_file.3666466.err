@@ -1,0 +1,19 @@
+/cosma/home/dp174/dc-bamb1/.bashrc: line 16: bind: warning: line editing not enabled
+[?1034h/cosma/home/dp174/dc-bamb1/.bashrc: line 17: bind: warning: line editing not enabled
+[proxy:0:0@m7051.pri.cosma7.alces.network] HYD_spawn (../../../../../src/pm/i_hydra/libhydra/spawn/intel/hydra_spawn.c:117): execvp error on file /cosma/home/dp174/dc-bamb1/Experimental_tools/InitialConditionSolver/Main_PoissonSolver3d.Linux.64.mpiicpc.ifort.OPT.MPI.OPENMPCC.ex (No such file or directory)
+[proxy:0:0@m7051.pri.cosma7.alces.network] HYD_spawn (../../../../../src/pm/i_hydra/libhydra/spawn/intel/hydra_spawn.c:117): execvp error on file /cosma/home/dp174/dc-bamb1/Experimental_tools/InitialConditionSolver/Main_PoissonSolver3d.Linux.64.mpiicpc.ifort.OPT.MPI.OPENMPCC.ex (No such file or directory)
+srun: error: m7053: task 0: Killed
+srun: Force Terminated job step 3666466.1
+srun: error: m7056: task 0: Killed
+srun: Force Terminated job step 3666466.4
+srun: error: m7055: task 0: Killed
+srun: Force Terminated job step 3666466.2
+srun: error: m7054: task 0: Killed
+srun: Force Terminated job step 3666466.3
+srun: error: m7052: task 0: Killed
+srun: Force Terminated job step 3666466.0
+[mpiexec@m7051.pri.cosma7.alces.network] wait_proxies_to_terminate (../../../../../src/pm/i_hydra/mpiexec/intel/i_mpiexec.c:389): downstream from host m7052 exited with status 137
+[mpiexec@m7051.pri.cosma7.alces.network] wait_proxies_to_terminate (../../../../../src/pm/i_hydra/mpiexec/intel/i_mpiexec.c:389): downstream from host m7053 exited with status 137
+[mpiexec@m7051.pri.cosma7.alces.network] wait_proxies_to_terminate (../../../../../src/pm/i_hydra/mpiexec/intel/i_mpiexec.c:389): downstream from host m7054 exited with status 137
+[mpiexec@m7051.pri.cosma7.alces.network] wait_proxies_to_terminate (../../../../../src/pm/i_hydra/mpiexec/intel/i_mpiexec.c:389): downstream from host m7055 exited with status 137
+[mpiexec@m7051.pri.cosma7.alces.network] wait_proxies_to_terminate (../../../../../src/pm/i_hydra/mpiexec/intel/i_mpiexec.c:389): downstream from host m7056 exited with status 137
