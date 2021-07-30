@@ -173,15 +173,16 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
                         pow(psi_0, -4.0) +
                     12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
             }
-            else // with BHs try only cancelling out the matter term and not Aij?
+            else
             {
                 K_0_sq =
                     1.5 * 8.0 * M_PI * a_params.G_Newton *
                         (pow(Pi_0, 2.0) + 2.0 * V_of_phi) +
-                    //                1.5 * A2_0 * pow(psi_0, -12.0) +
+                    //1.5 * A2_0 * pow(psi_0, -12.0) +
                     24.0 * M_PI * a_params.G_Newton * rho_gradient *
                         pow(psi_0, -4.0) +
-                    12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
+                    0.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
+                    //12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
             }
 
             integrand_box(iv, c_psi) =
@@ -206,9 +207,10 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
                 laplace_multigrid(iv, c_V2_0);
 
             // Set value for K
-            multigrid_vars_box(iv, c_K_0) =
+            multigrid_vars_box(iv, c_K_0) = 
                 a_params.sign_of_K *
-                sqrt(K_0_sq); // be careful when K=0, maybe discontinuity
+                sqrt(K_0_sq); 
+                // be careful when K=0, maybe discontinuity
 
             // set values for Aij_0
             multigrid_vars_box(iv, c_A11_0) = Aij_reg[0][0] + Aij_bh[0][0];
@@ -318,6 +320,7 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
                 0.125 * A2_0 * pow(psi_0, -7.0) -
                 2.0 * M_PI * a_params.G_Newton * rho_gradient * psi_0 -
                 laplace_multigrid(iv, c_psi_reg);
+
             rhs_box(iv, c_V0) =
                 -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[0] -
                 laplace_multigrid(iv, c_V0_0);
@@ -498,16 +501,18 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
                 set_binary_bh_Aij(Aij_bh, iv, loc, a_params);
                 // Also \bar  A_ij \bar A^ij
                 Real A2_0 = 0.0;
+                Real A2_bh = 0.0;
                 for (int i = 0; i < SpaceDim; i++)
                 {
                     for (int j = 0; j < SpaceDim; j++)
                     {
                         A2_0 += (Aij_reg[i][j] + Aij_bh[i][j]) *
                                 (Aij_reg[i][j] + Aij_bh[i][j]);
+                        A2_bh += Aij_bh[i][j] * Aij_bh[i][j];
                     }
                 }
                 aCoef_box(iv, c_psi) = -0.875 * A2_0 * pow(psi_0, -8.0);
-                // assume that other terms are set to zero with choice of K
+                // assume that matter terms are set to zero with choice of K
             }
         }
     }
