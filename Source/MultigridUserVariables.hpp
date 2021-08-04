@@ -53,7 +53,7 @@ enum
 {
     c_psi,
 
-    c_U_0,
+    c_U,
     c_V0,
     c_V1,
     c_V2,

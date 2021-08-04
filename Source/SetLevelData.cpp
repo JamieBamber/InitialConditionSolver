@@ -165,8 +165,10 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
         FArrayBox grad_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
         get_grad(unghosted_box, multigrid_vars_box,
                  Interval(c_psi_reg, c_phi_0), a_dx, grad_multigrid, a_params);
+        FArrayBox grad2_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
         get_grad2(unghosted_box, multigrid_vars_box,
                  Interval(c_U_0, c_phi_0), a_dx, grad2_multigrid, a_params);
+        FArrayBox mixed_grad2_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
         get_mixed_grad2(unghosted_box, multigrid_vars_box,
                  Interval(c_U_0, c_phi_0), a_dx, mixed_grad2_multigrid, a_params);
 

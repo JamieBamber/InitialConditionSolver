@@ -186,10 +186,10 @@ void set_Aij_reg(Real Aij[3][3], FArrayBox &multigrid_vars_box, const IntVect &i
 		+loc[1]*a_mixed_grad2_multigrid(iv, 3 * c_V1_0 + i + j - 1)
 		+loc[2]*a_mixed_grad2_multigrid(iv, 3 * c_V2_0 + i + j - 1));*/
 
-    -0.25*(a_grad2_multigrid(iv, 3 * c_U_0 + i) 
+    /*-0.25*(a_grad2_multigrid(iv, 3 * c_U_0 + i) 
                 +loc[0]*a_grad2_multigrid(iv, 3 * c_V0_0 + i)
                 +loc[1]*a_grad2_multigrid(iv, 3 * c_V1_0 + i)
-                +loc[2]*a_grad2_multigrid(iv, 3 * c_V2_0 + i));
+                +loc[2]*a_grad2_multigrid(iv, 3 * c_V2_0 + i));*/
 
     Real trace = (a_grad_multigrid(iv, 3 * c_V0_0 + 0) +
                   a_grad_multigrid(iv, 3 * c_V1_0 + 1) +
@@ -198,7 +198,7 @@ void set_Aij_reg(Real Aij[3][3], FArrayBox &multigrid_vars_box, const IntVect &i
     Aij[0][0] = 0.75 *
             (a_grad_multigrid(iv, 3 * c_V0_0 + 0) +
              a_grad_multigrid(iv, 3 * c_V0_0 + 0)) -
-        1. / 2. * trace -0.25*(a_grad2_multigrid(iv, 3 * c_U_0 + i) 
+        1. / 2. * trace -0.25*(a_grad2_multigrid(iv, 3 * c_U_0 + 0) 
                 +loc[0]*a_grad2_multigrid(iv, 3 * c_V0_0 + 0)
                 +loc[1]*a_grad2_multigrid(iv, 3 * c_V1_0 + 0)
                 +loc[2]*a_grad2_multigrid(iv, 3 * c_V2_0 + 0));
@@ -206,7 +206,7 @@ void set_Aij_reg(Real Aij[3][3], FArrayBox &multigrid_vars_box, const IntVect &i
     Aij[1][1] = 0.75 *
             (a_grad_multigrid(iv, 3 * c_V1_0 + 1) +
              a_grad_multigrid(iv, 3 * c_V1_0 + 1)) -
-        1. / 2. * trace -0.25*(a_grad2_multigrid(iv, 3 * c_U_0 + i) 
+        1. / 2. * trace -0.25*(a_grad2_multigrid(iv, 3 * c_U_0 + 1) 
                 +loc[0]*a_grad2_multigrid(iv, 3 * c_V0_0 + 1)
                 +loc[1]*a_grad2_multigrid(iv, 3 * c_V1_0 + 1)
                 +loc[2]*a_grad2_multigrid(iv, 3 * c_V2_0 + 1));
@@ -214,7 +214,7 @@ void set_Aij_reg(Real Aij[3][3], FArrayBox &multigrid_vars_box, const IntVect &i
     Aij[2][2] = 0.75 *
             (a_grad_multigrid(iv, 3 * c_V2_0 + 2) +
              a_grad_multigrid(iv, 3 * c_V2_0 + 2)) -
-        1. / 2. * trace -0.25*(a_grad2_multigrid(iv, 3 * c_U_0 + i) 
+        1. / 2. * trace -0.25*(a_grad2_multigrid(iv, 3 * c_U_0 + 2) 
                 +loc[0]*a_grad2_multigrid(iv, 3 * c_V0_0 + 2)
                 +loc[1]*a_grad2_multigrid(iv, 3 * c_V1_0 + 2)
                 +loc[2]*a_grad2_multigrid(iv, 3 * c_V2_0 + 2));
