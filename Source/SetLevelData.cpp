@@ -165,6 +165,10 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
         FArrayBox grad_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
         get_grad(unghosted_box, multigrid_vars_box,
                  Interval(c_psi_reg, c_phi_0), a_dx, grad_multigrid, a_params);
+        get_grad2(unghosted_box, multigrid_vars_box,
+                 Interval(c_psi_reg, c_phi_0), a_dx, grad2_multigrid, a_params);
+        get_mixed_grad2(unghosted_box, multigrid_vars_box,
+                 Interval(c_psi_reg, c_phi_0), a_dx, mixed_grad2_multigrid, a_params);
 
         BoxIterator bit(unghosted_box);
         for (bit.begin(); bit.ok(); ++bit)
@@ -202,7 +206,7 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
 
 // ***      JB: Note, how are we setting the Aij?
             set_Aij_reg(Aij_reg, multigrid_vars_box, iv, loc, a_dx, a_params,
-                        grad_multigrid);
+                        grad_multigrid, grad2_multigrid, mixed_grad2_multigrid);
             set_binary_bh_Aij(Aij_bh, iv, loc, a_params);
 
             // Compute rhograd from gradients of phi, factors of psi_0
