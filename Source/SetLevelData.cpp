@@ -24,61 +24,113 @@
 
 // Set various LevelData functions across the grid
 
+// This takes an IntVect and writes the physical coordinates to a RealVect
+void get_loc(RealVect &a_out_loc, const IntVect &a_iv,
+             const RealVect &a_dx, const PoissonParameters &a_params)
+{
+    a_out_loc = a_iv + 0.5 * RealVect::Unit;
+    a_out_loc *= a_dx;
+    a_out_loc -= a_params.domainLength / 2.0;
+}
+
 // set initial guess value for the conformal factor psi
 // defined by \gamma_ij = \psi^4 \tilde \gamma_ij, scalar field phi,
 // its conjugate momentum Pi and the V_i comps which compose Aij
 // For now the default setup is 2 Bowen York BHs plus a scalar field
 // with some initial user specified configuration
+
 void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
-                            LevelData<FArrayBox> &a_dpsi, const RealVect &a_dx,
+                        LevelData<FArrayBox> &a_dpsi,
+                            GRChomboBCs &a_grchombo_boundaries,
+                            const RealVect &a_dx,
                             const PoissonParameters &a_params)
 {
 
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
 
     DataIterator dit = a_multigrid_vars.dataIterator();
-    const DisjointBoxLayout &grids = a_multigrid_vars.disjointBoxLayout();
     for (dit.begin(); dit.ok(); ++dit)
     {
         // These contain the vars in the boxes, set them all to zero
-        FArrayBox &multigrid_vars_box = a_multigrid_vars[dit()];
+	FArrayBox &multigrid_vars_box = a_multigrid_vars[dit()];
         FArrayBox &dpsi_box = a_dpsi[dit()];
-        for (int comp = 0; comp < NUM_MULTIGRID_VARS; comp++)
+	for (int comp = 0; comp < NUM_MULTIGRID_VARS; comp++)
         {
             multigrid_vars_box.setVal(0.0, comp);
         }
-        for (int comp = 0; comp < NUM_CONSTRAINT_VARS; comp++)
+	for (int comp = 0; comp < NUM_CONSTRAINT_VARS; comp++)
         {
             dpsi_box.setVal(0.0, comp);
         }
-        // Iterate over the box
-        Box ghosted_box = multigrid_vars_box.box();
-        BoxIterator bit(ghosted_box);
+	// Iterate over the box
+        Box this_box = multigrid_vars_box.box();
+        BoxIterator bit(this_box);
         for (bit.begin(); bit.ok(); ++bit)
         {
-            // work out location on the grid
-            IntVect iv = bit();
-            RealVect loc(iv + 0.5 * RealVect::Unit);
-            loc *= a_dx;
-            loc -= a_params.domainLength / 2.0;
-
-            // note that we don't include the singular part of psi
-            // for the BHs - this is added at the output data stage
-            // and when we calculate psi_reg in the rhs etc
-            // as it already satisfies Laplacian(psi) = 0
-	    // ---
-	    // JB: so psi = psi_reg + psi_bh
-            multigrid_vars_box(iv, c_psi_reg) = a_params.psi_reg;
-
-            // set phi and pi according to user defined function
-            multigrid_vars_box(iv, c_phi_0) = my_phi_function(loc, a_params);
-            multigrid_vars_box(iv, c_Pi_0) = my_pi_function(loc, a_params);
-
-            // Note that Aij_0 and K_0 are set below since they require
-            // gradients
+            set_initial_multigrid_cell(multigrid_vars_box, dpsi_box,
+                bit(), a_dx, a_params);
         }
+
+        // now fill boundary ghost cells if using nonperiodic boundaries in
+        // GRChombo. Note that these cells are unused in the
+        IntVect offset_lo, offset_hi;
+        a_grchombo_boundaries.get_box_offsets(offset_lo, offset_hi, this_box);
+
+        // reduce box to the intersection of the box and the
+        // problem domain ie remove all outer ghost cells
+        a_grchombo_boundaries.remove_outer_ghost_cells(this_box);
+
+        for (int idir = 0; idir < SpaceDim; ++idir)
+        {
+            if (!a_params.periodic[idir])
+            {
+                for (SideIterator sit; sit.ok(); ++sit)
+                {
+                    Box boundary_box = a_grchombo_boundaries.get_boundary_box(
+                        sit(), idir, offset_lo, offset_hi, this_box);
+
+                    // now we have the appropriate box, fill it!
+                    BoxIterator bbit(boundary_box);
+                    for (bbit.begin(); bbit.ok(); ++bbit)
+                    {
+                        set_initial_multigrid_cell(multigrid_vars_box, dpsi_box,
+                            bbit(), a_dx, a_params);
+                    } // end loop through boundary box
+                } // end loop over sides
+            } // end if (periodic[idir])
+        } // end loop over directions
     }
 } // end set_initial_conditions
+
+void set_initial_multigrid_cell(FArrayBox &a_multigrid_vars_box,
+                                FArrayBox &a_dpsi_box,
+                                const IntVect &a_iv,
+                                const RealVect &a_dx,
+                                const PoissonParameters &a_params)
+{
+    RealVect loc;
+    get_loc(loc, a_iv, a_dx, a_params);
+
+    // set psi to 1.0 and zero dpsi
+    // note that we don't include the singular part of psi
+    // for the BHs - this is added at the output data stage
+    // and when we calculate psi_0 in the rhs etc
+    // as it already satisfies Laplacian(psi) = 0
+    a_multigrid_vars_box(a_iv, c_psi) = a_params.psi_reg;
+    a_dpsi_box(a_iv, 0) = 0.0;
+
+    // set phi and pi according to user defined function
+    a_multigrid_vars_box(a_iv, c_phi_0) = my_phi_function(loc, a_params);
+    a_multigrid_vars_box(a_iv, c_Pi_0) = my_pi_function(loc, a_params);
+
+    // set Aij for spin and momentum according to BH params
+    //set_binary_bh_Aij(a_multigrid_vars_box, a_iv, loc,
+    //                  a_params);
+
+    // Note that Aij_0 and K_0 are set below since they require
+    // gradients
+
+} //end set set_initial_multigrid_cell
 
 // Set K_0 and check integrands for periodic cases, update Aij
 void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
@@ -200,10 +252,13 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
                 K_0_sq =
                     24.0 * M_PI * a_params.G_Newton *
                         (pow(Pi_0, 2.0) + 2.0 * V_of_phi) +
-                    //                1.5 * A2_0 * pow(psi_0, -12.0) +
+                    //1.5 * A2_0 * pow(psi_0, -12.0) +
                     24.0 * M_PI * a_params.G_Newton * rho_gradient *
                         pow(psi_0, -4.0) +
-                    12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
+// ***!!! The important change - remove the laplacian term from the estimation of K
+// So K is only 16pi rho
+                    0.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
+                    //12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
             }
 
 	    // JB: so this should be zero?
@@ -231,9 +286,10 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
                 laplace_multigrid(iv, c_V2_0);
 
             // Set value for K
-            multigrid_vars_box(iv, c_K_0) =
+            multigrid_vars_box(iv, c_K_0) = 
                 a_params.sign_of_K *
-                sqrt(K_0_sq); // be careful when K=0, maybe discontinuity
+                sqrt(K_0_sq); 
+                // be careful when K=0, maybe discontinuity
 
             // set values for Aij_0
 	    // JB: why only these components?
@@ -344,6 +400,7 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
                 0.125 * A2_0 * pow(psi_0, -7.0) -
                 2.0 * M_PI * a_params.G_Newton * rho_gradient * psi_0 -
                 laplace_multigrid(iv, c_psi_reg);
+
             rhs_box(iv, c_V0) =
                 -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[0] -
                 laplace_multigrid(iv, c_V0_0);
@@ -525,16 +582,18 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
                 set_binary_bh_Aij(Aij_bh, iv, loc, a_params);
                 // Also \bar  A_ij \bar A^ij
                 Real A2_0 = 0.0;
+                Real A2_bh = 0.0;
                 for (int i = 0; i < SpaceDim; i++)
                 {
                     for (int j = 0; j < SpaceDim; j++)
                     {
                         A2_0 += (Aij_reg[i][j] + Aij_bh[i][j]) *
                                 (Aij_reg[i][j] + Aij_bh[i][j]);
+                        A2_bh += Aij_bh[i][j] * Aij_bh[i][j];
                     }
                 }
                 aCoef_box(iv, c_psi) = -0.875 * A2_0 * pow(psi_0, -8.0);
-                // assume that other terms are set to zero with choice of K
+                // assume that matter terms are set to zero with choice of K
             }
         }
     }

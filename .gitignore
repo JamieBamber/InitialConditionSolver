@@ -1,4 +1,5 @@
 jobscript*
+*.err
 pout.*
 .bashrc
 *.pbs

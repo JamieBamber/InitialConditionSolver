@@ -140,6 +140,7 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
 #else
     string filename(a_params.filename+".3d.hdf5");
     //string filename("InitialConditionsFinal.3d.hdf5");
+    pout() << "saving data as " << filename << endl;
 #endif
 
     // set up full data and write to hdf5 file ready for GRChombo

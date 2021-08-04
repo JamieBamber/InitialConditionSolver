@@ -40,7 +40,7 @@ numMGsmooth = 4 # number of GSRB smooths before and after MG coarsening
 num_mg     = 1 
 numMGIterations = 4 #this is the number of MG v-cycles in the preconditioner
 max_iterations = 100 #max number of solver iterations
-max_NL_iterations = 9 #non linear outside loop iterations
+max_NL_iterations = 16 #non linear outside loop iterations
 tolerance  = 1.0e-10  #solver tolerance for declaring convergence
 hang       = 1.0e-11  #solver tolerance for deciding when we're hung
 verbosity = 2 # higher number means more verbose output
@@ -80,11 +80,16 @@ vars_parity = 0             #psi
 G_Newton = GVALUE
 
 # Read from hdf5 file?
-#read_from_file = InitialConditionsFinal.3d.hdf5
+
+Newtonian_file=NEWT_FILE
+#run0015_M0.48847892320123_d12.21358_mu0.5_dt_mult0.0625_l0_m0_Al0_L512_N64/Newton_chk010000.3d.hdf5
+read_from_file = /cosma6/data/dp174/dc-bamb1/GRChombo_data/NewtonianBinaryBHScalar/${Newtonian_file}
+
+#InitialConditionsFinal.3d.hdf5
 
 # scalar field input params
 phi_0 = 0.0
-phi_amplitude = 1.0
+phi_amplitude = 0.0 # 1.0
 phi_wavelength = 8
 pi_0 = 1.0e-4
 pi_amplitude = 0.0

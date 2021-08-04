@@ -4,7 +4,8 @@
 
 work_dir=/cosma/home/dp174/dc-bamb1/Experimental_tools/InitialConditionSolver/
 
-output_dir=/cosma/home/dp174/dc-bamb1/Experimental_tools/InitialConditionSolver
+output_dir=/cosma6/data/dp174/dc-bamb1/Initial_conditions_solver
+#/cosma/home/dp174/dc-bamb1/Experimental_tools/InitialConditionSolver
 #/cosma6/data/dp174/dc-bamb1/Initial_conditions_solver
 # /cosma/home/dp174/dc-bamb1/outputs/Initial_conditions_solver
 
@@ -59,7 +60,8 @@ do
 
 	max_level=9
 	
-	name=josus_code_${run}
+	input_file=run0015_M0.48847892320123_d12.21358_mu0.5_dt_mult0.0625_l0_m0_Al0_L512_N64/Newton_chk010000.3d.hdf5	
+	name=josus_code_${run}_from_Newtonian_file
 	#name=${subdir}_initial_conditions
 	
         echo ${name} "initial conditions"
@@ -76,7 +78,8 @@ do
         # add the location of the new directory to the params file
         sed -i "s|JOBNAME|${run}IC|" slurm_submit
 	sed -i "s|MXLEVEL|${max_level}|" params.txt
-	sed -i "s|RUNNAME|${run}_${max_level}_levels|" params.txt
+	sed -i "s|RUNNAME|${run}_${max_level}_from_Newtonian_file|" params.txt
+	sed -i "s|NEWT_FILE|${input_file}|" params.txt
 	sed -i "s|GVALUE|${G}|" params.txt
 	sed -i "s|MUVALUE|${mu}|" params.txt
 	sed -i "s|LSPACE|${L}|" params.txt

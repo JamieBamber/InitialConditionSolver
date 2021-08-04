@@ -364,6 +364,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
     // now output final data in a form which can be read as a checkpoint file
     // for the GRChombo AMR time dependent runs
+    pout() << "printing data to hdf5 file" << endl;
     output_final_data(multigrid_vars, a_grids, vectDx, vectDomains, a_params);
 
     // clean up data
