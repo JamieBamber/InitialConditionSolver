@@ -178,9 +178,6 @@ void set_Aij_reg(Real Aij[3][3], FArrayBox &multigrid_vars_box, const IntVect &i
 	       const FArrayBox &a_grad2_multigrid,
                const FArrayBox &a_mixed_grad2_multigrid)
 {
-
-    
-
     /*-0.25*(a_mixed_grad2_multigrid(iv, 3 * c_U_0 + i + j - 1) 
 		+loc[0]*a_mixed_grad2_multigrid(iv, 3 * c_V0_0 + i + j - 1)
 		+loc[1]*a_mixed_grad2_multigrid(iv, 3 * c_V1_0 + i + j - 1)

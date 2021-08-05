@@ -225,6 +225,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
         // Calculate values for coefficients here - see SetLevelData.cpp
         // for details
+	pout() << "Calculate values for coefficients here: " << endl;
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
             set_a_coef(*aCoef[ilev], *multigrid_vars[ilev], a_params,
@@ -250,6 +251,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         solver.m_imax = max_iter;
 
         // output the data before the solver acts to check starting conditions
+	pout() << " output_solver_data(dpsi, rhs, multigrid_vars, a_grids, a_params,NL_iter);" << endl;
         output_solver_data(dpsi, rhs, multigrid_vars, a_grids, a_params,
                            NL_iter);
 
@@ -329,6 +331,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         }
 
         // check if converged or diverging and if so exit NL iteration for loop
+	pout() << "computeNorm(rhs, a_params.refRatio, a_params.coarsestDx,Interval(0, 0));" << endl;
         dpsi_norm0 =
             computeNorm(rhs, a_params.refRatio, a_params.coarsestDx,
                         Interval(0, 0)); // TODO JCAurre: not completely sure

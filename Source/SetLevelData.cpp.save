@@ -46,8 +46,6 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
                             const PoissonParameters &a_params)
 {
 
-    //if (a_params.verbosity){//pout() << "starting set_initial_conditions()" << endl;}
-    
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
 
     DataIterator dit = a_multigrid_vars.dataIterator();
@@ -102,9 +100,6 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
             } // end if (periodic[idir])
         } // end loop over directions
     }
-
-    //if (a_params.verbosity){//pout() << "end set_initial_conditions()" << endl;}
-
 } // end set_initial_conditions
 
 void set_initial_multigrid_cell(FArrayBox &a_multigrid_vars_box,
@@ -113,9 +108,6 @@ void set_initial_multigrid_cell(FArrayBox &a_multigrid_vars_box,
                                 const RealVect &a_dx,
                                 const PoissonParameters &a_params)
 {
-
-    //if (a_params.verbosity){//pout() << "start  set_initial_multigrid_cell()" << endl;}
-
     RealVect loc;
     get_loc(loc, a_iv, a_dx, a_params);
 
@@ -138,8 +130,6 @@ void set_initial_multigrid_cell(FArrayBox &a_multigrid_vars_box,
     // Note that Aij_0 and K_0 are set below since they require
     // gradients
 
-    //if (a_params.verbosity){//pout() << "end set_initial_multigrid_cell()" << endl;}
-
 } //end set set_initial_multigrid_cell
 
 // Set K_0 and check integrands for periodic cases, update Aij
@@ -148,8 +138,6 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
                              const RealVect &a_dx,
                              const PoissonParameters &a_params)
 {
-    //if (a_params.verbosity){//pout() << "start set_K_and_integrability()" << endl;}
-
     // JB: check number of variables is correct
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
 
@@ -175,14 +163,14 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
 
         // calculate gradients for constructing rho and Aij
         FArrayBox grad_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
+        FArrayBox grad2_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
+        FArrayBox mixed_grad2_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
         get_grad(unghosted_box, multigrid_vars_box,
                  Interval(c_psi_reg, c_phi_0), a_dx, grad_multigrid, a_params);
-        FArrayBox grad2_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
         get_grad2(unghosted_box, multigrid_vars_box,
-                 Interval(c_U_0, c_phi_0), a_dx, grad2_multigrid, a_params);
-        FArrayBox mixed_grad2_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
+                 Interval(c_psi_reg, c_phi_0), a_dx, grad2_multigrid, a_params);
         get_mixed_grad2(unghosted_box, multigrid_vars_box,
-                 Interval(c_U_0, c_phi_0), a_dx, mixed_grad2_multigrid, a_params);
+                 Interval(c_psi_reg, c_phi_0), a_dx, mixed_grad2_multigrid, a_params);
 
         BoxIterator bit(unghosted_box);
         for (bit.begin(); bit.ok(); ++bit)
@@ -303,11 +291,6 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
                 -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[2] -
                 laplace_multigrid(iv, c_V2_0);
 
-	    //
-	    integrand_box(iv, c_U) =
-                8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * (loc[0]*d_phi[0]+loc[1]*d_phi[1]+loc[2]*d_phi[2]) -
-                laplace_multigrid(iv, c_U_0);
-
             // Set value for K
             multigrid_vars_box(iv, c_K_0) = 
                 a_params.sign_of_K *
@@ -324,9 +307,6 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
             multigrid_vars_box(iv, c_A23_0) = Aij_reg[1][2] + Aij_bh[1][2];
         }
     }
-
-    //if (a_params.verbosity){//pout() << "end set_K_and_integrability()" << endl;}
-
 } // end set_K_and_integrability
 
 // set the rhs source for the poisson eqn
@@ -335,8 +315,6 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
              const PoissonParameters &a_params)
 {
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
-
-   //if (a_params.verbosity){//pout() << "start set_rhs()" << endl;}
 
     DataIterator dit = a_rhs.dataIterator();
     for (dit.begin(); dit.ok(); ++dit)
@@ -397,7 +375,7 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
 
             Real Aij_reg[3][3], Aij_bh[3][3];
             set_Aij_reg(Aij_reg, multigrid_vars_box, iv, loc, a_dx, a_params,
-                        grad_multigrid, grad2_multigrid, mixed_grad2_multigrid);
+                        grad_multigrid, );
             set_binary_bh_Aij(Aij_bh, iv, loc, a_params);
 
             // Compute rhograd from gradients of phi, factors of psi0
@@ -438,19 +416,12 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
             rhs_box(iv, c_V2) =
                 -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[2] -
                 laplace_multigrid(iv, c_V2_0);
-	    rhs_box(iv, c_U) =
-                8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * (loc[0]*d_phi[0]+loc[1]*d_phi[1]+loc[2]*d_phi[2]) -
-                laplace_multigrid(iv, c_U_0);
 
             rhs_box(iv, c_V0) += 2. / 3. * pow(psi_0, 6.0) * d_K[0];
             rhs_box(iv, c_V1) += 2. / 3. * pow(psi_0, 6.0) * d_K[1];
             rhs_box(iv, c_V2) += 2. / 3. * pow(psi_0, 6.0) * d_K[2];
-            rhs_box(iv, c_U) += -2. / 3. * pow(psi_0, 6.0) * (loc[0]*d_K[0]+loc[1]*d_K[1]+loc[2]*d_K[2]);
         }
     }
-
-   //if (a_params.verbosity){//pout() << "end set_rhs()" << endl;}
-
 } // end set_rhs
 
 // set the regrid condition - abs value of this drives AMR regrid
@@ -461,8 +432,6 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
 {
 
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
-
-   //if (a_params.verbosity){//pout() << "start set_regrid_condition()" << endl;}
 
     DataIterator dit = a_condition.dataIterator();
     for (dit.begin(); dit.ok(); ++dit)
@@ -476,13 +445,6 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
         FArrayBox grad_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
         get_grad(unghosted_box, multigrid_vars_box,
                  Interval(c_psi_reg, c_phi_0), a_dx, grad_multigrid, a_params);
-	FArrayBox grad2_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
-        get_grad2(unghosted_box, multigrid_vars_box,
-                  Interval(c_U_0, c_phi_0), a_dx, grad2_multigrid, a_params);
-        FArrayBox mixed_grad2_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
-        get_mixed_grad2(unghosted_box, multigrid_vars_box,
-                        Interval(c_U_0, c_phi_0), a_dx,
-                        mixed_grad2_multigrid, a_params);
 
         BoxIterator bit(unghosted_box);
         for (bit.begin(); bit.ok(); ++bit)
@@ -508,7 +470,7 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
             Real Aij_reg[3][3];
             Real Aij_bh[3][3];
             set_Aij_reg(Aij_reg, multigrid_vars_box, iv, loc, a_dx, a_params,
-                        grad_multigrid, grad2_multigrid, mixed_grad2_multigrid);
+                        grad_multigrid);
             set_binary_bh_Aij(Aij_bh, iv, loc, a_params);
 
             // JCAurre: compute rhograd from gradients of phi
@@ -542,9 +504,6 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
             // TODO: Add abs of D_i K and other Mom source terms here
         }
     }
-
-   //if (a_params.verbosity){//pout() << "end set_regrid_condition()" << endl;}
-
 } // end set_regrid_condition
 
 // Add the correction to psi0 after the solver operates
@@ -552,9 +511,6 @@ void set_update_psi0(LevelData<FArrayBox> &a_multigrid_vars,
                      LevelData<FArrayBox> &a_dpsi,
                      const Copier &a_exchange_copier)
 {
-
-    //pout() << "start set_update_psi0()" << endl;
-
     // first exchange ghost cells for dpsi so they are filled with the correct
     // values
     // *** potential source of error?
@@ -577,12 +533,8 @@ void set_update_psi0(LevelData<FArrayBox> &a_multigrid_vars,
             multigrid_vars_box(iv, c_V0_0) += dpsi_box(iv, c_V0);
             multigrid_vars_box(iv, c_V1_0) += dpsi_box(iv, c_V1);
             multigrid_vars_box(iv, c_V2_0) += dpsi_box(iv, c_V2);
-            multigrid_vars_box(iv, c_U_0) += dpsi_box(iv, c_U);
         }
     }
-
-    //pout() << "end set_update_psi0()" << endl;
-
 }
 
 // The coefficient of the I operator on dpsi
@@ -591,8 +543,6 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
                 const PoissonParameters &a_params, const RealVect &a_dx)
 {
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
-
-    //if (a_params.verbosity){//pout() << "start set_a_coef()" << endl;}
 
     DataIterator dit = a_aCoef.dataIterator();
     for (dit.begin(); dit.ok(); ++dit)
@@ -618,13 +568,6 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
             get_grad(unghosted_box, multigrid_vars_box,
                      Interval(c_psi_reg, c_phi_0), a_dx, grad_multigrid,
                      a_params);
-	    FArrayBox grad2_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
-	    get_grad2(unghosted_box, multigrid_vars_box,
-                  Interval(c_U_0, c_phi_0), a_dx, grad2_multigrid, a_params);
-            FArrayBox mixed_grad2_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
-            get_mixed_grad2(unghosted_box, multigrid_vars_box,
-                        Interval(c_U_0, c_phi_0), a_dx,
-                        mixed_grad2_multigrid, a_params);
 
             BoxIterator bit(unghosted_box);
             for (bit.begin(); bit.ok(); ++bit)
@@ -641,7 +584,7 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
                 Real Aij_reg[3][3];
                 Real Aij_bh[3][3];
                 set_Aij_reg(Aij_reg, multigrid_vars_box, iv, loc, a_dx,
-                            a_params, grad_multigrid, grad2_multigrid, mixed_grad2_multigrid);
+                            a_params, grad_multigrid);
                 set_binary_bh_Aij(Aij_bh, iv, loc, a_params);
                 // Also \bar  A_ij \bar A^ij
                 Real A2_0 = 0.0;
@@ -660,9 +603,6 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
             }
         }
     }
-
-    //if (a_params.verbosity){//pout() << "end set_a_coef()" << endl;}
-
 }
 // JB: this bit adds a term from RHS(psi_0 + dphi) = RHS(psi_0) + dphi * RHS'(psi_0) + ...
 // i.e. the order dpsi bit from the A_ij term. ??? What exactly it is added to ...
@@ -678,8 +618,6 @@ void set_b_coef(LevelData<FArrayBox> &a_bCoef,
     CH_assert(a_bCoef.nComp() == NUM_CONSTRAINT_VARS);
     int comp_number = 0;
 
-    //if (a_params.verbosity){//pout() << "start set_b_coef()" << endl;}
-
     for (DataIterator dit = a_bCoef.dataIterator(); dit.ok(); ++dit)
     {
         FArrayBox &bCoef_box = a_bCoef[dit()];
@@ -690,9 +628,6 @@ void set_b_coef(LevelData<FArrayBox> &a_bCoef,
             bCoef_box.setVal(1.0, iconstraint);
         }
     }
-
-    //if (a_params.verbosity){//pout() << "end set_b_coef()" << endl;}
-
 }
 
 // used to set output data for all ADM Vars for GRChombo restart
@@ -703,8 +638,6 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
 
     CH_assert(a_grchombo_vars.nComp() == NUM_GRCHOMBO_VARS);
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
-
-    //if (a_params.verbosity){//pout() << "start set_output_data()" << endl;}
 
     const DisjointBoxLayout &grids = a_grchombo_vars.disjointBoxLayout();
     DataIterator dit = a_grchombo_vars.dataIterator();
@@ -762,7 +695,4 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
                 multigrid_vars_box(iv, c_A33_0) * factor;
         }
     }
-
-    //if (a_params.verbosity){//pout() << "end set_output_data()" << endl;}
-
 }
