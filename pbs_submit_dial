@@ -1,0 +1,27 @@
+#PBS -N JOBNAME
+#PBS -l walltime=1:00:00
+
+#PBS -l nodes=2:ppn=36
+
+#PBS -A dp092
+#PBS -o job.out
+#PBS -e job.err
+#PBS -q devel
+##PBS -M katyclough@yahoo.com
+#PBS -m abe# Modules
+module load hdf5/intel_par/1.10.2
+# Ignore any placement instructions from the job scheduler.
+export I_MPI_JOB_RESPECT_PROCESS_PLACEMENT=0
+# Each process and all of its OMP threads on the same socket.  
+export I_MPI_PIN_DOMAIN=sock
+# Change to job submission directory
+cd $PBS_O_WORKDIR
+
+# Set threads
+export OMP_NUM_THREADS=2
+# np processes in total, with perhost process on each of the nodes.
+
+export location=/home/dc-bamb1/InitialConditionSolver/
+export application=Main_PoissonSolver3d.Linux.64.mpiicpc.ifort.OPT.MPI.OPENMPCC.ex_katy_bbh
+
+mpirun -perhost 18 -np 36 ${location}${application} params.txt
