@@ -52,12 +52,10 @@ static constexpr char const *variable_names[NUM_MULTIGRID_VARS] = {
 enum
 {
     c_psi,
-
     c_U,
     c_V0,
     c_V1,
     c_V2,
-
     NUM_CONSTRAINT_VARS
 };
 

@@ -254,6 +254,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 	pout() << " output_solver_data(dpsi, rhs, multigrid_vars, a_grids, a_params,NL_iter);" << endl;
         output_solver_data(dpsi, rhs, multigrid_vars, a_grids, a_params,
                            NL_iter);
+	pout() << " finished output_solver_data(dpsi, rhs, multigrid_vars, a_grids, a_params,NL_iter);" << endl;
 
         // Engage!
         solver.solve(dpsi, rhs);
