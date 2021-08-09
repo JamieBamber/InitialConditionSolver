@@ -104,7 +104,9 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
         if (a_params.read_from_file != "none")
         {
+	    pout() << "now trying to read from the HDF5" << endl;
             readHDF5(*multigrid_vars[ilev], a_grids, a_params, ilev, ghosts);
+            pout() << "successfully read from the HDF5" << endl;
         }
 
         GRChomboBCs grchombo_boundaries;
