@@ -13,10 +13,10 @@ alpha = 1.0
 beta  = -1.0
 
 # AMR grid params - grid length and number of cells by direction
-L = 512
+L = 256
 N = 64 64 64
 # number of AMR refinement levels is max_level + 1
-max_level    = MXLEVEL
+max_level    = 6
 # Threshold for AMR refinement, based on magnitude of rhs
 refine_threshold = 0.1
 #min box size
@@ -26,13 +26,9 @@ max_grid_size = 16
 # how aggressively to regrid
 fill_ratio   = 0.8
 buffer_size  = 3
-
-#output_path = 
-#/cosma6/data/dp174/dc-bamb1/GRChombo_data/BinaryBHSF/
-#/cosma7/data/dp092/dc-cui1/ICSolverOut/
+#output_path = /cosma7/data/dp092/dc-cui1/ICSolverOut/
 #output_path = /scratch/dp092/dc-cui1/ICSolveOut/
-
-#filename_base = /cosma6/data/dp174/dc-bamb1/GRChombo_data/BinaryBHSF/RUNNAME_IC
+output_path = Outputs/
 
 # Setup multigrid params
 numMGsmooth = 4 # number of GSRB smooths before and after MG coarsening
@@ -40,7 +36,7 @@ numMGsmooth = 4 # number of GSRB smooths before and after MG coarsening
 num_mg     = 1 
 numMGIterations = 4 #this is the number of MG v-cycles in the preconditioner
 max_iterations = 100 #max number of solver iterations
-max_NL_iterations = 16 #non linear outside loop iterations
+max_NL_iterations = 9 #non linear outside loop iterations
 tolerance  = 1.0e-10  #solver tolerance for declaring convergence
 hang       = 1.0e-11  #solver tolerance for deciding when we're hung
 verbosity = 2 # higher number means more verbose output
@@ -60,46 +56,23 @@ bc_hi       = 0 0 0
 # note bc_value probably 0 because it is applied to dpsi at boundary (not psi)
 bc_value = 0.0
 
-# GRChombo boundary parameters:
-# if not periodic, then specify the boundary type
-# 0 = static, 1 = sommerfeld, 2 = reflective
-# (see BoundaryConditions.hpp for details)
-#hi_boundary = 1 1 1
-#lo_boundary = 1 1 1
-hi_boundary = 0 0 0
-lo_boundary = 0 0 0
-
-# if reflective boundaries selected, must set
-# parity of all vars (in order given by MultigridUserVariables.hpp)
-# 0 = even
-# 1,2,3 = odd x, y, z
-# 4,5,6 = odd xy, yz, xz
-vars_parity = 0             #psi
-              0 4 6 0 5 0   #Aij
-              0             #phi
-
 # Q: "Simple, change the gravitational constant of the Universe"
-G_Newton = GVALUE
+G_Newton = 1.0 
 
 # Read from hdf5 file?
-
-#run0015_M0.48847892320123_d12.21358_mu0.5_dt_mult0.0625_l0_m0_Al0_L512_N64/Newton_chk010000.3d.hdf5
-read_from_file = /cosma6/data/dp174/dc-bamb1/GRChombo_data/NewtonianBinaryBHScalar/NEWT_FILE
-
-#BinaryBHSF/run0023_9_levels_IC.3d.hdf5
-#InitialConditionsFinal.3d.hdf5
+#read_from_file = InitialConditionsFinal.3d.hdf5
 
 # scalar field input params
 phi_0 = 0.0
-phi_amplitude = 1.0 # 1.0
+phi_amplitude = 1e-4
 phi_wavelength = 8
-pi_0 = 1.0e-4
-pi_amplitude = 0.0
-pi_wavelength = 8
+pi_0 = 0.0
+pi_amplitude = 1e-4
+pi_wavelength = 4
 
 # potential params
 pot_Lambda = 0
-pot_mu = MUVALUE
+pot_mu = 0.5
 
 # in asymptotically flat space set
 # initial scale factor a0 = psi_reg**2
@@ -113,28 +86,19 @@ sign_of_K = 1
 # and momenta/spins to zero
 
 #BH1
-bh1_bare_mass = 0.48847892320123
+bh1_bare_mass = 1.0
 # spin about z axis (this is J_z)
 bh1_spin = 0.0
 # boost in y direction (this is P_y)
-#bh1_momentum_x = -0.000510846
-#bh1_momentum_y = 0.0841746
+bh1_momentum = 0.1
 # offset from center in x direction
-#bh1_offset_x = 6.10679
-#bh1_offset_y = 0.0
-
-bh1_momentum = 0.0841746
-bh1_offset = 6.10679
-bh2_momentum = -0.0841746
-bh2_offset = -6.10679
+bh1_offset = 10.0
 
 #BH2
-bh2_bare_mass = 0.48847892320123
+bh2_bare_mass = 1.0
 # spin about z axis (this is J_z)
 bh2_spin = 0.0
 # boost in y direction (this is P_y)
-#bh2_momentum_x = 0.000510846
-#bh2_momentum_y = -0.0841746
+bh2_momentum = -0.1
 # offset from center in x direction
-#bh2_offset_x = -6.10679
-#bh2_offset_y = 0.0
+bh2_offset = -10.0
