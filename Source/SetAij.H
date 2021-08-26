@@ -11,9 +11,11 @@
 // Get the bh radius - input loc_bh should be location on the grid relative
 // to the centre - note that it gets corrected to the actual location
 // (see examples below)
-Real get_bh_radius(RealVect &loc_bh, const Real bh_x_offset)
+Real get_bh_radius(RealVect &loc_bh, RealVect bh_offset)
 {
-    loc_bh[0] -= bh_x_offset;
+    loc_bh[0] -= bh_offset[0];
+    loc_bh[1] -= bh_offset[1];
+    loc_bh[2] -= bh_offset[2];
     return sqrt(loc_bh[0] * loc_bh[0] + loc_bh[1] * loc_bh[1] +
                 loc_bh[2] * loc_bh[2]);
 }
@@ -71,8 +73,8 @@ void set_binary_bh_Aij(Real Aij[3][3], const IntVect &iv,
     // the Bowen York params
     RealVect J1 = {0.0, 0.0, a_params.bh1_spin};
     RealVect J2 = {0.0, 0.0, a_params.bh2_spin};
-    RealVect P1 = {0.0, a_params.bh1_momentum, 0.0};
-    RealVect P2 = {0.0, a_params.bh2_momentum, 0.0};
+    RealVect P1 = {a_params.bh1_momentum[0], a_params.bh1_momentum[1], a_params.bh1_momentum[2]};
+    RealVect P2 = {a_params.bh2_momentum[0], a_params.bh2_momentum[1], a_params.bh2_momentum[2]};
 
     // set the Aij vars
     Aij[0][0] =

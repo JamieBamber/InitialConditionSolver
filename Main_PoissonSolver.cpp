@@ -316,8 +316,8 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         pout() << "The norm of rhs Mom after step " << NL_iter + 1 << " is "
                << dpsi_norm1 << endl;
 
-        if ((dpsi_norm0 < tolerance && dpsi_norm1 < tolerance) ||
-            dpsi_norm0 > 1e5 || dpsi_norm1 > 1e5)
+        if ((dpsi_norm0 < tolerance && dpsi_norm1 < tolerance))
+    // || dpsi_norm0 > 1e5 || dpsi_norm1 > 1e5)
         {
             break;
         }

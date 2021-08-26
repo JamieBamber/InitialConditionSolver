@@ -9,7 +9,7 @@
 // assign an enum to each variable
 enum
 {
-    c_chi,
+/*    c_chi,
 
     c_h11,
     c_h12,
@@ -41,7 +41,7 @@ enum
 
     c_B1,
     c_B2,
-    c_B3,
+    c_B3,*/
 
     c_phi, // matter field added
     c_Pi,  //(minus) conjugate momentum
@@ -52,7 +52,7 @@ enum
 namespace GRChomboUserVariables
 {
 static constexpr char const *variable_names[NUM_GRCHOMBO_VARS] = {
-    "chi",
+/*    "chi",
 
     "h11",    "h12",    "h13",    "h22", "h23", "h33",
 
@@ -68,7 +68,7 @@ static constexpr char const *variable_names[NUM_GRCHOMBO_VARS] = {
 
     "shift1", "shift2", "shift3",
 
-    "B1",     "B2",     "B3",
+    "B1",     "B2",     "B3",*/
 
     "phi",    "Pi"};
 }

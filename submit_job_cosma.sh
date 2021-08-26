@@ -58,11 +58,11 @@ do
         #   subdir=${run}_mu${mu}_delay${delay}_G${G}_ratio${ratio}_l${l}_m${m}_Al${Al}
         #fi
 
-	max_level=6
+	max_level=4
 
 	input_file=run0016_M0.48847892320123_d12.21358_mu0.5_dt_mult0.1356676906_l0_m0_Al0_L512_N128/Newton_chk001000.3d.hdf5
 	#run0015_M0.48847892320123_d12.21358_mu0.5_dt_mult0.0625_l0_m0_Al0_L512_N64/Newton_chk010000.3d.hdf5	
-	name=josus_code_${run}_without_GRChombo_bcs_og
+	name=josus_code_${run}_without_GRChombo_bcs_katy_bbhs_version
 	#_from_Newtonian_file_periodic_bcs
 	#name=${subdir}_initial_conditions
 	

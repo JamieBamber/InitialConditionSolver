@@ -563,10 +563,10 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
 
         // now set non zero terms - const across whole box
         // Conformally flat, and lapse = 1
-        grchombo_vars_box.setVal(1.0, c_h11);
+/*        grchombo_vars_box.setVal(1.0, c_h11);
         grchombo_vars_box.setVal(1.0, c_h22);
         grchombo_vars_box.setVal(1.0, c_h33);
-        grchombo_vars_box.setVal(1.0, c_lapse);
+        grchombo_vars_box.setVal(1.0, c_lapse);*/
 
         // now non constant terms by location
         Box this_box = grchombo_vars_box.box();
@@ -581,7 +581,7 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
             // GRChombo conformal factor chi = psi^-4
             Real psi_bh = set_binary_bh_psi(loc, a_params);
             Real chi = pow(multigrid_vars_box(iv, c_psi_reg) + psi_bh, -4.0);
-            grchombo_vars_box(iv, c_chi) = chi;
+            // grchombo_vars_box(iv, c_chi) = chi;
             Real factor = pow(chi, 1.5);
 
             // Copy phi and Aij across - note this is now \tilde Aij not
@@ -589,7 +589,7 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
             grchombo_vars_box(iv, c_phi) = multigrid_vars_box(iv, c_phi_0);
             grchombo_vars_box(iv, c_Pi) = multigrid_vars_box(iv, c_Pi_0);
 
-            grchombo_vars_box(iv, c_K) = multigrid_vars_box(iv, c_K_0);
+            /*grchombo_vars_box(iv, c_K) = multigrid_vars_box(iv, c_K_0);
             grchombo_vars_box(iv, c_A11) =
                 multigrid_vars_box(iv, c_A11_0) * factor;
             grchombo_vars_box(iv, c_A12) =
@@ -601,7 +601,7 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
             grchombo_vars_box(iv, c_A23) =
                 multigrid_vars_box(iv, c_A23_0) * factor;
             grchombo_vars_box(iv, c_A33) =
-                multigrid_vars_box(iv, c_A33_0) * factor;
+                multigrid_vars_box(iv, c_A33_0) * factor;*/
         }
     }
 }

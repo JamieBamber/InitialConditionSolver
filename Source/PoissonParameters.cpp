@@ -34,6 +34,9 @@ void getPoissonParameters(PoissonParameters &a_params)
     pout() << "alpha, beta = " << a_params.alpha << ", " << a_params.beta
            << endl;
 
+    // filename = filename_base.3d.hdf5
+    pp.get("filename_base", a_params.filename);
+
     // Read from hdf5 file
     if (pp.contains("read_from_file"))
     {
@@ -80,10 +83,21 @@ void getPoissonParameters(PoissonParameters &a_params)
     pp.get("bh2_bare_mass", a_params.bh2_bare_mass);
     pp.get("bh1_spin", a_params.bh1_spin);
     pp.get("bh2_spin", a_params.bh2_spin);
-    pp.get("bh1_offset", a_params.bh1_offset);
-    pp.get("bh2_offset", a_params.bh2_offset);
-    pp.get("bh1_momentum", a_params.bh1_momentum);
-    pp.get("bh2_momentum", a_params.bh2_momentum);
+
+    Real bh1_offset_x, bh1_offset_y, bh2_offset_x, bh2_offset_y;
+    Real bh1_momentum_x, bh1_momentum_y, bh2_momentum_x, bh2_momentum_y;
+    pp.get("bh1_offset_x", bh1_offset_x);
+    pp.get("bh1_offset_y", bh1_offset_y);
+    pp.get("bh2_offset_x", bh2_offset_x);
+    pp.get("bh2_offset_y", bh2_offset_y);
+    pp.get("bh1_momentum_x", bh1_momentum_x);
+    pp.get("bh1_momentum_y", bh1_momentum_y);
+    pp.get("bh2_momentum_x", bh2_momentum_x);
+    pp.get("bh2_momentum_y", bh2_momentum_y);
+    a_params.bh1_offset = {bh1_offset_x, bh1_offset_y, 0.0};
+    a_params.bh2_offset = {bh2_offset_x, bh2_offset_y, 0.0};
+    a_params.bh1_momentum = {bh1_momentum_x, bh1_momentum_y, 0.0};
+    a_params.bh2_momentum = {bh2_momentum_x, bh2_momentum_y, 0.0};
 
     if (abs(a_params.bh1_bare_mass) > 0.0 || abs(a_params.bh2_bare_mass) > 0.0)
     {
