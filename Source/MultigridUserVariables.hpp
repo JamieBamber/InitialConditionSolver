@@ -11,6 +11,7 @@ enum
 {
     c_psi_reg,
 
+    c_U_0,
     c_V0_0,
     c_V1_0,
     c_V2_0,
@@ -35,7 +36,7 @@ namespace MultigridUserVariables
 static constexpr char const *variable_names[NUM_MULTIGRID_VARS] = {
     "psi_reg",
 
-    "V0_0",    "V1_0",  "V2_0",
+    "U_0", "V0_0",    "V1_0",  "V2_0",
 
     "phi_0",   "Pi_0",
 
@@ -48,7 +49,7 @@ static constexpr char const *variable_names[NUM_MULTIGRID_VARS] = {
 enum
 {
     c_psi,
-
+    c_U,
     c_V0,
     c_V1,
     c_V2,
@@ -60,7 +61,7 @@ namespace ConstraintTerms
 {
 static constexpr char const *variable_names[NUM_CONSTRAINT_VARS] = {"psi",
 
-                                                                    "V0", "V1",
+                                                                    "U","V0", "V1",
                                                                     "V2"};
 }
 
