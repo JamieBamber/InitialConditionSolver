@@ -73,17 +73,20 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
     int totalComp = ndpsiComp + nRhsComp + nMGComp;
     CH_assert(totalComp == 2 * NUM_CONSTRAINT_VARS + NUM_MULTIGRID_VARS);
 
-    // set names
+    // set names 
+    pout() << " set names: " << endl;
     Vector<string> variable_names(totalComp);
     variable_names[0] =
         "dpsi0"; // JCAurre: name for the rhs and linear solution of constraints
     variable_names[1] = "dpsi1";
     variable_names[2] = "dpsi2";
     variable_names[3] = "dpsi3";
-    variable_names[4] = "rhs0";
-    variable_names[5] = "rhs1";
-    variable_names[6] = "rhs2";
-    variable_names[7] = "rhs3";
+    variable_names[4] = "dpsi4";
+    variable_names[5] = "rhs0";
+    variable_names[6] = "rhs1";
+    variable_names[7] = "rhs2";
+    variable_names[8] = "rhs3";
+    variable_names[9] = "rhs4";
 
     for (int icomp = 0; icomp < NUM_MULTIGRID_VARS; icomp++)
     {
@@ -91,8 +94,12 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
             MultigridUserVariables::variable_names[icomp];
     }
     // check the domain sizes are the same
+    pout() << "check the domain sizes are the same " << endl;
     CH_assert(a_dpsi.size() == a_rhs.size());
+    pout() << "done CH_assert(a_dpsi.size() == a_rhs.size())" << endl;
     CH_assert(a_dpsi.size() == a_multigrid_vars.size());
+    pout() << "done CH_assert(a_dpsi.size() == a_multigrid_vars.size())" << endl;
+    pout() << "done checking the domain sizes are the same " << endl;
 
     Vector<LevelData<FArrayBox> *> tempData(a_dpsi.size(), NULL);
     for (int level = 0; level < a_dpsi.size(); level++)
@@ -111,6 +118,7 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
     }
     Real fakeTime = iter * 1.0;
     Real fakeDt = 1.0;
+    pout() << "now do WriteAMRHierarchyHDF5() " << endl;
     WriteAMRHierarchyHDF5(filename, a_grids, tempData, variable_names,
                           a_params.coarsestDomain.domainBox(),
                           a_params.coarsestDx, fakeDt, fakeTime,
@@ -121,6 +129,7 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
         delete tempData[level];
         tempData[level] = NULL;
     }
+    pout() << "done WriteAMRHierarchyHDF5() " << endl;
 #endif
 }
 
@@ -135,11 +144,12 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
 #ifdef CH_USE_HDF5
 
 #if CH_SPACEDIM == 2
-    string filename(a_params.output_path);
-    filename += "InitialConditionsFinal.2d.hdf5";
+    string filename(a_params.filename+".2d.hdf5");
+    //string filename("InitialConditionsFinal.2d.hdf5");
 #else
-    string filename(a_params.output_path);
-    filename += "InitialConditionsFinal.3d.hdf5";
+    string filename(a_params.filename+".3d.hdf5");
+    //string filename("InitialConditionsFinal.3d.hdf5");
+    pout() << "saving data as " << filename << endl;
 #endif
 
     // set up full data and write to hdf5 file ready for GRChombo
