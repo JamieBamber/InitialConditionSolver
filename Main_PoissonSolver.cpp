@@ -14,6 +14,7 @@
 #include "MultilevelLinearOp.H"
 #include "ParmParse.H"
 #include "PoissonParameters.H"
+#include "GRChomboBCs.hpp"
 #include "ReadHDF5.H"
 #include "SetBCs.H"
 #include "SetGrids.H"
@@ -98,13 +99,25 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         vectDx[ilev] = dxLev;
         // set initial guess for psi and zero dpsi
         // and values for other multigrid sources - phi and Aij
-        set_initial_conditions(*multigrid_vars[ilev], *dpsi[ilev], vectDx[ilev],
-                               a_params);
+        // set_initial_conditions(*multigrid_vars[ilev], *dpsi[ilev], vectDx[ilev],
+        //                       a_params);
 
         if (a_params.read_from_file != "none")
         {
+	    pout() << "now trying to read from the HDF5" << endl;
             readHDF5(*multigrid_vars[ilev], a_grids, a_params, ilev, ghosts);
+            pout() << "successfully read from the HDF5" << endl;
         }
+
+        GRChomboBCs grchombo_boundaries;
+        grchombo_boundaries.define(vectDx[ilev][0],
+                                   a_params.grchombo_boundary_params,
+                                   a_params.coarsestDomain,
+                                   a_params.num_ghosts);
+        // set initial guess for psi and zero dpsi
+        // and values for other multigrid sources - phi and Aij
+        set_initial_conditions(*multigrid_vars[ilev], *dpsi[ilev],
+                               grchombo_boundaries, vectDx[ilev], a_params);
 
         // prepare temp dx, domain vars for next level
         dxLev /= a_params.refRatio[ilev];
@@ -268,6 +281,19 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             Copier exchange_copier;
             exchange_copier.exchangeDefine(a_grids[ilev], ghosts);
 
+            if(a_params.symmetric_boundaries_exist)
+            {
+             	GRChomboBCs grchombo_boundaries;
+                grchombo_boundaries.define(vectDx[ilev][0],
+                                           a_params.grchombo_boundary_params,
+                                           a_params.coarsestDomain,
+                                           a_params.num_ghosts);
+                grchombo_boundaries.enforce_symmetric_boundaries(
+                                        Side::Hi, *dpsi[ilev]);
+                grchombo_boundaries.enforce_symmetric_boundaries(
+                                        Side::Lo, *dpsi[ilev]);
+            }
+
             // now the update
             set_update_psi0(*multigrid_vars[ilev], *dpsi[ilev],
                             exchange_copier);
@@ -340,6 +366,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
     // now output final data in a form which can be read as a checkpoint file
     // for the GRChombo AMR time dependent runs
+    pout() << "printing data to hdf5 file" << endl;
     output_final_data(multigrid_vars, a_grids, vectDx, vectDomains, a_params);
 
     // clean up data

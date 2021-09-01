@@ -9,9 +9,11 @@
 void my_potential_function(Real &V_of_phi, Real &dVdphi, const Real &phi_here,
                            const PoissonParameters &a_params)
 {
-    // Minimally coupled scalar field
-    V_of_phi = 0.5 * pow(a_params.pot_mu * phi_here, 2);
-    dVdphi = pow(a_params.pot_mu,2) * phi_here;
+    // Starobinsky
+    Real mpl = 1.0;
+    V_of_phi = a_params.pot_Lambda * pow(1. - exp((phi_here / a_params.pot_mu * pow(mpl, -1))), 2);
+    dVdphi = -2. * a_params.pot_Lambda / a_params.pot_mu * (1 - exp((phi_here / a_params.pot_mu * pow(mpl, -1)))) *
+             exp((phi_here / a_params.pot_mu * pow(mpl, -1))) * pow(mpl, -1);
 }
 
 #endif /* MYPOTENTIALFUNCTION_HPP */

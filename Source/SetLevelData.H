@@ -22,10 +22,22 @@ using std::cerr;
 // various functions operating on grids to set up data for initial
 // conditions, spatially dependent coefficients and rhs etc
 
+inline void get_loc(RealVect &a_out_loc,
+                    const IntVect &a_iv,
+                    const RealVect &a_dx,
+                    const PoissonParameters &a_params);
+
 extern void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
                                    LevelData<FArrayBox> &a_dpsi,
+                                   GRChomboBCs &a_grchombo_boundaries,
                                    const RealVect &a_dx,
                                    const PoissonParameters &a_params);
+
+inline void set_initial_multigrid_cell(FArrayBox &a_multigrid_vars_box,
+                                       FArrayBox &a_dpsi_box,
+                                       const IntVect &a_iv,
+                                       const RealVect &a_dx,
+                                       const PoissonParameters &a_params);
 
 extern void set_rhs(LevelData<FArrayBox> &a_rhs,
                     LevelData<FArrayBox> &a_multigrid_vars,

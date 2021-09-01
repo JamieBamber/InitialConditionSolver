@@ -19,6 +19,7 @@ using std::cerr;
 #include "FArrayBox.H"
 #include "ParmParse.H"
 #include "VariableCoeffPoissonOperator.H"
+#include "GRChomboBCs.hpp"
 
 /// Class for solver input parameters
 /**
@@ -40,6 +41,10 @@ class PoissonParameters
     int maxLevel;
     int numLevels;
     int sign_of_K;
+    int num_ghosts;
+    GRChomboBCs::params_t grchombo_boundary_params;
+    bool symmetric_boundaries_exist;
+    bool nonperiodic_boundaries_exist;
     Vector<int> refRatio;
     ProblemDomain coarsestDomain;
     Real coarsestDx;
