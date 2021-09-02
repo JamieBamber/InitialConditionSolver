@@ -62,7 +62,7 @@ do
 
 	input_file=run0016_M0.48847892320123_d12.21358_mu0.5_dt_mult0.1356676906_l0_m0_Al0_L512_N128/Newton_chk000000.3d.hdf5
 	#run0015_M0.48847892320123_d12.21358_mu0.5_dt_mult0.0625_l0_m0_Al0_L512_N64/Newton_chk010000.3d.hdf5	
-	name=josus_code_${run}_without_GRChombo_bcs_katy_bbhs_0_data
+	name=josus_code_${run}_without_GRChombo_bcs_katy_bbhs
 	#without_GRChombo_bcs_alternative_W_i_decomp
 	#_from_Newtonian_file_periodic_bcs
 	#name=${subdir}_initial_conditions
