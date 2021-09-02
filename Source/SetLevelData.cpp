@@ -332,16 +332,16 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
                 laplace_multigrid(iv, c_psi_reg);
 
             rhs_box(iv, c_V0) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[0] -
+                -8.0 * M_PI * pow(psi_0, 6.0) * a_params.G_Newton * Pi_0 * d_phi[0] -
                 laplace_multigrid(iv, c_V0_0);
             rhs_box(iv, c_V1) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[1] -
+                -8.0 * M_PI * pow(psi_0, 6.0) * a_params.G_Newton * Pi_0 * d_phi[1] -
                 laplace_multigrid(iv, c_V1_0);
             rhs_box(iv, c_V2) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[2] -
+                -8.0 * M_PI * pow(psi_0, 6.0) * a_params.G_Newton * Pi_0 * d_phi[2] -
                 laplace_multigrid(iv, c_V2_0);
 	    rhs_box(iv, c_U) =
-                8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * (loc[0]*d_phi[0]+loc[1]*d_phi[1]+loc[2]*d_phi[2]) -
+                8.0 * M_PI * pow(psi_0, 6.0) * a_params.G_Newton * Pi_0 * (loc[0]*d_phi[0]+loc[1]*d_phi[1]+loc[2]*d_phi[2]) -
                 laplace_multigrid(iv, c_U_0);
 
             rhs_box(iv, c_V0) += 2. / 3. * pow(psi_0, 6.0) * d_K[0];
