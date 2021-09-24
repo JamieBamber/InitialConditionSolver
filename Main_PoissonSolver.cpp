@@ -102,13 +102,6 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         // set_initial_conditions(*multigrid_vars[ilev], *dpsi[ilev], vectDx[ilev],
         //                       a_params);
 
-        if (a_params.read_from_file != "none")
-        {
-	    pout() << "now trying to read from the HDF5" << endl;
-            readHDF5(*multigrid_vars[ilev], a_grids, a_params, ilev, ghosts);
-            pout() << "successfully read from the HDF5" << endl;
-        }
-
         GRChomboBCs grchombo_boundaries;
         grchombo_boundaries.define(vectDx[ilev][0],
                                    a_params.grchombo_boundary_params,
@@ -118,6 +111,13 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         // and values for other multigrid sources - phi and Aij
         set_initial_conditions(*multigrid_vars[ilev], *dpsi[ilev],
                                grchombo_boundaries, vectDx[ilev], a_params);
+
+        if (a_params.read_from_file != "none")
+        {
+	    pout() << "now trying to read from the HDF5" << endl;
+            readHDF5(*multigrid_vars[ilev], a_grids, a_params, ilev, ghosts);
+            pout() << "successfully read from the HDF5" << endl;
+        }
 
         // prepare temp dx, domain vars for next level
         dxLev /= a_params.refRatio[ilev];
@@ -252,8 +252,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         solver.m_imax = max_iter;
 
         // output the data before the solver acts to check starting conditions
-        output_solver_data(dpsi, rhs, multigrid_vars, a_grids, a_params,
-                           NL_iter);
+        output_solver_data(dpsi, rhs, multigrid_vars, a_grids, a_params, NL_iter);
 
         // Engage!
         solver.solve(dpsi, rhs);
