@@ -280,7 +280,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             Copier exchange_copier;
             exchange_copier.exchangeDefine(a_grids[ilev], ghosts);
 
-            if(a_params.symmetric_boundaries_exist)
+            /*if(a_params.symmetric_boundaries_exist)
             {
              	GRChomboBCs grchombo_boundaries;
                 grchombo_boundaries.define(vectDx[ilev][0],
@@ -291,7 +291,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
                                         Side::Hi, *dpsi[ilev]);
                 grchombo_boundaries.enforce_symmetric_boundaries(
                                         Side::Lo, *dpsi[ilev]);
-            }
+            }*/
 
             // now the update
             set_update_psi0(*multigrid_vars[ilev], *dpsi[ilev],

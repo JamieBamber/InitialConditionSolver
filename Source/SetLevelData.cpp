@@ -71,6 +71,8 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
                 bit(), a_dx, a_params);
         }
 
+	// So this bit is for filling the boundary/ghost boxes	
+
         // now fill boundary ghost cells if using nonperiodic boundaries in
         // GRChombo. Note that these cells are unused in the
         /*IntVect offset_lo, offset_hi;
@@ -98,8 +100,7 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
                     } // end loop through boundary box
                 } // end loop over sides
             } // end if (periodic[idir])
-        } // end loop over directions
-        */
+        } // end loop over directions*/
     }
 } // end set_initial_conditions
 
@@ -255,10 +256,10 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
                         (pow(Pi_0, 2.0) + 2.0 * V_of_phi) +
                     //1.5 * A2_0 * pow(psi_0, -12.0) +
                     24.0 * M_PI * a_params.G_Newton * rho_gradient *
-                        pow(psi_0, -4.0) +
+                        pow(psi_0, -4.0); //+
 // ***!!! The important change - remove the laplacian term from the estimation of K
 // So K is only 16pi rho
-                    0.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
+//                    0.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
                     //12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
             }
 
@@ -393,14 +394,13 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
             }
 
             rhs_box(iv, c_psi) =
-// set this to be zero --->
-/*                0.125 *
-                    (2.0 / 3.0 * K_0 * K_0 -
+                0.125 *						// * Set this to be zero ?
+                    (2.0 / 3.0 * K_0 * K_0 -			//
                      8.0 * M_PI * a_params.G_Newton *
                          (pow(Pi_0, 2.0) + 2.0 * V_of_phi)) *
-                    pow(psi_0, 5.0) 
-                - 2.0 * M_PI * a_params.G_Newton * rho_gradient * psi_0)*/ 
-                -0.125 * A2_0 * pow(psi_0, -7.0) -
+                    pow(psi_0, 5.0) -
+             	2.0 * M_PI * a_params.G_Newton * rho_gradient * psi_0 - // *
+                0.125 * A2_0 * pow(psi_0, -7.0) -
                 laplace_multigrid(iv, c_psi_reg);
 
             rhs_box(iv, c_V0) =
