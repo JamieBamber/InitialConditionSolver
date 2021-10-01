@@ -661,8 +661,26 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
         BoxIterator bit(this_box);
         for (bit.begin(); bit.ok(); ++bit)
         {
-            set_non_const_output_cell(multigrid_vars_box,
-                grchombo_vars_box, bit(), a_dx, a_params);
+	    IntVect iv = bit();
+            RealVect loc(iv + 0.5 * RealVect::Unit);
+            loc *= a_dx;
+            loc -= a_params.domainLength / 2.0;
+
+            // GRChombo conformal factor chi = psi^-4
+            Real psi_bh = set_binary_bh_psi(loc, a_params);
+            Real chi = pow(multigrid_vars_box(iv, c_psi_reg) + psi_bh, -4.0);
+//            grchombo_vars_box(iv, c_chi) = chi;
+            Real factor = pow(chi, 1.5);
+
+            // Copy phi and Aij across - note this is now \tilde Aij not
+            // \bar Aij
+            grchombo_vars_box(iv, c_phi) = multigrid_vars_box(iv, c_phi_0);
+            grchombo_vars_box(iv, c_Pi) = multigrid_vars_box(iv, c_Pi_0);
+            //grchombo_vars_box(iv, c_phi_Im) = multigrid_vars_box(iv, c_phi_0);
+            //grchombo_vars_box(iv, c_Pi_Im) = multigrid_vars_box(iv, c_Pi_0);
+
+            //set_non_const_output_cell(multigrid_vars_box,
+            //    grchombo_vars_box, bit(), a_dx, a_params);
         }
 
         // now non constant terms by location
