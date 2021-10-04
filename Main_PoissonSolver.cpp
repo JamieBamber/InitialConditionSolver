@@ -102,13 +102,6 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         // set_initial_conditions(*multigrid_vars[ilev], *dpsi[ilev], vectDx[ilev],
         //                       a_params);
 
-        if (a_params.read_from_file != "none")
-        {
-	    pout() << "now trying to read from the HDF5" << endl;
-            readHDF5(*multigrid_vars[ilev], a_grids, a_params, ilev, ghosts);
-            pout() << "successfully read from the HDF5" << endl;
-        }
-
         GRChomboBCs grchombo_boundaries;
         grchombo_boundaries.define(vectDx[ilev][0],
                                    a_params.grchombo_boundary_params,
@@ -118,6 +111,13 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         // and values for other multigrid sources - phi and Aij
         set_initial_conditions(*multigrid_vars[ilev], *dpsi[ilev],
                                grchombo_boundaries, vectDx[ilev], a_params);
+
+        if (a_params.read_from_file != "none")
+        {
+	    pout() << "now trying to read from the HDF5" << endl;
+            readHDF5(*multigrid_vars[ilev], a_grids, a_params, ilev, ghosts);
+            pout() << "successfully read from the HDF5" << endl;
+        }
 
         // prepare temp dx, domain vars for next level
         dxLev /= a_params.refRatio[ilev];
@@ -252,8 +252,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         solver.m_imax = max_iter;
 
         // output the data before the solver acts to check starting conditions
-        output_solver_data(dpsi, rhs, multigrid_vars, a_grids, a_params,
-                           NL_iter);
+        output_solver_data(dpsi, rhs, multigrid_vars, a_grids, a_params, NL_iter);
 
         // Engage!
         solver.solve(dpsi, rhs);
@@ -281,7 +280,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             Copier exchange_copier;
             exchange_copier.exchangeDefine(a_grids[ilev], ghosts);
 
-            if(a_params.symmetric_boundaries_exist)
+            /*if(a_params.symmetric_boundaries_exist)
             {
              	GRChomboBCs grchombo_boundaries;
                 grchombo_boundaries.define(vectDx[ilev][0],
@@ -292,7 +291,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
                                         Side::Hi, *dpsi[ilev]);
                 grchombo_boundaries.enforce_symmetric_boundaries(
                                         Side::Lo, *dpsi[ilev]);
-            }
+            }*/
 
             // now the update
             set_update_psi0(*multigrid_vars[ilev], *dpsi[ilev],
@@ -342,8 +341,8 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         pout() << "The norm of rhs Mom after step " << NL_iter + 1 << " is "
                << dpsi_norm1 << endl;
 
-        if ((dpsi_norm0 < tolerance && dpsi_norm1 < tolerance) ||
-            dpsi_norm0 > 1e5 || dpsi_norm1 > 1e5)
+        if ((dpsi_norm0 < tolerance && dpsi_norm1 < tolerance))
+    // || dpsi_norm0 > 1e5 || dpsi_norm1 > 1e5)
         {
             break;
         }

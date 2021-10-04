@@ -19,6 +19,6 @@ module load intel_comp/2019 intel_mpi/2019 parallel_hdf5/1.10.3
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 # Run the program
 export location=/cosma/home/dp174/dc-bamb1/Experimental_tools/InitialConditionSolver/
-export application=Main_PoissonSolver3d.Linux.64.mpiicpc.ifort.OPT.MPI.OPENMPCC.ex_katy_bbh
+export application=Main_PoissonSolver3d.Linux.64.mpiicpc.ifort.OPT.MPI.OPENMPCC.ex
 mpirun -np $SLURM_NTASKS ${location}${application} params.txt
 
