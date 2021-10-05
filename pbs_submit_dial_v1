@@ -1,14 +1,16 @@
 #PBS -N JOBNAME
-#PBS -l walltime=1:00:00
+#PBS -l walltime=12:00:00
 
-#PBS -l nodes=2:ppn=36
+#PBS -l nodes=10:ppn=36
 
 #PBS -A dp092
 #PBS -o job.out
 #PBS -e job.err
-#PBS -q devel
-##PBS -M james.bamber@physics.ox.ac.uk
+#PBS -q dirac25x 
+#PBS -M james.bamber@physics.ox.ac.uk
 #PBS -m p
+
+### abe
 
 # Modules
 module load hdf5/intel_par/1.10.2
@@ -23,7 +25,7 @@ cd $PBS_O_WORKDIR
 export OMP_NUM_THREADS=2
 # np processes in total, with perhost process on each of the nodes.
 
-export location=/home/dc-bamb1/InitialConditionSolver/
-export application=Main_PoissonSolver3d.Linux.64.mpiicpc.ifort.OPT.MPI.OPENMPCC.ex
+export location=/home/dc-bamb1/GRChombo/Examples/NewtonianScalar_equal_mass_complex/
+export application=Main_ScalarField3d.Linux.64.mpiicpc.ifort.OPTHIGH.MPI.OPENMPCC.ex
 
-mpirun -perhost 18 -np 36 ${location}${application} params.txt
+mpirun -perhost 18 -np 180 ${location}${application} ../params.txt

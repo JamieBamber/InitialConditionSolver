@@ -15,8 +15,10 @@ enum
     c_V1_0,
     c_V2_0,
 
-    c_phi_0, // matter field
-    c_Pi_0,
+    c_phi_Re_0, // matter field
+    c_Pi_Re_0,
+    c_phi_Im_0, // matter field
+    c_Pi_Im_0,
 
     c_K_0,
 
@@ -37,7 +39,8 @@ static constexpr char const *variable_names[NUM_MULTIGRID_VARS] = {
 
     "V0_0",    "V1_0",  "V2_0",
 
-    "phi_0",   "Pi_0",
+    "phi_Re_0",   "Pi_Re_0",
+    "phi_Im_0",   "Pi_Im_0",
 
     "K_0",
 

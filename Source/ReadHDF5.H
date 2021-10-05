@@ -62,8 +62,10 @@ void read_level_data(LevelData<FArrayBox> &lev_dat_1,
         for (bit.begin(); bit.ok(); ++bit)
         {
             IntVect iv = bit();
-            fab_2(iv, c_phi_0) = fab_1(iv, c_phi);
-            fab_2(iv, c_Pi_0) = fab_1(iv, c_Pi);
+            fab_2(iv, c_phi_Re_0) = fab_1(iv, c_phi_Re);
+            fab_2(iv, c_Pi_Re_0) = fab_1(iv, c_Pi_Re);
+            fab_2(iv, c_phi_Im_0) = fab_1(iv, c_phi_Im);
+            fab_2(iv, c_Pi_Im_0) = fab_1(iv, c_Pi_Im);
         }
     }
 }

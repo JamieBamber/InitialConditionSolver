@@ -262,7 +262,6 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         // need to fill interlevel and intralevel ghosts first in dpsi
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
-
             // For interlevel ghosts in dpsi and multigrid_vars
             if (ilev > 0)
             {

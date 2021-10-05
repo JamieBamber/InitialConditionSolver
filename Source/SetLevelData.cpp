@@ -122,8 +122,8 @@ void set_initial_multigrid_cell(FArrayBox &a_multigrid_vars_box,
     a_dpsi_box(a_iv, 0) = 0.0;
 
     // set phi and pi according to user defined function
-    a_multigrid_vars_box(a_iv, c_phi_0) = my_phi_function(loc, a_params);
-    a_multigrid_vars_box(a_iv, c_Pi_0) = my_pi_function(loc, a_params);
+    a_multigrid_vars_box(a_iv, c_phi_Re_0) = my_phi_function(loc, a_params);
+    a_multigrid_vars_box(a_iv, c_Pi_Re_0) = my_pi_function(loc, a_params);
 
     // set Aij for spin and momentum according to BH params
     //set_binary_bh_Aij(a_multigrid_vars_box, a_iv, loc,
@@ -166,7 +166,7 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
         // calculate gradients for constructing rho and Aij
         FArrayBox grad_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
         get_grad(unghosted_box, multigrid_vars_box,
-                 Interval(c_psi_reg, c_phi_0), a_dx, grad_multigrid, a_params);
+                 Interval(c_psi_reg, c_phi_Re_0), a_dx, grad_multigrid, a_params);
 
         BoxIterator bit(unghosted_box);
         for (bit.begin(); bit.ok(); ++bit)
@@ -186,9 +186,9 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
             // 24 pi rho_grad psi_0^-4  + 12*laplacian(psi_0)*psi^-5
         
 	    // JCAurre: Calculate potential and derivative
-            Real V_of_phi, dVdphi;
-            my_potential_function(V_of_phi, dVdphi,
-                                  multigrid_vars_box(iv, c_phi_0), a_params);
+            Real V_of_phi, dVdphi_Re, dVdphi_Im;
+            my_potential_function(V_of_phi, dVdphi_Re, dVdphi_Im,
+                                  multigrid_vars_box(iv, c_phi_Re_0), multigrid_vars_box(iv, c_phi_Im_0), a_params);
 
             // Calculate the actual value of psi including BH part
             Real psi_bh = set_binary_bh_psi(loc, a_params);
@@ -196,9 +196,11 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
 
             // Assign values of useful quantities
             // TODO: Use Tensor class not arrays of Reals
-            Real Pi_0 = multigrid_vars_box(iv, c_Pi_0);
-            Real d_phi[3];
-            set_deriv1(d_phi, iv, grad_multigrid, c_phi_0);
+            Real Pi_Re_0 = multigrid_vars_box(iv, c_Pi_Re_0);
+            Real Pi_Im_0 = multigrid_vars_box(iv, c_Pi_Im_0);
+            Real d_phi_Re[3], d_phi_Im[3];
+            set_deriv1(d_phi_Re, iv, grad_multigrid, c_phi_Re_0);
+            set_deriv1(d_phi_Im, iv, grad_multigrid, c_phi_Im_0);
             Real Aij_reg[3][3];
             Real Aij_bh[3][3];
 
@@ -219,7 +221,7 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
             Real rho_gradient = 0;
             for (int i = 0; i < SpaceDim; i++)
             {
-                rho_gradient += 0.5 * d_phi[i] * d_phi[i];
+                rho_gradient += 0.5 * (d_phi_Re[i] * d_phi_Re[i] + d_phi_Im[i] * d_phi_Im[i]);
             }
 
             // Also \bar  A_ij \bar A^ij (factors of psi introduced below)
@@ -242,7 +244,7 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
  		// correct if bar gamma^ij = delta^ij so bar R = 0
                 K_0_sq =
                     24.0 * M_PI * a_params.G_Newton *
-                        (pow(Pi_0, 2.0) + 2.0 * V_of_phi) +
+                        (pow(Pi_Re_0, 2.0) + pow(Pi_Im_0, 2.0) + 2.0 * V_of_phi) +
                     1.5 * A2_0 * pow(psi_0, -12.0) +
                     24.0 * M_PI * a_params.G_Newton * rho_gradient *
                         pow(psi_0, -4.0) +
@@ -253,7 +255,7 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
             {
                 K_0_sq =
                     24.0 * M_PI * a_params.G_Newton *
-                        (pow(Pi_0, 2.0) + 2.0 * V_of_phi) +
+                        (pow(Pi_Re_0, 2.0) + pow(Pi_Im_0, 2.0) + 2.0 * V_of_phi) +
                     //1.5 * A2_0 * pow(psi_0, -12.0) +
                     24.0 * M_PI * a_params.G_Newton * rho_gradient *
                         pow(psi_0, -4.0); //+
@@ -267,7 +269,7 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
             integrand_box(iv, c_psi) =
             -1.5 * (2.0 / 3.0 * K_0_sq -
                         8.0 * M_PI * a_params.G_Newton *
-                            (pow(Pi_0, 2.0) + 2.0 * V_of_phi)) +
+                            (pow(Pi_Re_0, 2.0) + pow(Pi_Im_0, 2.0) + 2.0 * V_of_phi)) +
                 1.5 * A2_0 * pow(psi_0, -12.0) +
                 24.0 * M_PI * a_params.G_Newton * rho_gradient *
                     pow(psi_0, -4.0) +
@@ -276,15 +278,15 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
 	    //  This corresponds to 
 	    // integrand_box(iv, c_Vi) = (1/3) barD^i barD_j V + barD_j barM^ij - 2/3 psi^6 barD^i K
             integrand_box(iv, c_V0) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[0] -
+                -8.0 * M_PI * pow(psi_0, 6.0) * (Pi_Re_0 * d_phi_Re[0] + Pi_Im_0 * d_phi_Im[0]) -
                 laplace_multigrid(iv, c_V0_0);
 
             integrand_box(iv, c_V1) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[1] -
+                -8.0 * M_PI * pow(psi_0, 6.0) * (Pi_Re_0 * d_phi_Re[1] + Pi_Im_0 * d_phi_Im[1]) -
                 laplace_multigrid(iv, c_V1_0);
 
             integrand_box(iv, c_V2) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[2] -
+                -8.0 * M_PI * pow(psi_0, 6.0) * (Pi_Re_0 * d_phi_Re[2] + Pi_Im_0 * d_phi_Im[2]) -
                 laplace_multigrid(iv, c_V2_0);
 
             // Set value for K
@@ -337,11 +339,11 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
 
         FArrayBox grad2_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
         get_grad2(unghosted_box, multigrid_vars_box,
-                  Interval(c_psi_reg, c_Pi_0), a_dx, grad2_multigrid, a_params);
+                  Interval(c_psi_reg, c_Pi_Im_0), a_dx, grad2_multigrid, a_params);
 
         FArrayBox mixed_grad2_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
         get_mixed_grad2(unghosted_box, multigrid_vars_box,
-                        Interval(c_psi_reg, c_Pi_0), a_dx,
+                        Interval(c_psi_reg, c_Pi_Im_0), a_dx,
                         mixed_grad2_multigrid, a_params);
 
         BoxIterator bit(unghosted_box);
@@ -354,20 +356,24 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
 
             // rhs = term/8 psi_0^5 - 2 pi rho_grad psi_0  - laplacian(psi_0)
             // JCAurre: Calculate potential and derivative
-            Real V_of_phi, dVdphi;
-            my_potential_function(V_of_phi, dVdphi,
-                                  multigrid_vars_box(iv, c_phi_0), a_params);
+            Real V_of_phi, dVdphi_Re, dVdphi_Im;
+            my_potential_function(V_of_phi, dVdphi_Re, dVdphi_Im,
+                                  multigrid_vars_box(iv, c_phi_Re_0), multigrid_vars_box(iv, c_phi_Im_0), a_params);
 
             // Calculate useful quantities
             Real psi_bh = set_binary_bh_psi(loc, a_params);
             Real psi_0 = multigrid_vars_box(iv, c_psi_reg) + psi_bh;
             Real K_0 = multigrid_vars_box(iv, c_K_0);
-            Real Pi_0 = multigrid_vars_box(iv, c_Pi_0);
-            Real d_K[3], d_phi[3], dd_phi[3][3];
+            Real Pi_Re_0 = multigrid_vars_box(iv, c_Pi_Re_0);
+            Real Pi_Im_0 = multigrid_vars_box(iv, c_Pi_Im_0);
+            Real d_K[3], d_phi_Re[3], d_phi_Im[3], dd_phi_Re[3][3], dd_phi_Im[3][3];
             set_deriv1(d_K, iv, grad_multigrid, c_K_0);
-            set_deriv1(d_phi, iv, grad_multigrid, c_phi_0);
-            set_deriv2(dd_phi, iv, grad2_multigrid, mixed_grad2_multigrid,
-                       c_phi_0);
+            set_deriv1(d_phi_Re, iv, grad_multigrid, c_phi_Re_0);
+            set_deriv2(dd_phi_Re, iv, grad2_multigrid, mixed_grad2_multigrid,
+                       c_phi_Re_0);
+	    set_deriv1(d_phi_Im, iv, grad_multigrid, c_phi_Im_0);
+            set_deriv2(dd_phi_Im, iv, grad2_multigrid, mixed_grad2_multigrid,
+                       c_phi_Im_0);
 
             Real Aij_reg[3][3], Aij_bh[3][3];
             set_Aij_reg(Aij_reg, multigrid_vars_box, iv, loc, a_dx, a_params,
@@ -379,7 +385,7 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
             Real rho_gradient = 0;
             for (int i = 0; i < SpaceDim; i++)
             {
-                rho_gradient += 0.5 * d_phi[i] * d_phi[i];
+                rho_gradient += 0.5 * (d_phi_Re[i] * d_phi_Re[i] + d_phi_Im[i] * d_phi_Im[i]);
             }
 
             // Also \bar  A_ij \bar A^ij
@@ -397,20 +403,20 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
                 0.125 *						// * Set this to be zero ?
                     (2.0 / 3.0 * K_0 * K_0 -			//
                      8.0 * M_PI * a_params.G_Newton *
-                         (pow(Pi_0, 2.0) + 2.0 * V_of_phi)) *
+                         (pow(Pi_Re_0, 2.0) + pow(Pi_Im_0, 2.0) + 2.0 * V_of_phi)) *
                     pow(psi_0, 5.0) -
              	2.0 * M_PI * a_params.G_Newton * rho_gradient * psi_0 - // *
                 0.125 * A2_0 * pow(psi_0, -7.0) -
                 laplace_multigrid(iv, c_psi_reg);
 
             rhs_box(iv, c_V0) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * a_params.G_Newton * Pi_0 * d_phi[0] -
+                -8.0 * M_PI * pow(psi_0, 6.0) * a_params.G_Newton * (Pi_Re_0 * d_phi_Re[0]+Pi_Im_0 * d_phi_Im[0]) -
                 laplace_multigrid(iv, c_V0_0);
             rhs_box(iv, c_V1) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * a_params.G_Newton * Pi_0 * d_phi[1] -
+                -8.0 * M_PI * pow(psi_0, 6.0) * a_params.G_Newton * (Pi_Re_0 * d_phi_Re[1]+Pi_Im_0 * d_phi_Im[1]) -
                 laplace_multigrid(iv, c_V1_0);
             rhs_box(iv, c_V2) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * a_params.G_Newton * Pi_0 * d_phi[2] -
+                -8.0 * M_PI * pow(psi_0, 6.0) * a_params.G_Newton * (Pi_Re_0 * d_phi_Re[2]+Pi_Im_0 * d_phi_Im[2]) -
                 laplace_multigrid(iv, c_V2_0);
 
             rhs_box(iv, c_V0) += 2. / 3. * pow(psi_0, 6.0) * d_K[0];
@@ -440,7 +446,7 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
         // calculate gradients for constructing rho and Aij
         FArrayBox grad_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
         get_grad(unghosted_box, multigrid_vars_box,
-                 Interval(c_psi_reg, c_phi_0), a_dx, grad_multigrid, a_params);
+                 Interval(c_psi_reg, c_phi_Re_0), a_dx, grad_multigrid, a_params);
 
         BoxIterator bit(unghosted_box);
         for (bit.begin(); bit.ok(); ++bit)
@@ -451,18 +457,20 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
             loc -= a_params.domainLength / 2.0;
 
             // Calculate potential and derivative
-            Real V_of_phi, dVdphi;
-            my_potential_function(V_of_phi, dVdphi,
-                                  multigrid_vars_box(iv, c_phi_0), a_params);
+            Real V_of_phi, dVdphi_Re, dVdphi_Im;
+            my_potential_function(V_of_phi, dVdphi_Re, dVdphi_Im,
+                                  multigrid_vars_box(iv, c_phi_Re_0), multigrid_vars_box(iv, c_phi_Im_0), a_params);
 
             // Calculate useful quantities
             Real psi_bh = set_binary_bh_psi(loc, a_params);
             Real psi_0 = multigrid_vars_box(iv, c_psi_reg) + psi_bh;
             Real K_0 = multigrid_vars_box(iv, c_K_0);
-            Real Pi_0 = multigrid_vars_box(iv, c_Pi_0);
+            Real Pi_Re_0 = multigrid_vars_box(iv, c_Pi_Re_0);
+            Real Pi_Im_0 = multigrid_vars_box(iv, c_Pi_Im_0);
 
-            Real d_phi[3];
-            set_deriv1(d_phi, iv, grad_multigrid, c_phi_0);
+            Real d_phi_Re[3], d_phi_Im[3];
+            set_deriv1(d_phi_Re, iv, grad_multigrid, c_phi_Re_0);
+            set_deriv1(d_phi_Im, iv, grad_multigrid, c_phi_Im_0);
             Real Aij_reg[3][3];
             Real Aij_bh[3][3];
             set_Aij_reg(Aij_reg, multigrid_vars_box, iv, loc, a_dx, a_params,
@@ -473,7 +481,7 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
             Real rho_gradient = 0;
             for (int i = 0; i < SpaceDim; i++)
             {
-                rho_gradient += 0.5 * d_phi[i] * d_phi[i];
+                rho_gradient += 0.5 * (d_phi_Re[i] * d_phi_Re[i] + d_phi_Im[i] * d_phi_Im[i]);
             }
 
             // Also \bar  A_ij \bar A^ij
@@ -492,7 +500,7 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
             condition_box(iv, 0) =
                 1.5 * abs((2.0 / 3.0 * K_0 * K_0 +
                            8.0 * M_PI * a_params.G_Newton *
-                               (pow(Pi_0, 2.0) + 2.0 * V_of_phi))) +
+                               (pow(Pi_Re_0, 2.0) + pow(Pi_Im_0, 2.0) + 2.0 * V_of_phi))) +
                 1.5 * A2_0 * pow(psi_0, -7.0) +
                 24.0 * M_PI * a_params.G_Newton * abs(rho_gradient) *
                     pow(psi_0, 1.0) +
@@ -562,7 +570,7 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
             // calculate gradients for constructing rho and Aij
             FArrayBox grad_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
             get_grad(unghosted_box, multigrid_vars_box,
-                     Interval(c_psi_reg, c_phi_0), a_dx, grad_multigrid,
+                     Interval(c_psi_reg, c_phi_Re_0), a_dx, grad_multigrid,
                      a_params);
 
             BoxIterator bit(unghosted_box);
@@ -674,10 +682,10 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
 
             // Copy phi and Aij across - note this is now \tilde Aij not
             // \bar Aij
-            grchombo_vars_box(iv, c_phi) = multigrid_vars_box(iv, c_phi_0);
-            grchombo_vars_box(iv, c_Pi) = multigrid_vars_box(iv, c_Pi_0);
-            //grchombo_vars_box(iv, c_phi_Im) = multigrid_vars_box(iv, c_phi_0);
-            //grchombo_vars_box(iv, c_Pi_Im) = multigrid_vars_box(iv, c_Pi_0);
+            grchombo_vars_box(iv, c_phi_Re) = multigrid_vars_box(iv, c_phi_Re_0);
+            grchombo_vars_box(iv, c_Pi_Re) = multigrid_vars_box(iv, c_Pi_Re_0);
+            grchombo_vars_box(iv, c_phi_Im) = multigrid_vars_box(iv, c_phi_Im_0);
+            grchombo_vars_box(iv, c_Pi_Im) = multigrid_vars_box(iv, c_Pi_Im_0);
 
             //set_non_const_output_cell(multigrid_vars_box,
             //    grchombo_vars_box, bit(), a_dx, a_params);
@@ -701,8 +709,10 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
 
             // Copy phi and Aij across - note this is now \tilde Aij not
             // \bar Aij
-            grchombo_vars_box(iv, c_phi) = multigrid_vars_box(iv, c_phi_0);
-            grchombo_vars_box(iv, c_Pi) = multigrid_vars_box(iv, c_Pi_0);
+            grchombo_vars_box(iv, c_phi_Re) = multigrid_vars_box(iv, c_phi_Re_0);
+            grchombo_vars_box(iv, c_Pi_Re) = multigrid_vars_box(iv, c_Pi_Re_0);
+            grchombo_vars_box(iv, c_phi_Im) = multigrid_vars_box(iv, c_phi_Im_0);
+            grchombo_vars_box(iv, c_Pi_Im) = multigrid_vars_box(iv, c_Pi_Im_0);
 
             /*grchombo_vars_box(iv, c_K) = multigrid_vars_box(iv, c_K_0);
             grchombo_vars_box(iv, c_A11) =
@@ -770,7 +780,8 @@ void set_non_const_output_cell(const FArrayBox &a_multigrid_vars_box,
 
     // Copy phi and Aij across - note this is now \tilde Aij not \bar
     // Aij
-    a_grchombo_vars_box(a_iv, c_phi) = a_multigrid_vars_box(a_iv, c_phi_0);
+    a_grchombo_vars_box(a_iv, c_phi_Re) = a_multigrid_vars_box(a_iv, c_phi_Re_0);
+    a_grchombo_vars_box(a_iv, c_phi_Im) = a_multigrid_vars_box(a_iv, c_phi_Im_0);
     a_grchombo_vars_box(a_iv, c_A11) =
         a_multigrid_vars_box(a_iv, c_A11_0) * factor;
     a_grchombo_vars_box(a_iv, c_A12) =
