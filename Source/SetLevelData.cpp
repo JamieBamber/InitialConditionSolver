@@ -124,6 +124,8 @@ void set_initial_multigrid_cell(FArrayBox &a_multigrid_vars_box,
     // set phi and pi according to user defined function
     a_multigrid_vars_box(a_iv, c_phi_Re_0) = my_phi_function(loc, a_params);
     a_multigrid_vars_box(a_iv, c_Pi_Re_0) = my_pi_function(loc, a_params);
+    a_multigrid_vars_box(a_iv, c_phi_Im_0) = 0.0;
+    a_multigrid_vars_box(a_iv, c_Pi_Im_0) = 0.0;
 
     // set Aij for spin and momentum according to BH params
     //set_binary_bh_Aij(a_multigrid_vars_box, a_iv, loc,
@@ -166,7 +168,7 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
         // calculate gradients for constructing rho and Aij
         FArrayBox grad_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
         get_grad(unghosted_box, multigrid_vars_box,
-                 Interval(c_psi_reg, c_phi_Re_0), a_dx, grad_multigrid, a_params);
+                 Interval(c_psi_reg, c_phi_Im_0), a_dx, grad_multigrid, a_params);
 
         BoxIterator bit(unghosted_box);
         for (bit.begin(); bit.ok(); ++bit)

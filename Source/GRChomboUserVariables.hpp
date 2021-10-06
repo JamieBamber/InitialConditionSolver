@@ -54,7 +54,7 @@ enum
 namespace GRChomboUserVariables
 {
 static constexpr char const *variable_names[NUM_GRCHOMBO_VARS] = {
-    "phi_Re",    "Pi_Re", "phi_Im", "Pi_Im",
+    "phi_Re", "Pi_Re", "phi_Im", "Pi_Im",
 
     "chi",
 
