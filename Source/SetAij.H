@@ -111,8 +111,24 @@ Real set_binary_bh_psi(const RealVect &loc, const PoissonParameters &a_params)
     return m1 / rbh1 + m2 / rbh2;
 }
 
+/*
+
+I think 
+
+a_grad_multigrid(iv, 3 * c_V0_i + j) = d_j V_i
+
+for i =/= j
+d_{ij} V_k = a_mixed_grad2_multigrid(iv, 3 * c_Vk_0 + i + j - 1)
+
+for i = j
+d_{ii} V_k = a_grad2_multigrid(iv, 3 * c_Vk_0 + i)
+
+*/
+
+
+// The old version:
 // The part of Aij excluding the Brill Lindquist BH Aij
-void set_Aij_reg(Real Aij[3][3], FArrayBox &multigrid_vars_box, const IntVect &iv,
+/*void set_Aij_reg(Real Aij[3][3], FArrayBox &multigrid_vars_box, const IntVect &iv,
                const RealVect &loc, const RealVect &a_dx,
                const PoissonParameters &a_params,
                const FArrayBox &a_grad_multigrid)
@@ -151,7 +167,85 @@ void set_Aij_reg(Real Aij[3][3], FArrayBox &multigrid_vars_box, const IntVect &i
     Aij[1][0] = Aij[0][1];
     Aij[2][0] = Aij[0][2];
     Aij[2][1] = Aij[1][2];
+}*/
+
+// The new version:
+// The part of Aij excluding the Brill Lindquist BH Aij
+void set_Aij_reg(Real Aij[3][3], FArrayBox &multigrid_vars_box, const IntVect &iv,
+               const RealVect &loc, const RealVect &a_dx,
+               const PoissonParameters &a_params,
+               const FArrayBox &a_grad_multigrid,
+	       const FArrayBox &a_grad2_multigrid,
+               const FArrayBox &a_mixed_grad2_multigrid)
+{
+    /*-0.25*(a_mixed_grad2_multigrid(iv, 3 * c_U_0 + i + j - 1) 
+		+loc[0]*a_mixed_grad2_multigrid(iv, 3 * c_V0_0 + i + j - 1)
+		+loc[1]*a_mixed_grad2_multigrid(iv, 3 * c_V1_0 + i + j - 1)
+		+loc[2]*a_mixed_grad2_multigrid(iv, 3 * c_V2_0 + i + j - 1));*/
+
+    /*-0.25*(a_grad2_multigrid(iv, 3 * c_U_0 + i) 
+                +loc[0]*a_grad2_multigrid(iv, 3 * c_V0_0 + i)
+                +loc[1]*a_grad2_multigrid(iv, 3 * c_V1_0 + i)
+                +loc[2]*a_grad2_multigrid(iv, 3 * c_V2_0 + i));*/
+
+    Real trace = (a_grad_multigrid(iv, 3 * c_V0_0 + 0) +
+                  a_grad_multigrid(iv, 3 * c_V1_0 + 1) +
+                  a_grad_multigrid(iv, 3 * c_V2_0 + 2));
+
+    Aij[0][0] = 0.75 *
+            (a_grad_multigrid(iv, 3 * c_V0_0 + 0) +
+             a_grad_multigrid(iv, 3 * c_V0_0 + 0)) -
+        1. / 2. * trace -0.25*(a_grad2_multigrid(iv, 3 * c_U_0 + 0) 
+                +loc[0]*a_grad2_multigrid(iv, 3 * c_V0_0 + 0)
+                +loc[1]*a_grad2_multigrid(iv, 3 * c_V1_0 + 0)
+                +loc[2]*a_grad2_multigrid(iv, 3 * c_V2_0 + 0));
+
+    Aij[1][1] = 0.75 *
+            (a_grad_multigrid(iv, 3 * c_V1_0 + 1) +
+             a_grad_multigrid(iv, 3 * c_V1_0 + 1)) -
+        1. / 2. * trace -0.25*(a_grad2_multigrid(iv, 3 * c_U_0 + 1) 
+                +loc[0]*a_grad2_multigrid(iv, 3 * c_V0_0 + 1)
+                +loc[1]*a_grad2_multigrid(iv, 3 * c_V1_0 + 1)
+                +loc[2]*a_grad2_multigrid(iv, 3 * c_V2_0 + 1));
+
+    Aij[2][2] = 0.75 *
+            (a_grad_multigrid(iv, 3 * c_V2_0 + 2) +
+             a_grad_multigrid(iv, 3 * c_V2_0 + 2)) -
+        1. / 2. * trace -0.25*(a_grad2_multigrid(iv, 3 * c_U_0 + 2) 
+                +loc[0]*a_grad2_multigrid(iv, 3 * c_V0_0 + 2)
+                +loc[1]*a_grad2_multigrid(iv, 3 * c_V1_0 + 2)
+                +loc[2]*a_grad2_multigrid(iv, 3 * c_V2_0 + 2));
+
+    Aij[0][1] = 0.75 * (a_grad_multigrid(iv, 3 * c_V0_0 + 1) + a_grad_multigrid(iv, 3 * c_V1_0 + 0)) 
+			-0.25*(a_mixed_grad2_multigrid(iv, 3 * c_U_0 + 0 + 1 - 1) 
+                +loc[0]*a_mixed_grad2_multigrid(iv, 3 * c_V0_0 + 0 + 1 - 1)
+                +loc[1]*a_mixed_grad2_multigrid(iv, 3 * c_V1_0 + 0 + 1 - 1)
+                +loc[2]*a_mixed_grad2_multigrid(iv, 3 * c_V2_0 + 0 + 1 - 1));
+
+    Aij[0][2] = 0.75 * (a_grad_multigrid(iv, 3 * c_V0_0 + 2) + a_grad_multigrid(iv, 3 * c_V2_0 + 0))
+			-0.25*(a_mixed_grad2_multigrid(iv, 3 * c_U_0 + 0 + 2 - 1) 
+                +loc[0]*a_mixed_grad2_multigrid(iv, 3 * c_V0_0 + 0 + 2 - 1)
+                +loc[1]*a_mixed_grad2_multigrid(iv, 3 * c_V1_0 + 0 + 2 - 1)
+                +loc[2]*a_mixed_grad2_multigrid(iv, 3 * c_V2_0 + 0 + 2 - 1));
+
+    Aij[1][2] = 0.75 * (a_grad_multigrid(iv, 3 * c_V2_0 + 1) + a_grad_multigrid(iv, 3 * c_V1_0 + 2))
+		 -0.25*(a_mixed_grad2_multigrid(iv, 3 * c_U_0 + 1 + 2 - 1) 
+                +loc[0]*a_mixed_grad2_multigrid(iv, 3 * c_V0_0 + 1 + 2 - 1)
+                +loc[1]*a_mixed_grad2_multigrid(iv, 3 * c_V1_0 + 1 + 2 - 1)
+                +loc[2]*a_mixed_grad2_multigrid(iv, 3 * c_V2_0 + 1 + 2 - 1));
+
+    Aij[1][0] = Aij[0][1];
+    Aij[2][0] = Aij[0][2];
+    Aij[2][1] = Aij[1][2];
 }
+
+/* For the decomposition:
+
+W_i = (7/8)V_i - (1/8)(d_i U + x^k d_i V_k)
+
+We have (I think):
+
+A_ij = X_ij + (3/4)(d_i V_j + d_j V_i) - (1/2) \delta_ij d_k V^k - (1/4)(d_i d_j U + x^k d_i d_j V_k)
 
 /*
 void set_deriv_Aij_0(Real d_Aij[3][3][3], FArrayBox &multigrid_vars_box,
