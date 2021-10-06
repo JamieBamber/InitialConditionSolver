@@ -75,7 +75,7 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
 
         // now fill boundary ghost cells if using nonperiodic boundaries in
         // GRChombo. Note that these cells are unused in the
-        /*IntVect offset_lo, offset_hi;
+        IntVect offset_lo, offset_hi;
         a_grchombo_boundaries.get_box_offsets(offset_lo, offset_hi, unghosted_box);
 
         // reduce box to the intersection of the box and the
@@ -100,7 +100,7 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
                     } // end loop through boundary box
                 } // end loop over sides
             } // end if (periodic[idir])
-        } // end loop over directions*/
+        } // end loop over directions
     }
 } // end set_initial_conditions
 
@@ -661,36 +661,18 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
 
         // now set non zero terms - const across whole box
         // Conformally flat, and lapse = 1
-        /*grchombo_vars_box.setVal(1.0, c_h11);
+        grchombo_vars_box.setVal(1.0, c_h11);
         grchombo_vars_box.setVal(1.0, c_h22);
         grchombo_vars_box.setVal(1.0, c_h33);
-        grchombo_vars_box.setVal(1.0, c_lapse);*/
+        grchombo_vars_box.setVal(1.0, c_lapse);
 
         // now non constant terms by location
         Box this_box = grchombo_vars_box.box();
         BoxIterator bit(this_box);
         for (bit.begin(); bit.ok(); ++bit)
         {
-	    IntVect iv = bit();
-            RealVect loc(iv + 0.5 * RealVect::Unit);
-            loc *= a_dx;
-            loc -= a_params.domainLength / 2.0;
-
-            // GRChombo conformal factor chi = psi^-4
-            Real psi_bh = set_binary_bh_psi(loc, a_params);
-            Real chi = pow(multigrid_vars_box(iv, c_psi_reg) + psi_bh, -4.0);
-//            grchombo_vars_box(iv, c_chi) = chi;
-            Real factor = pow(chi, 1.5);
-
-            // Copy phi and Aij across - note this is now \tilde Aij not
-            // \bar Aij
-            grchombo_vars_box(iv, c_phi_Re) = multigrid_vars_box(iv, c_phi_Re_0);
-            grchombo_vars_box(iv, c_Pi_Re) = multigrid_vars_box(iv, c_Pi_Re_0);
-            grchombo_vars_box(iv, c_phi_Im) = multigrid_vars_box(iv, c_phi_Im_0);
-            grchombo_vars_box(iv, c_Pi_Im) = multigrid_vars_box(iv, c_Pi_Im_0);
-
-            //set_non_const_output_cell(multigrid_vars_box,
-            //    grchombo_vars_box, bit(), a_dx, a_params);
+            set_non_const_output_cell(multigrid_vars_box,
+                grchombo_vars_box, bit(), a_dx, a_params);
         }
 
         // now non constant terms by location
@@ -731,7 +713,7 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
                 multigrid_vars_box(iv, c_A33_0) * factor;
 	}*/
 	
-	/*
+	
 	// finally non-constant boundary ghosts
         IntVect offset_lo, offset_hi;
         a_grchombo_boundaries.get_box_offsets(offset_lo, offset_hi, this_box);
@@ -760,7 +742,6 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
                 } // end loop over sides
             } // end if (periodic[idir])
         } // end loop over directions
-      */
 
       } // end loop over boxes
 } // end set_output_data
