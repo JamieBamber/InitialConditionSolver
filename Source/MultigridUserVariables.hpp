@@ -38,7 +38,7 @@ namespace MultigridUserVariables
 static constexpr char const *variable_names[NUM_MULTIGRID_VARS] = {
     "psi_reg",
 
-    "U_0", V0_0",    "V1_0",  "V2_0",
+    "U_0", "V0_0",    "V1_0",  "V2_0",
 
     "phi_Re_0",   "Pi_Re_0",
     "phi_Im_0",   "Pi_Im_0",

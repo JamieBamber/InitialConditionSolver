@@ -57,8 +57,7 @@ do
 
 	max_level=9
 	
-	input_file=run0015_M0.48847892320123_d12.21358_mu0.5_dt_mult0.0625_l0_m0_Al0_L512_N64/Newton_chk010000.3d.hdf5	
-	name=josus_code_${run}_from_Newtonian_file
+	name=${run}_alternative_W_i_decomp_from_Newtonian_file_complex
 	#name=${subdir}_initial_conditions
 	
         echo ${name} "initial conditions"
