@@ -75,7 +75,7 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
 
         // now fill boundary ghost cells if using nonperiodic boundaries in
         // GRChombo. Note that these cells are unused in the
-        /*IntVect offset_lo, offset_hi;
+        IntVect offset_lo, offset_hi;
         a_grchombo_boundaries.get_box_offsets(offset_lo, offset_hi, unghosted_box);
 
         // reduce box to the intersection of the box and the
@@ -100,7 +100,7 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
                     } // end loop through boundary box
                 } // end loop over sides
             } // end if (periodic[idir])
-        } // end loop over directions*/
+        } // end loop over directions
     }
 } // end set_initial_conditions
 
