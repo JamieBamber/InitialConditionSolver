@@ -42,7 +42,7 @@ void getPoissonParameters(PoissonParameters &a_params)
     {
         pp.get("read_from_file", a_params.read_from_file);
 	pout() << "read_from_file = " << a_params.read_from_file << endl;
-	a_params.read_from_file = "/cosma6/data/dp174/dc-bamb1/GRChombo_data/NewtonianBinaryBHScalar/run0016_M0.48847892320123_d12.21358_mu0.5_dt_mult0.1356676906_l0_m0_Al0_L512_N128_4levels_with_ghosts_complex/Newton_chk000500.3d.hdf5";
+	a_params.read_from_file = "/cosma6/data/dp174/dc-bamb1/GRChombo_data/NewtonianBinaryBHScalar/run0016_M0.48847892320123_d12.21358_mu0.5_dt_mult0.1356676906_l0_m0_Al0_L512_N128_4levels_complex_periodic/Newton_chk000500.3d.hdf5";
     }
     else
     {
