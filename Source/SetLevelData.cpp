@@ -72,7 +72,7 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
         }
 
 	// So this bit is for filling the boundary/ghost boxes	
-	/*
+	
         // now fill boundary ghost cells if using nonperiodic boundaries in
         // GRChombo. Note that these cells are unused in the
         IntVect offset_lo, offset_hi;
@@ -100,7 +100,7 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
                     } // end loop through boundary box
                 } // end loop over sides
             } // end if (periodic[idir])
-        } // end loop over directions */
+        } // end loop over directions
     }
 } // end set_initial_conditions
 

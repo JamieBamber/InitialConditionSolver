@@ -30,9 +30,11 @@ buffer_size  = 3
 #output_path = /scratch/dp092/dc-cui1/ICSolveOut/
 #output_path = Outputs/
 
-filename_base = /cosma6/data/dp174/dc-bamb1/GRChombo_data/BinaryBHSF/RUNNAME_IC
+### this is if you want to give it a different name
+# filename_base = /cosma6/data/dp174/dc-bamb1/GRChombo_data/BinaryBHSF/run0023_4_from_Newt_with_ghosts_complex_IC
 
-#/scratch/dp092/dc-bamb1/GRChombo_data/BinaryBHSF/RUNNAME_IC
+### this allows you to directly output into the first checkpoint file for your evolution run
+filename_base = /cosma6/data/dp174/dc-bamb1/GRChombo_data/BinaryBHSF/run0023_from_Newt_ICS_level4_with_ghosts_complex_mu0.5_delay0_G0.0000000001_ratio1/BinaryBHSFChk_000000
 
 # Setup multigrid params
 numMGsmooth = 4 # number of GSRB smooths before and after MG coarsening
@@ -61,21 +63,22 @@ bc_hi       = 0 0 0
 bc_value = 0.0
 
 # Q: "Simple, change the gravitational constant of the Universe"
-G_Newton = GVALUE
+
+### G = 10^-23
+G_Newton = 0.0000000001
 
 # Read from hdf5 file?
 
-#read_from_file = /cosma6/data/dp174/dc-bamb1/GRChombo_data/NewtonianBinaryBHScalar/run0016_M0.48847892320123_d12.21358_mu0.5_dt_mult0.1356676906_l0_m0_Al0_L512_N128_4levels_with_ghosts_complex_v2/Newton_chk000500.3d.hdf5
-
-#run0016_M0.48847892320123_d12.21358_mu0.5_dt_mult0.1356676906_l0_m0_Al0_L512_N128_4levels_with_ghosts_complex/Newton_chk000500.3d.hdf5
+### chosen the 500th timestep as this should correspond to when the black holes are back in their original positions
+read_from_file = /cosma6/data/dp174/dc-bamb1/GRChombo_data/NewtonianBinaryBHScalar/run0016_M0.48847892320123_d12.21358_mu0.5_dt_mult0.1356676906_l0_m0_Al0_L512_N128_4levels_with_ghosts_complex_for_ICS/Newton_chk000500.3d.hdf5
 
 # scalar field input params
-phi_0 = 1.0
-phi_amplitude = 1.0
-phi_wavelength = 100
-pi_0 = 1.0
-pi_amplitude = 1.0
-pi_wavelength = 100
+phi_0 = 0.0
+phi_amplitude = 1e-4
+phi_wavelength = 8
+pi_0 = 0.0
+pi_amplitude = 1e-4
+pi_wavelength = 4
 
 # potential params
 pot_Lambda = 0
