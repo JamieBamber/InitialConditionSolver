@@ -34,6 +34,7 @@ buffer_size  = 3
 # filename_base = /cosma6/data/dp174/dc-bamb1/GRChombo_data/BinaryBHSF/run0023_4_from_Newt_with_ghosts_complex_IC
 
 ### this allows you to directly output into the first checkpoint file for your evolution run
+#
 filename_base = /cosma6/data/dp174/dc-bamb1/GRChombo_data/BinaryBHSF/run0023_from_Newt_ICS_level4_with_ghosts_complex_mu0.5_delay0_G0.0000000001_ratio1/BinaryBHSFChk_000000
 
 # Setup multigrid params
@@ -56,11 +57,35 @@ coefficient_average_type = harmonic
 is_periodic = 0
 # if not periodic, then what?
 # 1 -> const Neumann (gradient), 0 -> const Dirichlet (value)
+# also need reflective
+# 1 -> 1st order extrapolation, 0 -> 0th order extrapolation
 bc_lo       = 0 0 0
 bc_hi       = 0 0 0
 # And set the constant value of these conditions
 # note bc_value probably 0 because it is applied to dpsi at boundary (not psi)
 bc_value = 0.0
+
+###
+#
+# fill_ghosts ???
+# extrapolation,  symmetry, etc.
+# extrapolation_order ...
+
+# GRChombo boundary parameters:
+# if not periodic, then specify the boundary type
+# 0 = static, 1 = sommerfeld, 2 = reflective
+# (see BoundaryConditions.hpp for details)
+hi_boundary = 1 1 1
+lo_boundary = 1 1 1
+
+# if reflective boundaries selected, must set
+# parity of all vars (in order given by MultigridUserVariables.hpp)
+# 0 = even
+# 1,2,3 = odd x, y, z
+# 4,5,6 = odd xy, yz, xz
+vars_parity = 0             #psi
+              0 4 6 0 5 0   #Aij
+              0 0 0 0       #phi_Re, phi_Im, Pi_Re, Pi_Im
 
 # Q: "Simple, change the gravitational constant of the Universe"
 
@@ -70,7 +95,8 @@ G_Newton = 0.0000000001
 # Read from hdf5 file?
 
 ### chosen the 500th timestep as this should correspond to when the black holes are back in their original positions
-read_from_file = /cosma6/data/dp174/dc-bamb1/GRChombo_data/NewtonianBinaryBHScalar/run0016_M0.48847892320123_d12.21358_mu0.5_dt_mult0.1356676906_l0_m0_Al0_L512_N128_4levels_with_ghosts_complex_for_ICS/Newton_chk000500.3d.hdf5
+#read_from_file = /cosma6/data/dp174/dc-bamb1/GRChombo_data/NewtonianBinaryBHScalar/run0016_M0.48847892320123_d12.21358_mu0.5_dt_mult0.1356676906_l0_m0_Al0_L512_N128_4levels_with_ghosts_complex/Newton_chk000500.3d.hdf5
+read_from_file = /cosma6/data/dp174/dc-bamb1/GRChombo_data/NewtonianBinaryBHScalar/Newton_chk000500.3d.hdf5
 
 # scalar field input params
 phi_0 = 0.0

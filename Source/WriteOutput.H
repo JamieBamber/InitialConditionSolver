@@ -150,6 +150,9 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
     pout() << "saving data as " << filename << endl;
 #endif
 
+    // ghosts
+    IntVect ghosts = a_params.num_ghosts * IntVect::Unit;    
+
     // set up full data and write to hdf5 file ready for GRChombo
     HDF5Handle handle(filename, HDF5Handle::CREATE);
     Vector<LevelData<FArrayBox> *> grchombo_vars(a_multigrid_vars.size(), NULL);
@@ -229,8 +232,32 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
         }
 
         level_header.writeToFile(handle);
+
+	/* from CH_HDF5.H:
+	
+		template <class T>
+		int write(HDF5Handle& a_handle,
+          	const BoxLayoutData<T>& a_data,
+          	const std::string& a_name,
+          	IntVect outputGhost = IntVect::Zero,
+          	const Interval& comps = Interval(),
+          	bool  newForm = false);
+	
+		/// writes BoxLayout to HDF5 file.
+	
+    		Writes BoxLayout to HDF5 file.  Only one BoxLayout per group is permitted, this operation overwrites
+    		previous entries.
+    		This operation assumes boxes are cell-centered.\\
+    		returns: success:    0\\
+    		HDF5 error: negative error code.\\
+	
+		int write(HDF5Handle& a_handle,
+          	const BoxLayout& a_layout,
+          	const std::string& name = "boxes");
+	*/
+
         write(handle, a_grids[level]);
-        write(handle, *grchombo_vars[level], "data"); 
+        write(handle, *grchombo_vars[level], "data", ghosts); 
         // TODO: is this writing ghosts - will need to for some boundary cases
     }
 

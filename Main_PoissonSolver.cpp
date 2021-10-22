@@ -81,27 +81,37 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
     // although not currently needed for 2nd order stencils used here
     for (int ilev = 0; ilev < nlevels; ilev++)
     {
+	pout() << "declaring variables here: ilev = " << ilev << endl;
         multigrid_vars[ilev] =
             new LevelData<FArrayBox>(a_grids[ilev], NUM_MULTIGRID_VARS, ghosts);
+	pout() << "declared multigrid_vars" << endl;
         dpsi[ilev] = new LevelData<FArrayBox>(a_grids[ilev],
                                               NUM_CONSTRAINT_VARS, ghosts);
+	pout() << "declared dpsi" << endl;
+	// these are set up without ghosts
         rhs[ilev] = new LevelData<FArrayBox>(a_grids[ilev], NUM_CONSTRAINT_VARS,
                                              IntVect::Zero);
+	pout() << "declared rhs" << endl;
         integrand[ilev] = new LevelData<FArrayBox>(
             a_grids[ilev], NUM_CONSTRAINT_VARS, IntVect::Zero);
+	pout() << "declared integrand" << endl;
         aCoef[ilev] =
             RefCountedPtr<LevelData<FArrayBox>>(new LevelData<FArrayBox>(
                 a_grids[ilev], NUM_CONSTRAINT_VARS, IntVect::Zero));
+	pout() << "declared aCoef" << endl;
         bCoef[ilev] =
             RefCountedPtr<LevelData<FArrayBox>>(new LevelData<FArrayBox>(
                 a_grids[ilev], NUM_CONSTRAINT_VARS, IntVect::Zero));
+	pout() << "declared bCoef" << endl;
         vectDomains[ilev] = domLev;
         vectDx[ilev] = dxLev;
+	pout() << "declared all our variables" << endl;
         // set initial guess for psi and zero dpsi
         // and values for other multigrid sources - phi and Aij
         // set_initial_conditions(*multigrid_vars[ilev], *dpsi[ilev], vectDx[ilev],
         //                       a_params);
 
+	pout() << "defining GRChombo boundaries object which holds info about bcs" << endl;
         GRChomboBCs grchombo_boundaries;
         grchombo_boundaries.define(vectDx[ilev][0],
                                    a_params.grchombo_boundary_params,
@@ -109,6 +119,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
                                    a_params.num_ghosts);
         // set initial guess for psi and zero dpsi
         // and values for other multigrid sources - phi and Aij
+	pout() << "set_initial_conditions" << endl;
         set_initial_conditions(*multigrid_vars[ilev], *dpsi[ilev],
                                grchombo_boundaries, vectDx[ilev], a_params);
 
@@ -120,8 +131,10 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         }
 
         // prepare temp dx, domain vars for next level
+	pout() << "prepare temp dx, domain vars for next level" << endl;
         dxLev /= a_params.refRatio[ilev];
         domLev.refine(a_params.refRatio[ilev]);
+	pout() << "done refine step" << endl;
     }
 
     // set up linear operator
@@ -430,7 +443,9 @@ int main(int argc, char *argv[])
         }
         else
         {
+	    pout() << "trying to read grids" << endl;
             readgrids(grids, params);
+	    pout() << "done reading grids" << endl;
         }
 
         // Solve the equations!

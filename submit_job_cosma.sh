@@ -60,10 +60,9 @@ do
 
 	max_level=4
 
-	input_file=run0016_M0.48847892320123_d12.21358_mu0.5_dt_mult0.1356676906_l0_m0_Al0_L512_N128_4levels_with_ghosts/Newton_chk001000.3d.hdf5
 	#run0016_M0.48847892320123_d12.21358_mu0.5_dt_mult0.1356676906_l0_m0_Al0_L512_N128/Newton_chk000000.3d.hdf5
 	#run0015_M0.48847892320123_d12.21358_mu0.5_dt_mult0.0625_l0_m0_Al0_L512_N64/Newton_chk010000.3d.hdf5	
-	name=${run}_InitialConditionsSolver_with_ghosts_complex_gaussian_100
+	name=${run}_InitialConditionsSolver_with_ghosts_from_Newtonian_complex_test
 	#from_Newtonian_complex
 	#without_GRChombo_bcs_alternative_W_i_decomp
 	#_from_Newtonian_file_periodic_bcs
@@ -75,7 +74,7 @@ do
 	mkdir -p ${new_dir_path}
         
        	cp slurm_submit_cosma7 ${new_dir_path}/slurm_submit
-	params_file=params.txt
+	params_file=params_for_testing.txt
         cp ${params_file} ${new_dir_path}/params.txt
         
        	cd ${new_dir_path}
@@ -83,7 +82,7 @@ do
         # add the location of the new directory to the params file
         sed -i "s|JOBNAME|ICfNF|" slurm_submit
 	sed -i "s|MXLEVEL|${max_level}|" params.txt
-	sed -i "s|RUNNAME|${run}_${max_level}_with_ghosts_complex_gaussian_100|" params.txt
+	sed -i "s|RUNNAME|${run}_${max_level}_with_ghosts_complex|" params.txt
 	sed -i "s|NEWT_FILE|${input_file}|" params.txt
 	sed -i "s|GVALUE|${G}|" params.txt
 	sed -i "s|MUVALUE|${mu}|" params.txt

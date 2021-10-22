@@ -72,7 +72,6 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
         }
 
 	if (a_params.read_from_file == "none") {
-		pout() << "This bit should only be done if read_from_file is empty!!" << endl;
 		// So this bit is for filling the boundary/ghost boxes	
 	
         	// now fill boundary ghost cells if using nonperiodic boundaries in
