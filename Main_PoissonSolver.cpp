@@ -379,6 +379,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
     // for the GRChombo AMR time dependent runs
     pout() << "printing data to hdf5 file" << endl;
     output_final_data(multigrid_vars, a_grids, vectDx, vectDomains, a_params);
+    pout() << "successfully saved data to hdf5 file" << endl;
 
     // clean up data
     for (int level = 0; level < multigrid_vars.size(); level++)

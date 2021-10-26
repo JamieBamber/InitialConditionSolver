@@ -65,7 +65,7 @@ void read_level_data(LevelData<FArrayBox> &lev_dat_1,
 	    if ((iv[0]<0) || (iv[1]<0) || (iv[2]<0)){
 		pout() << "reading ghost cell" << endl;
 		pout() << "iv = " << iv << endl;
-	    }
+	    } 
             fab_2(iv, c_phi_Re_0) = fab_1(iv, c_phi_Re);
             fab_2(iv, c_Pi_Re_0) = fab_1(iv, c_Pi_Re);
             fab_2(iv, c_phi_Im_0) = fab_1(iv, c_phi_Im);

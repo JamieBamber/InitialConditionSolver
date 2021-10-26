@@ -151,7 +151,8 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
 #endif
 
     // ghosts
-    IntVect ghosts = a_params.num_ghosts * IntVect::Unit;    
+    // for the moment hardcode the number of ghosts to 3
+    IntVect ghosts = 3 * IntVect::Unit;    
 
     // set up full data and write to hdf5 file ready for GRChombo
     HDF5Handle handle(filename, HDF5Handle::CREATE);
@@ -256,8 +257,10 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
           	const std::string& name = "boxes");
 	*/
 
+	pout() << "about to do the write() step" << endl;
         write(handle, a_grids[level]);
-        write(handle, *grchombo_vars[level], "data", ghosts); 
+        write(handle, *grchombo_vars[level], "data", ghosts);
+	pout() << "done write step" << endl; 
         // TODO: is this writing ghosts - will need to for some boundary cases
     }
 
