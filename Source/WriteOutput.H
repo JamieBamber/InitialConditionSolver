@@ -56,20 +56,22 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
 #ifdef CH_USE_HDF5
 
 #if CH_SPACEDIM == 2
-    string fileName("vcPoissonOut.2d");
+    string filename(a_params.output_path);
+    filename += "vcPoissonOut.2d";
 #else
-    string fileName("vcPoissonOut.3d");
+    string filename(a_params.output_path);
+    filename += "vcPoissonOut.3d";
 #endif
 
     char suffix[30];
     sprintf(suffix, "_%d.hdf5", iter);
-    fileName += suffix;
+    filename += suffix;
 
     int ndpsiComp = a_dpsi[0]->nComp();
     int nRhsComp = a_rhs[0]->nComp();
     int nMGComp = a_multigrid_vars[0]->nComp();
     int totalComp = ndpsiComp + nRhsComp + nMGComp;
-    CH_assert(totalComp == 2 * NUM_CONSTRAINTS_VARS + NUM_MULTIGRID_VARS);
+    CH_assert(totalComp == 2 * NUM_CONSTRAINT_VARS + NUM_MULTIGRID_VARS);
 
     // set names
     Vector<string> variable_names(totalComp);
@@ -82,10 +84,10 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
     variable_names[5] = "rhs1";
     variable_names[6] = "rhs2";
     variable_names[7] = "rhs3";
-    variable_names[8] = "rhs4";
+
     for (int icomp = 0; icomp < NUM_MULTIGRID_VARS; icomp++)
     {
-        variable_names[2 * NUM_CONSTRAINTS_VARS + icomp] =
+        variable_names[2 * NUM_CONSTRAINT_VARS + icomp] =
             MultigridUserVariables::variable_names[icomp];
     }
     // check the domain sizes are the same
@@ -96,10 +98,10 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
     for (int level = 0; level < a_dpsi.size(); level++)
     {
         tempData[level] = new LevelData<FArrayBox>(a_grids[level], totalComp);
-        Interval dpsiComps(0, NUM_CONSTRAINTS_VARS - 1);
-        Interval rhsComps(NUM_CONSTRAINTS_VARS, 2 * NUM_CONSTRAINTS_VARS - 1);
-        Interval mgComps(2 * NUM_CONSTRAINTS_VARS,
-                         2 * NUM_CONSTRAINTS_VARS + NUM_MULTIGRID_VARS - 1);
+        Interval dpsiComps(0, NUM_CONSTRAINT_VARS - 1);
+        Interval rhsComps(NUM_CONSTRAINT_VARS, 2 * NUM_CONSTRAINT_VARS - 1);
+        Interval mgComps(2 * NUM_CONSTRAINT_VARS,
+                         2 * NUM_CONSTRAINT_VARS + NUM_MULTIGRID_VARS - 1);
         a_dpsi[level]->copyTo(a_dpsi[level]->interval(), *tempData[level],
                               dpsiComps);
         a_rhs[level]->copyTo(a_rhs[level]->interval(), *tempData[level],
@@ -109,7 +111,7 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
     }
     Real fakeTime = iter * 1.0;
     Real fakeDt = 1.0;
-    WriteAMRHierarchyHDF5(fileName, a_grids, tempData, variable_names,
+    WriteAMRHierarchyHDF5(filename, a_grids, tempData, variable_names,
                           a_params.coarsestDomain.domainBox(),
                           a_params.coarsestDx, fakeDt, fakeTime,
                           a_params.refRatio, a_params.numLevels);
@@ -133,9 +135,11 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
 #ifdef CH_USE_HDF5
 
 #if CH_SPACEDIM == 2
-    string filename("InitialConditionsFinal.2d.hdf5");
+    string filename(a_params.output_path);
+    filename += "InitialConditionsFinal.2d.hdf5";
 #else
-    string filename("InitialConditionsFinal.3d.hdf5");
+    string filename(a_params.output_path);
+    filename += "InitialConditionsFinal.3d.hdf5";
 #endif
 
     // set up full data and write to hdf5 file ready for GRChombo
@@ -200,6 +204,7 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
 
         // Setup the periodicity info - for GRChombo we always treat it as
         // periodic
+        // TODO: fix this to include boundary data?
         for (int dir = 0; dir < SpaceDim; ++dir)
         {
             char dir_str[20];
@@ -211,7 +216,8 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
 
         level_header.writeToFile(handle);
         write(handle, a_grids[level]);
-        write(handle, *grchombo_vars[level], "data");
+        write(handle, *grchombo_vars[level], "data"); 
+        // TODO: is this writing ghosts - will need to for some boundary cases
     }
 
     // shut the file

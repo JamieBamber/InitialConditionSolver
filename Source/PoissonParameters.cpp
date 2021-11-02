@@ -34,7 +34,7 @@ void getPoissonParameters(PoissonParameters &a_params)
     pout() << "alpha, beta = " << a_params.alpha << ", " << a_params.beta
            << endl;
 
-	// Read from hdf5 file
+    // Read from hdf5 file
     if (pp.contains("read_from_file"))
     {
         pp.get("read_from_file", a_params.read_from_file);
@@ -44,27 +44,36 @@ void getPoissonParameters(PoissonParameters &a_params)
         a_params.read_from_file = "none";
     }
 
+    if (pp.contains("output_path"))
+    {
+        pp.get("output_path", a_params.output_path);
+    }
+    else
+    {
+        a_params.output_path = "";
+    }
+
     // Initial conditions for the scalar field
     pp.get("G_Newton", a_params.G_Newton);
-	pp.get("phi_0", a_params.phi_0);
-	pp.get("phi_amplitude", a_params.phi_amplitude);
+    pp.get("phi_0", a_params.phi_0);
+    pp.get("phi_amplitude", a_params.phi_amplitude);
     pp.get("phi_wavelength", a_params.phi_wavelength);
-	pp.get("pi_0", a_params.pi_0);
+    pp.get("pi_0", a_params.pi_0);
     pp.get("pi_amplitude", a_params.pi_amplitude);
     pp.get("pi_wavelength", a_params.pi_wavelength);
 
-	// Potential parameters
-	pp.get("pot_Lambda", a_params.pot_Lambda);
-	pp.get("pot_mu", a_params.pot_mu);
-
-	pp.get("psi_0", a_params.psi_0);
-
+    // Potential parameters
+    pp.get("pot_Lambda", a_params.pot_Lambda);
+    pp.get("pot_mu", a_params.pot_mu);
 
     if (abs(a_params.phi_amplitude) > 0.0)
     {
         pout() << "Spacetime contains scalar field of amplitude "
                << a_params.phi_amplitude << endl;
     }
+
+    pp.get("psi_reg", a_params.psi_reg);
+    pp.get("sign_of_K", a_params.sign_of_K);
 
     // Initial conditions for the black holes
     pp.get("bh1_bare_mass", a_params.bh1_bare_mass);
@@ -151,15 +160,14 @@ void getPoissonParameters(PoissonParameters &a_params)
 
     // Periodicity - for the moment enforce same in all directions
     ProblemDomain crseDom(crseDomBox);
-    int is_periodic;
-    pp.get("is_periodic", is_periodic);
+    pp.get("is_periodic", a_params.is_periodic);
     a_params.periodic.resize(SpaceDim);
-    a_params.periodic.assign(is_periodic);
+    a_params.periodic.assign(a_params.is_periodic);
     for (int dir = 0; dir < SpaceDim; dir++)
     {
-        crseDom.setPeriodic(dir, is_periodic);
+        crseDom.setPeriodic(dir, a_params.is_periodic);
     }
     a_params.coarsestDomain = crseDom;
 
-    pout() << "periodicity = " << is_periodic << endl;
+    pout() << "periodicity = " << a_params.is_periodic << endl;
 }

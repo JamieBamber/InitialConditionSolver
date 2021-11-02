@@ -31,7 +31,7 @@ extern void set_rhs(LevelData<FArrayBox> &a_rhs,
                     LevelData<FArrayBox> &a_multigrid_vars,
                     const RealVect &a_dx, const PoissonParameters &a_params);
 
-extern void set_integrability(LevelData<FArrayBox> &a_integrand,
+extern void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
                               LevelData<FArrayBox> &a_multigrid_vars,
                               const RealVect &a_dx,
                               const PoissonParameters &a_params);
