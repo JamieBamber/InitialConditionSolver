@@ -173,16 +173,16 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
                         pow(psi_0, -4.0) +
                     12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
             }
-            else
+            else // in non periodic case exclude psi terms
             {
                 K_0_sq =
                     1.5 * 8.0 * M_PI * a_params.G_Newton *
                         (pow(Pi_0, 2.0) + 2.0 * V_of_phi) +
-                    //1.5 * A2_0 * pow(psi_0, -12.0) +
+                    // 1.5 * A2_0 * pow(psi_0, -12.0) +
                     24.0 * M_PI * a_params.G_Newton * rho_gradient *
                         pow(psi_0, -4.0) +
                     0.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
-                    //12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
+                // 12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
             }
 
             integrand_box(iv, c_psi) =
@@ -207,10 +207,8 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
                 laplace_multigrid(iv, c_V2_0);
 
             // Set value for K
-            multigrid_vars_box(iv, c_K_0) = 
-                a_params.sign_of_K *
-                sqrt(K_0_sq); 
-                // be careful when K=0, maybe discontinuity
+            multigrid_vars_box(iv, c_K_0) = a_params.sign_of_K * sqrt(K_0_sq);
+            // be careful when K=0, maybe discontinuity
 
             // set values for Aij_0
             multigrid_vars_box(iv, c_A11_0) = Aij_reg[0][0] + Aij_bh[0][0];
@@ -461,17 +459,16 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
     for (dit.begin(); dit.ok(); ++dit)
     {
         FArrayBox &aCoef_box = a_aCoef[dit()];
-
-        // JCAurre: aCoef is now set to zero for periodic
-        // and Mom is linear
         for (int iconstraint = 0; iconstraint < NUM_CONSTRAINT_VARS;
              iconstraint++)
         {
-            aCoef_box.setVal(0.0, iconstraint);
+            // this prevents small amounts of noise in the sources
+            // activating the zero modes - Garfinkle trick!
+            aCoef_box.setVal(-1e-6, iconstraint);
         }
 
-        // KC: Trying to add back some non trivial psi for the Aij part
-        // but this doesn't seem to help...
+        // For the non periodic case
+        // add back some non trivial psi for the Aij part
         if (!a_params.is_periodic)
         {
             FArrayBox &multigrid_vars_box = a_multigrid_vars[dit()];
@@ -491,14 +488,31 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
                 loc -= a_params.domainLength / 2.0;
 
                 // Calculate useful quantities
+                Real V_of_phi, dVdphi;
+                my_potential_function(V_of_phi, dVdphi,
+                                      multigrid_vars_box(iv, c_phi_0),
+                                      a_params);
+
+                // Calculate useful quantities
                 Real psi_bh = set_binary_bh_psi(loc, a_params);
                 Real psi_0 = multigrid_vars_box(iv, c_psi_reg) + psi_bh;
+                Real K_0 = multigrid_vars_box(iv, c_K_0);
+                Real Pi_0 = multigrid_vars_box(iv, c_Pi_0);
+                Real d_phi[3];
+                set_deriv1(d_phi, iv, grad_multigrid, c_phi_0);
 
-                Real Aij_reg[3][3];
-                Real Aij_bh[3][3];
+                Real Aij_reg[3][3], Aij_bh[3][3];
                 set_Aij_reg(Aij_reg, multigrid_vars_box, iv, loc, a_dx,
                             a_params, grad_multigrid);
                 set_binary_bh_Aij(Aij_bh, iv, loc, a_params);
+
+                // Compute rhograd from gradients of phi, factors of psi0
+                // accounted for below
+                Real rho_gradient = 0;
+                for (int i = 0; i < SpaceDim; i++)
+                {
+                    rho_gradient += 0.5 * d_phi[i] * d_phi[i];
+                }
                 // Also \bar  A_ij \bar A^ij
                 Real A2_0 = 0.0;
                 Real A2_bh = 0.0;
@@ -511,8 +525,14 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
                         A2_bh += Aij_bh[i][j] * Aij_bh[i][j];
                     }
                 }
-                aCoef_box(iv, c_psi) = -0.875 * A2_0 * pow(psi_0, -8.0);
-                // assume that matter terms are set to zero with choice of K
+
+                // check me!
+                aCoef_box(iv, c_psi) =
+                    -0.875 * A2_0 * pow(psi_0, -8.0) +
+                    5.0 / 12.0 * K_0 * K_0 * pow(psi_0, 4.0) +
+                    10.0 * M_PI * a_params.G_Newton *
+                        (0.5 * Pi_0 * Pi_0 + V_of_phi) * pow(psi_0, 4.0) +
+                    10.0 * M_PI * a_params.G_Newton * 0.5 * rho_gradient;
             }
         }
     }

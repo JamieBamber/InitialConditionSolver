@@ -54,8 +54,9 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids, PoissonParameters &a_params)
     procAssign[0].resize(oldBoxes[0].size());
     LoadBalance(procAssign[0], oldBoxes[0]);
     vectGrids[0].define(oldBoxes[0], procAssign[0], vectDomain[0]);
-    vect_tagging_criterion[0] = new LevelData<FArrayBox>(vectGrids[0], 1, // only one value in this array
-                                          IntVect::Zero);
+    vect_tagging_criterion[0] = new LevelData<FArrayBox>(
+        vectGrids[0], 1, // only one value in this array
+        IntVect::Zero);
 
     int topLevel = 0;
     bool moreLevels = (maxLevel > 0);
@@ -94,8 +95,8 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids, PoissonParameters &a_params)
 
             // set condition for regrid - use the integrability condition
             // integral
-            set_regrid_condition(*vect_tagging_criterion[level], *temp_multigrid_vars, dxLevel,
-                                 a_params);
+            set_regrid_condition(*vect_tagging_criterion[level],
+                                 *temp_multigrid_vars, dxLevel, a_params);
 
             if (temp_multigrid_vars != NULL)
             {
@@ -145,7 +146,7 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids, PoissonParameters &a_params)
             moreLevels = true;
         }
         // doesn't break anything but redundant I think
-        //else
+        // else
         //{
         //    break;
         //}
@@ -196,21 +197,24 @@ void set_tag_cells(Vector<LevelData<FArrayBox> *> &vect_tagging_criterion,
     for (int lev = baseLevel; lev != numLevels; lev++)
     {
         IntVectSet local_tags;
-        LevelData<FArrayBox> &level_tagging_criterion = *vect_tagging_criterion[lev];
+        LevelData<FArrayBox> &level_tagging_criterion =
+            *vect_tagging_criterion[lev];
         DisjointBoxLayout level_domain = level_tagging_criterion.getBoxes();
         DataIterator dit = level_tagging_criterion.dataIterator();
 
-        // KC: this seems an odd way to refine - would expect theshold to 
+        // KC: this seems an odd way to refine - would expect theshold to
         // decrease with higher levels. It seems to work ok so leave it for now.
         Real max_tagging_criterion = 0;
-        max_tagging_criterion = norm(level_tagging_criterion, level_tagging_criterion.interval(), 0);
+        max_tagging_criterion = norm(level_tagging_criterion,
+                                     level_tagging_criterion.interval(), 0);
         Real tagVal = max_tagging_criterion * refine_thresh;
 
         // now loop through grids and tag cells where tagging crierion > tagVal
         for (dit.reset(); dit.ok(); ++dit)
         {
             const Box thisBox = level_domain.get(dit());
-            const FArrayBox &this_tagging_criterion = level_tagging_criterion[dit()];
+            const FArrayBox &this_tagging_criterion =
+                level_tagging_criterion[dit()];
             BoxIterator bit(thisBox);
             for (bit.begin(); bit.ok(); ++bit)
             {
