@@ -35,7 +35,7 @@ num_mg     = 1
 numMGIterations = 4 #this is the number of MG v-cycles in the preconditioner
 max_iterations = 100 #max number of solver iterations
 max_NL_iterations = 100 #non linear outside loop iterations
-tolerance  = 1.0e-5  #solver tolerance for declaring convergence
+tolerance  = 1.0e-6  #solver tolerance for declaring convergence
 hang       = 1.0e-11  #solver tolerance for deciding when we're hung
 verbosity = 2 # higher number means more verbose output
 
@@ -47,12 +47,17 @@ coefficient_average_type = harmonic
 # 0 for non periodic, 1 for periodic (enforces same for all)
 is_periodic = 0
 # if not periodic, then what?
-# 1 -> const Neumann (gradient), 0 -> const Dirichlet (value)
-bc_lo       = 0 0 0
-bc_hi       = 0 0 0
+# 0 -> const Dirichlet (value)
+# 1 -> const Neumann (gradient)
+bc_lo_psi       = 0 0 0
+bc_hi_psi       = 0 0 0
+bc_lo_Vi       = 1 1 1
+bc_hi_Vi       = 1 1 1
 # And set the constant value of these conditions
 # note bc_value probably 0 because it is applied to dpsi at boundary (not psi)
-bc_value = 0.0
+bc_value_psi = 0.0
+# note bc_value probably 0 because it is applied to the gradient of Vi
+bc_value_Vi = 0.0
 
 # Q: "Simple, change the gravitational constant of the Universe"
 G_Newton = 1.0 

@@ -19,18 +19,23 @@ using std::cerr;
 #include "FArrayBox.H"
 #include "ParmParse.H"
 #include "VariableCoeffPoissonOperator.H"
+#include "MultigridUserVariables.hpp"
 
 // BC class
 class GlobalBCRS
 {
   public:
-    static std::vector<bool> s_printedThatLo, s_printedThatHi;
-    static std::vector<int> s_bcLo, s_bcHi;
+    static std::vector<bool> s_printedThatLo_psi, s_printedThatHi_psi;
+    static std::vector<bool> s_printedThatLo_Vi, s_printedThatHi_Vi;
+    static std::vector<int> s_bcLo_psi, s_bcHi_psi, s_bcLo_Vi, s_bcHi_Vi;
     static RealVect s_trigvec;
     static bool s_areBCsParsed, s_valueParsed, s_trigParsed;
 };
 
-extern void ParseValue(Real *pos, int *dir, Side::LoHiSide *side,
+extern void ParseValuePsi(Real *pos, int *dir, Side::LoHiSide *side,
+                       Real *a_values);
+
+extern void ParseValueVi(Real *pos, int *dir, Side::LoHiSide *side,
                        Real *a_values);
 
 extern void ParseBC(FArrayBox &a_state, const Box &a_valid,

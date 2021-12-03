@@ -76,14 +76,14 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
     // set names
     Vector<string> variable_names(totalComp);
     variable_names[0] =
-        "dpsi0"; // JCAurre: name for the rhs and linear solution of constraints
-    variable_names[1] = "dpsi1";
-    variable_names[2] = "dpsi2";
-    variable_names[3] = "dpsi3";
-    variable_names[4] = "rhs0";
-    variable_names[5] = "rhs1";
-    variable_names[6] = "rhs2";
-    variable_names[7] = "rhs3";
+        "dpsi_reg"; // JCAurre: name for the rhs and linear solution of constraints
+    variable_names[1] = "dV1";
+    variable_names[2] = "dV2";
+    variable_names[3] = "dV3";
+    variable_names[4] = "rhs_dpsi_reg";
+    variable_names[5] = "rhs_dV1";
+    variable_names[6] = "rhs_dV2";
+    variable_names[7] = "rhs_dV3";
 
     for (int icomp = 0; icomp < NUM_MULTIGRID_VARS; icomp++)
     {
