@@ -93,21 +93,43 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
     // check the domain sizes are the same
     CH_assert(a_dpsi.size() == a_rhs.size());
     CH_assert(a_dpsi.size() == a_multigrid_vars.size());
-
+    IntVect ghosts = 3 * IntVect::Unit;
     Vector<LevelData<FArrayBox> *> tempData(a_dpsi.size(), NULL);
+
     for (int level = 0; level < a_dpsi.size(); level++)
     {
-        tempData[level] = new LevelData<FArrayBox>(a_grids[level], totalComp);
+        tempData[level] = new LevelData<FArrayBox>(a_grids[level], totalComp, ghosts);
         Interval dpsiComps(0, NUM_CONSTRAINT_VARS - 1);
         Interval rhsComps(NUM_CONSTRAINT_VARS, 2 * NUM_CONSTRAINT_VARS - 1);
         Interval mgComps(2 * NUM_CONSTRAINT_VARS,
                          2 * NUM_CONSTRAINT_VARS + NUM_MULTIGRID_VARS - 1);
-        a_dpsi[level]->copyTo(a_dpsi[level]->interval(), *tempData[level],
+
+/*        if(level == 0) // output boundary cells
+        {
+            Box grown_domain_box = a_grids[level].physDomain();
+            grown_domain_box.grow(3 * IntVect::Unit);
+            Copier boundary_copier;
+            boundary_copier.ghostDefine(
+                a_dpsi[level]->getBoxes(),
+                a_dpsi[level]->getBoxes(), grown_domain_box,
+                3 * IntVect::Unit, 3 * IntVect::Unit);
+            a_dpsi[level]->copyTo(a_dpsi[level]->interval(), *tempData[level],
+                              dpsiComps, boundary_copier);
+            a_rhs[level]->copyTo(a_rhs[level]->interval(), *tempData[level],
+                             rhsComps, boundary_copier);
+            a_multigrid_vars[level]->copyTo(a_multigrid_vars[level]->interval(),
+                                        *tempData[level], mgComps, boundary_copier);
+        }
+        else
+        {
+*/
+            a_dpsi[level]->copyTo(a_dpsi[level]->interval(), *tempData[level],
                               dpsiComps);
-        a_rhs[level]->copyTo(a_rhs[level]->interval(), *tempData[level],
+            a_rhs[level]->copyTo(a_rhs[level]->interval(), *tempData[level],
                              rhsComps);
-        a_multigrid_vars[level]->copyTo(a_multigrid_vars[level]->interval(),
+            a_multigrid_vars[level]->copyTo(a_multigrid_vars[level]->interval(),
                                         *tempData[level], mgComps);
+//        }
     }
     Real fakeTime = iter * 1.0;
     Real fakeDt = 1.0;
@@ -160,7 +182,8 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
 
         char headername2[100];
         sprintf(headername2, "steps_since_regrid_%d", level);
-        header.m_int[headername2] = 0;
+        // setting this to 1 forces a regrid on loading, which can be useful
+        header.m_int[headername2] = 1;
     }
 
     header.m_int["num_components"] = NUM_GRCHOMBO_VARS;
@@ -180,8 +203,9 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
     {
         HDF5HeaderData level_header;
         // want output data to have 3 ghost cells to match GRChombo
+        IntVect ghost_vector = 3 * IntVect::Unit;
         grchombo_vars[level] = new LevelData<FArrayBox>(
-            a_grids[level], NUM_GRCHOMBO_VARS, 3 * IntVect::Unit);
+            a_grids[level], NUM_GRCHOMBO_VARS, ghost_vector);
 
         // Add in the values of the data in the correct form
         set_output_data(*grchombo_vars[level], *a_multigrid_vars[level],
@@ -202,22 +226,20 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
         level_header.m_real["time"] = 0.0;
         level_header.m_box["prob_domain"] = a_vectDomains[level].domainBox();
 
-        // Setup the periodicity info - for GRChombo we always treat it as
-        // periodic
-        // TODO: fix this to include boundary data?
+        // Setup the periodicity info - for now set as non periodic, 
+        // can overwrite in GRChombo
         for (int dir = 0; dir < SpaceDim; ++dir)
         {
             char dir_str[20];
             sprintf(dir_str, "%d", dir);
             const std::string periodic_label =
                 std::string("is_periodic_") + dir_str;
-            level_header.m_int[periodic_label] = true;
+            level_header.m_int[periodic_label] = false;
         }
 
         level_header.writeToFile(handle);
         write(handle, a_grids[level]);
-        write(handle, *grchombo_vars[level], "data"); 
-        // TODO: is this writing ghosts - will need to for some boundary cases
+        write(handle, *grchombo_vars[level], "data", ghost_vector);
     }
 
     // shut the file

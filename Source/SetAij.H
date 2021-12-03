@@ -116,36 +116,36 @@ void set_Aij_reg(Real Aij[3][3], FArrayBox &multigrid_vars_box, const IntVect &i
                const FArrayBox &a_grad_multigrid)
 {
 
-    Real trace = (a_grad_multigrid(iv, 3 * c_V0_0 + 0) +
-                  a_grad_multigrid(iv, 3 * c_V1_0 + 1) +
-                  a_grad_multigrid(iv, 3 * c_V2_0 + 2));
+    Real trace = (a_grad_multigrid(iv, 3 * c_V1_0 + 0) +
+                  a_grad_multigrid(iv, 3 * c_V2_0 + 1) +
+                  a_grad_multigrid(iv, 3 * c_V3_0 + 2));
 
     Aij[0][0] = 0.75 *
-            (a_grad_multigrid(iv, 3 * c_V0_0 + 0) +
-             a_grad_multigrid(iv, 3 * c_V0_0 + 0)) -
+            (a_grad_multigrid(iv, 3 * c_V1_0 + 0) +
+             a_grad_multigrid(iv, 3 * c_V1_0 + 0)) -
         1. / 2. * trace;
 
     Aij[1][1] = 0.75 *
-            (a_grad_multigrid(iv, 3 * c_V1_0 + 1) +
-             a_grad_multigrid(iv, 3 * c_V1_0 + 1)) -
+            (a_grad_multigrid(iv, 3 * c_V2_0 + 1) +
+             a_grad_multigrid(iv, 3 * c_V2_0 + 1)) -
         1. / 2. * trace;
 
     Aij[2][2] = 0.75 *
-            (a_grad_multigrid(iv, 3 * c_V2_0 + 2) +
-             a_grad_multigrid(iv, 3 * c_V2_0 + 2)) -
+            (a_grad_multigrid(iv, 3 * c_V3_0 + 2) +
+             a_grad_multigrid(iv, 3 * c_V3_0 + 2)) -
         1. / 2. * trace;
 
     Aij[0][1] = 0.75 *
-                                      (a_grad_multigrid(iv, 3 * c_V0_0 + 1) +
-                                       a_grad_multigrid(iv, 3 * c_V1_0 + 0));
-
-    Aij[0][2] = 0.75 *
-                                      (a_grad_multigrid(iv, 3 * c_V0_0 + 2) +
+                                      (a_grad_multigrid(iv, 3 * c_V1_0 + 1) +
                                        a_grad_multigrid(iv, 3 * c_V2_0 + 0));
 
+    Aij[0][2] = 0.75 *
+                                      (a_grad_multigrid(iv, 3 * c_V1_0 + 2) +
+                                       a_grad_multigrid(iv, 3 * c_V3_0 + 0));
+
     Aij[1][2] = 0.75 *
-                                      (a_grad_multigrid(iv, 3 * c_V2_0 + 1) +
-                                       a_grad_multigrid(iv, 3 * c_V1_0 + 2));
+                                      (a_grad_multigrid(iv, 3 * c_V3_0 + 1) +
+                                       a_grad_multigrid(iv, 3 * c_V2_0 + 2));
     Aij[1][0] = Aij[0][1];
     Aij[2][0] = Aij[0][2];
     Aij[2][1] = Aij[1][2];
@@ -160,35 +160,35 @@ void set_deriv_Aij_0(Real d_Aij[3][3][3], FArrayBox &multigrid_vars_box,
 {
     Real d2_V[3][3][3];
 
-    d2_V[0][0][0] = a_grad2_multigrid(iv, 3 * c_V0_0 + 0);
-    d2_V[0][1][1] = a_grad2_multigrid(iv, 3 * c_V0_0 + 1);
-    d2_V[0][2][2] = a_grad2_multigrid(iv, 3 * c_V0_0 + 2);
+    d2_V[0][0][0] = a_grad2_multigrid(iv, 3 * c_V1_0 + 0);
+    d2_V[0][1][1] = a_grad2_multigrid(iv, 3 * c_V1_0 + 1);
+    d2_V[0][2][2] = a_grad2_multigrid(iv, 3 * c_V1_0 + 2);
 
-    d2_V[1][0][0] = a_grad2_multigrid(iv, 3 * c_V1_0 + 0);
-    d2_V[1][1][1] = a_grad2_multigrid(iv, 3 * c_V1_0 + 1);
-    d2_V[1][2][2] = a_grad2_multigrid(iv, 3 * c_V1_0 + 2);
+    d2_V[1][0][0] = a_grad2_multigrid(iv, 3 * c_V2_0 + 0);
+    d2_V[1][1][1] = a_grad2_multigrid(iv, 3 * c_V2_0 + 1);
+    d2_V[1][2][2] = a_grad2_multigrid(iv, 3 * c_V2_0 + 2);
 
-    d2_V[2][0][0] = a_grad2_multigrid(iv, 3 * c_V2_0 + 0);
-    d2_V[2][1][1] = a_grad2_multigrid(iv, 3 * c_V2_0 + 1);
-    d2_V[2][2][2] = a_grad2_multigrid(iv, 3 * c_V2_0 + 2);
+    d2_V[2][0][0] = a_grad2_multigrid(iv, 3 * c_V3_0 + 0);
+    d2_V[2][1][1] = a_grad2_multigrid(iv, 3 * c_V3_0 + 1);
+    d2_V[2][2][2] = a_grad2_multigrid(iv, 3 * c_V3_0 + 2);
 
-    d2_V[0][1][0] = a_mixed_grad2_multigrid(iv, 3 * c_V0_0 + 1 + 0 - 1);
-    d2_V[0][2][0] = a_mixed_grad2_multigrid(iv, 3 * c_V0_0 + 2 + 0 - 1);
-    d2_V[0][1][2] = a_mixed_grad2_multigrid(iv, 3 * c_V0_0 + 1 + 2 - 1);
+    d2_V[0][1][0] = a_mixed_grad2_multigrid(iv, 3 * c_V1_0 + 1 + 0 - 1);
+    d2_V[0][2][0] = a_mixed_grad2_multigrid(iv, 3 * c_V1_0 + 2 + 0 - 1);
+    d2_V[0][1][2] = a_mixed_grad2_multigrid(iv, 3 * c_V1_0 + 1 + 2 - 1);
     d2_V[0][0][1] = d2_V[0][1][0];
     d2_V[0][0][2] = d2_V[0][2][0];
     d2_V[0][2][1] = d2_V[0][1][2];
 
-    d2_V[1][1][0] = a_mixed_grad2_multigrid(iv, 3 * c_V1_0 + 1 + 0 - 1);
-    d2_V[1][2][0] = a_mixed_grad2_multigrid(iv, 3 * c_V1_0 + 2 + 0 - 1);
-    d2_V[1][1][2] = a_mixed_grad2_multigrid(iv, 3 * c_V1_0 + 1 + 2 - 1);
+    d2_V[1][1][0] = a_mixed_grad2_multigrid(iv, 3 * c_V2_0 + 1 + 0 - 1);
+    d2_V[1][2][0] = a_mixed_grad2_multigrid(iv, 3 * c_V2_0 + 2 + 0 - 1);
+    d2_V[1][1][2] = a_mixed_grad2_multigrid(iv, 3 * c_V2_0 + 1 + 2 - 1);
     d2_V[1][0][1] = d2_V[1][1][0];
     d2_V[1][0][2] = d2_V[1][2][0];
     d2_V[1][2][1] = d2_V[1][1][2];
 
-    d2_V[2][1][0] = a_mixed_grad2_multigrid(iv, 3 * c_V2_0 + 1 + 0 - 1);
-    d2_V[2][2][0] = a_mixed_grad2_multigrid(iv, 3 * c_V2_0 + 2 + 0 - 1);
-    d2_V[2][1][2] = a_mixed_grad2_multigrid(iv, 3 * c_V2_0 + 1 + 2 - 1);
+    d2_V[2][1][0] = a_mixed_grad2_multigrid(iv, 3 * c_V3_0 + 1 + 0 - 1);
+    d2_V[2][2][0] = a_mixed_grad2_multigrid(iv, 3 * c_V3_0 + 2 + 0 - 1);
+    d2_V[2][1][2] = a_mixed_grad2_multigrid(iv, 3 * c_V3_0 + 1 + 2 - 1);
     d2_V[2][0][1] = d2_V[2][1][0];
     d2_V[2][0][2] = d2_V[2][2][0];
     d2_V[2][2][1] = d2_V[2][1][2];

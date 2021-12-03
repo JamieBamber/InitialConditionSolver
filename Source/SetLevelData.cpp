@@ -103,7 +103,7 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
         // calculate the laplacian of psi and V_i across the box
         FArrayBox laplace_multigrid(unghosted_box, NUM_CONSTRAINT_VARS);
         get_laplacian(unghosted_box, multigrid_vars_box,
-                      Interval(c_psi_reg, c_V2_0), a_dx, laplace_multigrid,
+                      Interval(c_psi_reg, c_V3_0), a_dx, laplace_multigrid,
                       a_params);
 
         // calculate gradients for constructing rho and Aij
@@ -194,17 +194,17 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
                     pow(psi_0, -4.0) +
                 12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
 
-            integrand_box(iv, c_V0) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[0] -
-                laplace_multigrid(iv, c_V0_0);
-
             integrand_box(iv, c_V1) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[1] -
+                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[0] -
                 laplace_multigrid(iv, c_V1_0);
 
             integrand_box(iv, c_V2) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[2] -
+                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[1] -
                 laplace_multigrid(iv, c_V2_0);
+
+            integrand_box(iv, c_V3) =
+                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[2] -
+                laplace_multigrid(iv, c_V3_0);
 
             // Set value for K
             multigrid_vars_box(iv, c_K_0) = a_params.sign_of_K * sqrt(K_0_sq);
@@ -243,7 +243,7 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
 
         // calculate the laplacian of Psi across the box
         FArrayBox laplace_multigrid(unghosted_box, NUM_CONSTRAINT_VARS);
-        get_laplacian(unghosted_box, multigrid_vars_box, Interval(c_psi, c_V2),
+        get_laplacian(unghosted_box, multigrid_vars_box, Interval(c_psi, c_V3),
                       a_dx, laplace_multigrid, a_params);
 
         // calculate gradients for constructing rho and Aij
@@ -319,19 +319,19 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
                 2.0 * M_PI * a_params.G_Newton * rho_gradient * psi_0 -
                 laplace_multigrid(iv, c_psi_reg);
 
-            rhs_box(iv, c_V0) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[0] -
-                laplace_multigrid(iv, c_V0_0);
             rhs_box(iv, c_V1) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[1] -
+                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[0] -
                 laplace_multigrid(iv, c_V1_0);
             rhs_box(iv, c_V2) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[2] -
+                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[1] -
                 laplace_multigrid(iv, c_V2_0);
+            rhs_box(iv, c_V3) =
+                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[2] -
+                laplace_multigrid(iv, c_V3_0);
 
-            rhs_box(iv, c_V0) += 2. / 3. * pow(psi_0, 6.0) * d_K[0];
-            rhs_box(iv, c_V1) += 2. / 3. * pow(psi_0, 6.0) * d_K[1];
-            rhs_box(iv, c_V2) += 2. / 3. * pow(psi_0, 6.0) * d_K[2];
+            rhs_box(iv, c_V1) += 2. / 3. * pow(psi_0, 6.0) * d_K[0];
+            rhs_box(iv, c_V2) += 2. / 3. * pow(psi_0, 6.0) * d_K[1];
+            rhs_box(iv, c_V3) += 2. / 3. * pow(psi_0, 6.0) * d_K[2];
         }
     }
 } // end set_rhs
@@ -440,9 +440,9 @@ void set_update_psi0(LevelData<FArrayBox> &a_multigrid_vars,
 
             // Update constraint variables for the linear step
             multigrid_vars_box(iv, c_psi_reg) += dpsi_box(iv, c_psi);
-            multigrid_vars_box(iv, c_V0_0) += dpsi_box(iv, c_V0);
             multigrid_vars_box(iv, c_V1_0) += dpsi_box(iv, c_V1);
             multigrid_vars_box(iv, c_V2_0) += dpsi_box(iv, c_V2);
+            multigrid_vars_box(iv, c_V3_0) += dpsi_box(iv, c_V3);
         }
     }
 }
