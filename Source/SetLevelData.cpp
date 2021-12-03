@@ -411,8 +411,7 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
                                (pow(Pi_0, 2.0) + 2.0 * V_of_phi))) +
                 1.5 * A2_0 * pow(psi_0, -7.0) +
                 24.0 * M_PI * a_params.G_Newton * abs(rho_gradient) *
-                    pow(psi_0, 1.0) +
-                log(psi_0);
+                    pow(psi_0, 1.0) + log(psi_0);
             // TODO: Add abs of D_i K and other Mom source terms here
         }
     }

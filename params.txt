@@ -16,7 +16,7 @@ beta  = -1.0
 L = 256
 N = 64 64 64
 # number of AMR refinement levels is max_level + 1
-max_level    = 0
+max_level    = 5
 # Threshold for AMR refinement, based on magnitude of rhs
 refine_threshold = 0.5
 #min box size
@@ -35,7 +35,7 @@ num_mg     = 1
 numMGIterations = 4 #this is the number of MG v-cycles in the preconditioner
 max_iterations = 100 #max number of solver iterations
 max_NL_iterations = 100 #non linear outside loop iterations
-tolerance  = 1.0e-10  #solver tolerance for declaring convergence
+tolerance  = 1.0e-7  #solver tolerance for declaring convergence
 hang       = 1.0e-11  #solver tolerance for deciding when we're hung
 verbosity = 2 # higher number means more verbose output
 
@@ -45,7 +45,7 @@ coefficient_average_type = harmonic
 
 # Boundary conditions for domain-boundary faces 
 # 0 for non periodic, 1 for periodic (enforces same for all)
-is_periodic = 1
+is_periodic = 0
 # if not periodic, then what?
 # 1 -> const Neumann (gradient), 0 -> const Dirichlet (value)
 bc_lo       = 0 0 0
@@ -65,8 +65,8 @@ phi_0 = 1e-3
 phi_amplitude = 1e-2
 phi_wavelength = 2
 pi_0 = -1e-3
-pi_amplitude = 1e-2
-pi_wavelength = 3
+pi_amplitude = -1e-2
+pi_wavelength = 4
 
 # potential params
 pot_Lambda = 0
@@ -84,19 +84,19 @@ sign_of_K = 1
 # and momenta/spins to zero
 
 #BH1
-bh1_bare_mass = 0.0
+bh1_bare_mass = 0.5
 # spin about z axis (this is J_z)
-bh1_spin = 0.0
+bh1_spin = -0.0
 # boost in y direction (this is P_y)
-bh1_momentum = 0.0
+bh1_momentum = -0.1
 # offset from center in x direction
 bh1_offset = 10.0
 
 #BH2
-bh2_bare_mass = 0.0
+bh2_bare_mass = 0.5
 # spin about z axis (this is J_z)
 bh2_spin = 0.0
 # boost in y direction (this is P_y)
-bh2_momentum = -0.0
+bh2_momentum = 0.1
 # offset from center in x direction
 bh2_offset = -10.0
