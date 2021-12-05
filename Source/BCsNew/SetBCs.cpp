@@ -81,10 +81,6 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
         }
 
         const Box valid = a_valid;
-        Interval psi_comps(c_psi, c_psi);
-        Interval Vi_comps(c_V1, c_V2);
-        const BCValueHolder psi_bc(ParseValuePsi); // pointer to void function
-        const BCValueHolder Vi_bc(ParseValueVi); // pointer to void function
 
         for (int i = 0; i < CH_SPACEDIM; ++i)
         {
@@ -106,8 +102,10 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
                                       "side direction "
                                    << i << endl;
                         }
+                        const BCValueHolder psi_bc(ParseValuePsi); // pointer to void function
                         NeumBC(a_state, valid, a_dx, a_homogeneous,
-                               psi_bc, i, Side::Lo, psi_comps);
+                               psi_bc,
+                               i, Side::Lo, Interval(c_psi, c_psi));
                     }
                     else if (GlobalBCRS::s_bcLo_psi[i] == 0)
                     {
@@ -118,8 +116,9 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
                                       "side direction "
                                    << i << endl;
                         }
+                        const BCValueHolder psi_bc(ParseValuePsi); // pointer to void function
                         DiriBC(a_state, valid, a_dx, a_homogeneous, psi_bc,
-                               i, Side::Lo, psi_comps);
+                               i, Side::Lo, Interval(c_psi, c_psi));
                     }
                     else
                     {
@@ -137,7 +136,8 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
                                    << i << endl;
                         }
                         NeumBC(a_state, valid, a_dx, a_homogeneous,
-                               Vi_bc, i, Side::Lo, Vi_comps);
+                               ParseValueVi, // BCValueHolder class
+                               i, Side::Lo, Interval(c_V1, c_V3));
                     }
                     else if (GlobalBCRS::s_bcLo_Vi[i] == 0)
                     {
@@ -148,8 +148,8 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
                                       "side direction "
                                    << i << endl;
                         }
-                        DiriBC(a_state, valid, a_dx, a_homogeneous, Vi_bc,
-                               i, Side::Lo, Vi_comps);
+                        DiriBC(a_state, valid, a_dx, a_homogeneous, ParseValueVi,
+                               i, Side::Lo, Interval(c_V1, c_V3));
                     }
                     else
                     {
@@ -169,8 +169,8 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
                                       "side direction "
                                    << i << endl;
                         }
-                        NeumBC(a_state, valid, a_dx, a_homogeneous, psi_bc,
-                               i, Side::Hi, psi_comps);
+                        NeumBC(a_state, valid, a_dx, a_homogeneous, ParseValuePsi,
+                               i, Side::Hi, Interval(c_psi, c_psi));
                     }
                     else if (GlobalBCRS::s_bcHi_psi[i] == 0)
                     {
@@ -181,8 +181,8 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
                                       "side direction "
                                    << i << endl;
                         }
-                        DiriBC(a_state, valid, a_dx, a_homogeneous, psi_bc,
-                               i, Side::Hi, psi_comps);
+                        DiriBC(a_state, valid, a_dx, a_homogeneous, ParseValuePsi,
+                               i, Side::Hi, Interval(c_psi, c_psi));
                     }
                     else
                     {
@@ -199,8 +199,8 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
                                       "side direction "
                                    << i << endl;
                         }
-                        NeumBC(a_state, valid, a_dx, a_homogeneous, Vi_bc,
-                               i, Side::Hi, Vi_comps);
+                        NeumBC(a_state, valid, a_dx, a_homogeneous, ParseValueVi,
+                               i, Side::Hi, Interval(c_V1, c_V3));
                     }
                     else if (GlobalBCRS::s_bcHi_Vi[i] == 0)
                     {
@@ -211,8 +211,8 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
                                       "side direction "
                                    << i << endl;
                         }
-                        DiriBC(a_state, valid, a_dx, a_homogeneous, Vi_bc,
-                               i, Side::Hi, Vi_comps);
+                        DiriBC(a_state, valid, a_dx, a_homogeneous, ParseValueVi,
+                               i, Side::Hi, Interval(c_V1, c_V3));
                     }
                     else
                     {

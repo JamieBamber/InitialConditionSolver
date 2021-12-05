@@ -128,7 +128,6 @@ void VariableCoeffPoissonOperatorFactory::define(
     Vector<RefCountedPtr<LevelData<FArrayBox>>> aCoef(a_grids.size());
     Vector<RefCountedPtr<LevelData<FArrayBox>>> bCoef(a_grids.size());
 
-    cout << "Im here" << endl;
     for (int i = 0; i < a_grids.size(); ++i)
     {
         aCoef[i] = RefCountedPtr<LevelData<FArrayBox>>(
