@@ -82,7 +82,7 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
 
         const Box valid = a_valid;
         Interval psi_comps(c_psi, c_psi);
-        Interval Vi_comps(c_V1, c_V2);
+        Interval Vi_comps(c_V1, c_V3);
         const BCValueHolder psi_bc(ParseValuePsi); // pointer to void function
         const BCValueHolder Vi_bc(ParseValueVi); // pointer to void function
 
