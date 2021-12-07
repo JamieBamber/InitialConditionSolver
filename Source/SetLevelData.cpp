@@ -68,7 +68,7 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
             // gradients of these quantities
         }
     }
-} // end set_initial_conditions_matter
+} // end set_initial_conditions
 
 // Set values of K_ij - \bar Aij and K, based on current values
 void set_update_Kij(LevelData<FArrayBox> &a_multigrid_vars,
@@ -126,7 +126,7 @@ void set_update_Kij(LevelData<FArrayBox> &a_multigrid_vars,
             FOR1(i) { d1_phi_squared += d1_phi[i] * d1_phi[i]; }
             Real rho_matter =
                 0.5 * Pi_0 * Pi_0 + V_of_phi +
-                0.5 * d1_phi_squared * d1_phi_squared * pow(psi_0, -4.0);
+                0.5 * d1_phi_squared * pow(psi_0, -4.0);
 
             // Now work out K using ansatz which sets it to (roughly)
             // the FRW value based on the local densities
@@ -214,7 +214,7 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
             FOR1(i) { d1_phi_squared += d1_phi[i] * d1_phi[i]; }
             Real rho_matter =
                 0.5 * Pi_0 * Pi_0 + V_of_phi +
-                0.5 * d1_phi_squared * d1_phi_squared * pow(psi_0, -4.0);
+                0.5 * d1_phi_squared * pow(psi_0, -4.0);
 
             // Get current values for K and derivs
             Real K_0 = multigrid_vars_box(iv, c_K_0);
@@ -222,8 +222,7 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
             Tensor<1, Real, SpaceDim> d1_K =
                 get_d1(iv, multigrid_vars_box, a_dx, c_K_0);
 
-            // rhs = -1.5*term + 1.5 * \bar A_ij \bar A^ij psi_0^-12 +
-            // 24 pi rho_grad psi_0^-4  + 12*laplacian(psi_0)*psi^-5
+            // rhs terms
             rhs_box(iv, c_psi) =
                 0.125 * pow(psi_0, 5.0) *
                     (2.0 / 3.0 * K_0_sq -
@@ -281,10 +280,8 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
     {
         FArrayBox &multigrid_vars_box = a_multigrid_vars[dit()];
         FArrayBox &condition_box = a_condition[dit()];
-        for (int comp = 0; comp < NUM_CONSTRAINT_VARS; comp++)
-        {
-            condition_box.setVal(0.0, comp);
-        }
+        condition_box.setVal(0.0, 0);
+
         Box unghosted_box = condition_box.box();
         BoxIterator bit(unghosted_box);
         for (bit.begin(); bit.ok(); ++bit)
@@ -325,15 +322,16 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
             FOR1(i) { d1_phi_squared += d1_phi[i] * d1_phi[i]; }
             Real rho_matter =
                 0.5 * Pi_0 * Pi_0 + V_of_phi +
-                0.5 * d1_phi_squared * d1_phi_squared * pow(psi_0, -4.0);
+                0.5 * d1_phi_squared * pow(psi_0, -4.0);
 
             // the condition is similar to the rhs but we take abs
-            // value of the contributions and add in BH criteria
+            // value of the contributions and add in effect of psi_0 via log
             condition_box(iv, 0) =
-                2.0 * M_PI * a_params.G_Newton * rho_matter * pow(psi_0, 5.0) +
-                abs(0.125 * A2_0 * pow(psi_0, -7.0)) + log(psi_0) +
-                abs(8.0 * M_PI * a_params.G_Newton * pow(psi_0, 6.0) * Pi_0 *
-                    d1_phi[0]);
+                2.0 * M_PI * a_params.G_Newton * rho_matter +
+                abs(0.125 * A2_0) + 
+                log(psi_0) +
+                8.0 * M_PI * a_params.G_Newton * abs(Pi_0) *
+                   (abs(d1_phi[0]) + abs(d1_phi[1]) + abs(d1_phi[2]));
         }
     }
 } // end set_regrid_condition
@@ -435,7 +433,7 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
                 FOR1(i) { d1_phi_squared += d1_phi[i] * d1_phi[i]; }
                 Real rho_matter =
                     0.5 * Pi_0 * Pi_0 + V_of_phi +
-                    0.5 * d1_phi_squared * d1_phi_squared * pow(psi_0, -4.0);
+                    0.5 * d1_phi_squared * pow(psi_0, -4.0);
 
                 // checked, found errors, should now be right
                 aCoef_box(iv, c_psi) =

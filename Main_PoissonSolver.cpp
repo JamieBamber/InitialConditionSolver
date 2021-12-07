@@ -96,6 +96,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         bool set_matter = true;
         if (a_params.read_from_file != "none")
         {
+            pout() << "Set matter data using read in" << endl;
             set_matter = false;
             // just set initial guess for psi and zero dpsi
             readHDF5(*multigrid_vars[ilev], a_grids, a_params, ilev, ghosts);
@@ -104,11 +105,13 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         }
         else
         {
+            pout() << "Set matter data using analytic data" << endl;
             // set initial guess for psi and zero dpsi
             // and values for other multigrid matter sources (Kij set below)
             set_initial_conditions(*multigrid_vars[ilev], *dpsi[ilev],
                                    vectDx[ilev], a_params, set_matter);
         }
+        pout() << "Set matter data using analytic data done" << endl;
 
         // prepare temp dx, domain vars for next level
         dxLev /= a_params.refRatio[ilev];
@@ -392,6 +395,7 @@ int main(int argc, char *argv[])
 
         // set up the grids, using the rhs for tagging to decide
         // where needs additional levels
+        pout() << "Setup grids" << endl;
         if (params.read_from_file == "none")
         {
             set_grids(grids, params);

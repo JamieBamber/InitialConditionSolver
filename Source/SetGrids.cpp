@@ -91,7 +91,7 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids, PoissonParameters &a_params)
                 vectGrids[level], NUM_CONSTRAINT_VARS, 3 * IntVect::Unit);
 
             set_initial_conditions(*temp_multigrid_vars, *temp_dpsi, dxLevel,
-                                   a_params);
+                                   a_params, true);
 
             // set condition for regrid - use the integrability condition
             // integral
@@ -145,11 +145,11 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids, PoissonParameters &a_params)
         {
             moreLevels = true;
         }
-        // doesn't break anything but redundant I think
-        // else
-        //{
-        //    break;
-        //}
+        // doesn't break anything but redundant I think?
+        else
+        {
+            break;
+        }
     } // end while moreLevels loop
 
     // clean up temp storage

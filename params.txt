@@ -16,9 +16,9 @@ beta  = -1.0
 L = 256
 N = 64 64 64
 # number of AMR refinement levels is max_level + 1
-max_level    = 5
+max_level    = 1
 # Threshold for AMR refinement, based on magnitude of rhs
-refine_threshold = 0.5
+refine_threshold = 1.0
 #min box size
 block_factor = 16
 #max box size
