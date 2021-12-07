@@ -49,15 +49,19 @@ is_periodic = 0
 # if not periodic, then what?
 # 0 -> const Dirichlet (value)
 # 1 -> const Neumann (gradient)
+# 2 -> extrapolating at 1st order from within grid
 bc_lo_psi       = 0 0 0
 bc_hi_psi       = 0 0 0
-bc_lo_Vi       = 1 1 1
-bc_hi_Vi       = 1 1 1
+bc_lo_Vi       = 2 2 2
+bc_hi_Vi       = 2 2 2
+#bc_lo       = 1 1 1
+#bc_hi       = 1 1 1
 # And set the constant value of these conditions
 # note bc_value probably 0 because it is applied to dpsi at boundary (not psi)
 bc_value_psi = 0.0
-# note bc_value probably 0 because it is applied to the gradient of Vi
+# bc_value applied to Vi for Dirichlet or Neumann
 bc_value_Vi = 0.0
+#bc_value = 0.0
 
 # Q: "Simple, change the gravitational constant of the Universe"
 G_Newton = 1.0 

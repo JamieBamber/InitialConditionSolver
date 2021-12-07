@@ -180,9 +180,8 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
                         (pow(Pi_0, 2.0) + 2.0 * V_of_phi) +
                     // 1.5 * A2_0 * pow(psi_0, -12.0) +
                     24.0 * M_PI * a_params.G_Newton * rho_gradient *
-                        pow(psi_0, -4.0) +
-                    0.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
-                // 12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
+                        pow(psi_0, -4.0);
+                    //12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
             }
 
             integrand_box(iv, c_psi) =
@@ -286,8 +285,11 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
                        c_phi_0);
 
             Real Aij_reg[3][3], Aij_bh[3][3];
+            // note that this is \bar A^{ij}, but since conformal metric
+            // if flat we have \bar A^{ij} = \bar A_{ij}
             set_Aij_reg(Aij_reg, multigrid_vars_box, iv, loc, a_dx, a_params,
                         grad_multigrid);
+            // this is \bar A_{ij}
             set_binary_bh_Aij(Aij_bh, iv, loc, a_params);
 
             // Compute rhograd from gradients of phi, factors of psi0
@@ -319,15 +321,16 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
                 2.0 * M_PI * a_params.G_Newton * rho_gradient * psi_0 -
                 laplace_multigrid(iv, c_psi_reg);
 
+            // use the linear form
             rhs_box(iv, c_V1) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[0] -
-                laplace_multigrid(iv, c_V1_0);
+                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[0];// -
+                //laplace_multigrid(iv, c_V1_0);
             rhs_box(iv, c_V2) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[1] -
-                laplace_multigrid(iv, c_V2_0);
+                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[1];// -
+                //laplace_multigrid(iv, c_V2_0);
             rhs_box(iv, c_V3) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[2] -
-                laplace_multigrid(iv, c_V3_0);
+                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[2];// -
+                //laplace_multigrid(iv, c_V3_0);
 
             rhs_box(iv, c_V1) += 2. / 3. * pow(psi_0, 6.0) * d_K[0];
             rhs_box(iv, c_V2) += 2. / 3. * pow(psi_0, 6.0) * d_K[1];
@@ -381,8 +384,11 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
             set_deriv1(d_phi, iv, grad_multigrid, c_phi_0);
             Real Aij_reg[3][3];
             Real Aij_bh[3][3];
+            // note that this is \bar A^{ij}, but since conformal metric
+            // if flat we have \bar A^{ij} = \bar A_{ij}
             set_Aij_reg(Aij_reg, multigrid_vars_box, iv, loc, a_dx, a_params,
                         grad_multigrid);
+            // this is \bar A_{ij}
             set_binary_bh_Aij(Aij_bh, iv, loc, a_params);
 
             // JCAurre: compute rhograd from gradients of phi
@@ -440,9 +446,10 @@ void set_update_psi0(LevelData<FArrayBox> &a_multigrid_vars,
 
             // Update constraint variables for the linear step
             multigrid_vars_box(iv, c_psi_reg) += dpsi_box(iv, c_psi);
-            multigrid_vars_box(iv, c_V1_0) += dpsi_box(iv, c_V1);
-            multigrid_vars_box(iv, c_V2_0) += dpsi_box(iv, c_V2);
-            multigrid_vars_box(iv, c_V3_0) += dpsi_box(iv, c_V3);
+            // these are just linear, so equal instead of add
+            multigrid_vars_box(iv, c_V1_0) = dpsi_box(iv, c_V1);
+            multigrid_vars_box(iv, c_V2_0) = dpsi_box(iv, c_V2);
+            multigrid_vars_box(iv, c_V3_0) = dpsi_box(iv, c_V3);
         }
     }
 }
@@ -463,7 +470,8 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
         {
             // this prevents small amounts of noise in the sources
             // activating the zero modes - Garfinkle trick!
-            aCoef_box.setVal(-1e-6, iconstraint);
+            // Seems to work best to set this relative to the tolerance
+            aCoef_box.setVal(-100.0 * a_params.tolerance, iconstraint);
         }
 
         // For the non periodic case
@@ -525,13 +533,13 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
                     }
                 }
 
-                // check me!
+                // checked, found errors, should now be right
                 aCoef_box(iv, c_psi) =
-                    -0.875 * A2_0 * pow(psi_0, -8.0) +
-                    5.0 / 12.0 * K_0 * K_0 * pow(psi_0, 4.0) +
+                    - 0.875 * A2_0 * pow(psi_0, -8.0)
+                    - 5.0 / 12.0 * K_0 * K_0 * pow(psi_0, 4.0) +
                     10.0 * M_PI * a_params.G_Newton *
                         (0.5 * Pi_0 * Pi_0 + V_of_phi) * pow(psi_0, 4.0) +
-                    10.0 * M_PI * a_params.G_Newton * 0.5 * rho_gradient;
+                    10.0 * M_PI * a_params.G_Newton * rho_gradient;
             }
         }
     }

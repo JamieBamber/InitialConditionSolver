@@ -88,6 +88,7 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
 
         for (int i = 0; i < CH_SPACEDIM; ++i)
         {
+
             // periodic? If not, check if Dirichlet or Neumann
             if (!a_domain.isPeriodic(i))
             {
@@ -126,19 +127,7 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
                     }
 
                     // Now for Vi values 
-                    if (GlobalBCRS::s_bcLo_Vi[i] == 2)
-                    {
-                        if (!GlobalBCRS::s_printedThatLo_Vi[i])
-                        {
-                            GlobalBCRS::s_printedThatLo_Vi[i] = true;
-                            pout() << "Extrapolating bcs imposed on Vi for low "
-                                      "side direction "
-                                   << i << endl;
-                        }
-                        // first order extrapolation
-                        ExtrapolateBC(a_state, valid, a_dx, i, Side::Lo, Vi_comps);
-                    }
-                    else if (GlobalBCRS::s_bcLo_Vi[i] == 1)
+                    if (GlobalBCRS::s_bcLo_Vi[i] == 1)
                     {
                         if (!GlobalBCRS::s_printedThatLo_Vi[i])
                         {
@@ -201,19 +190,7 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
                     }
 
                     // Now for Vi
-                    if (GlobalBCRS::s_bcHi_Vi[i] == 2)
-                    {
-                        if (!GlobalBCRS::s_printedThatHi_Vi[i])
-                        {
-                            GlobalBCRS::s_printedThatHi_Vi[i] = true;
-                            pout() << "Extrapolating bcs imposed on Vi for high "
-                                      "side direction "
-                                   << i << endl;
-                        }
-                        // first order extrapolation
-                        ExtrapolateBC(a_state, valid, a_dx, i, Side::Hi, Vi_comps);
-                    }
-                    else if (GlobalBCRS::s_bcHi_Vi[i] == 1)
+                    if (GlobalBCRS::s_bcHi_Vi[i] == 1)
                     {
                         if (!GlobalBCRS::s_printedThatHi_Vi[i])
                         {

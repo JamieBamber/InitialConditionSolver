@@ -66,6 +66,7 @@ class PoissonParameters
     Real pot_Lambda;
     Real pot_mu;
     Real psi_reg;
+    Real tolerance;
     std::string read_from_file;
     std::string output_path;
 };

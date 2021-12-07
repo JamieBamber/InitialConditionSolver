@@ -127,6 +127,9 @@ void getPoissonParameters(PoissonParameters &a_params)
     pp.get("fill_ratio", a_params.fillRatio);
     pp.get("buffer_size", a_params.bufferSize);
 
+    // Get the tolerance - used to set a_coeff
+    pp.get("tolerance", a_params.tolerance);
+
     // set average type -
     // set to a bogus default value, so we only break from solver
     // default if it's set to something real

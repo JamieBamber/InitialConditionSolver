@@ -221,6 +221,25 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             set_b_coef(*bCoef[ilev], a_params, vectDx[ilev]);
             set_rhs(*rhs[ilev], *multigrid_vars[ilev], vectDx[ilev], a_params);
         }
+
+        // check at this point if converged or diverging and if so exit NL iteration
+        dpsi_norm0 =
+            computeNorm(rhs, a_params.refRatio, a_params.coarsestDx,
+                        Interval(0, 0)); // TODO JCAurre: not completely sure
+        dpsi_norm1 =
+            computeNorm(rhs, a_params.refRatio, a_params.coarsestDx,
+                        Interval(1, 3)); // TODO JCAurre: not completely sure
+        pout() << "The norm of rhs Ham before step " << NL_iter << " is "
+               << dpsi_norm0 << endl;
+        pout() << "The norm of rhs Mom before step " << NL_iter << " is "
+               << dpsi_norm1 << endl;
+
+        if ((dpsi_norm0 < tolerance && dpsi_norm1 < tolerance) ||
+            dpsi_norm0 > 1e5 || dpsi_norm1 > 1e5)
+        {
+            break;
+        }
+
         // set up solver factory
         RefCountedPtr<AMRLevelOpFactory<LevelData<FArrayBox>>> opFactory =
             RefCountedPtr<AMRLevelOpFactory<LevelData<FArrayBox>>>(
@@ -302,24 +321,6 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             exchange_copier.exchangeDefine(a_grids[ilev], ghosts);
             multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(),
                                            exchange_copier);
-        }
-
-        // check if converged or diverging and if so exit NL iteration for loop
-        dpsi_norm0 =
-            computeNorm(rhs, a_params.refRatio, a_params.coarsestDx,
-                        Interval(0, 0)); // TODO JCAurre: not completely sure
-        dpsi_norm1 =
-            computeNorm(rhs, a_params.refRatio, a_params.coarsestDx,
-                        Interval(1, 3)); // TODO JCAurre: not completely sure
-        pout() << "The norm of rhs Ham after step " << NL_iter + 1 << " is "
-               << dpsi_norm0 << endl;
-        pout() << "The norm of rhs Mom after step " << NL_iter + 1 << " is "
-               << dpsi_norm1 << endl;
-
-        if ((dpsi_norm0 < tolerance && dpsi_norm1 < tolerance) ||
-            dpsi_norm0 > 1e5 || dpsi_norm1 > 1e5)
-        {
-            break;
         }
 
     } // end NL iteration loop
