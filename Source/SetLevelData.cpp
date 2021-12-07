@@ -175,13 +175,12 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
             }
             else // in non periodic case exclude psi terms
             {
-                K_0_sq =
-                    1.5 * 8.0 * M_PI * a_params.G_Newton *
-                        (pow(Pi_0, 2.0) + 2.0 * V_of_phi) +
-                    // 1.5 * A2_0 * pow(psi_0, -12.0) +
-                    24.0 * M_PI * a_params.G_Newton * rho_gradient *
-                        pow(psi_0, -4.0);
-                    //12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
+                K_0_sq = 1.5 * 8.0 * M_PI * a_params.G_Newton *
+                             (pow(Pi_0, 2.0) + 2.0 * V_of_phi) +
+                         // 1.5 * A2_0 * pow(psi_0, -12.0) +
+                         24.0 * M_PI * a_params.G_Newton * rho_gradient *
+                             pow(psi_0, -4.0);
+                // 12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
             }
 
             integrand_box(iv, c_psi) =
@@ -192,6 +191,8 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
                 24.0 * M_PI * a_params.G_Newton * rho_gradient *
                     pow(psi_0, -4.0) +
                 12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
+
+            integrand_box(iv, c_U) = 0.0; // d^i V_i
 
             integrand_box(iv, c_V1) =
                 -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[0] -
@@ -321,16 +322,17 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
                 2.0 * M_PI * a_params.G_Newton * rho_gradient * psi_0 -
                 laplace_multigrid(iv, c_psi_reg);
 
-            // use the linear form
+            // non linear form
+            rhs_box(iv, c_U) = 0.0; // will be d^i V_i
             rhs_box(iv, c_V1) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[0];// -
-                //laplace_multigrid(iv, c_V1_0);
+                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[0] -
+                laplace_multigrid(iv, c_V1_0);
             rhs_box(iv, c_V2) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[1];// -
-                //laplace_multigrid(iv, c_V2_0);
+                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[1] -
+                laplace_multigrid(iv, c_V2_0);
             rhs_box(iv, c_V3) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[2];// -
-                //laplace_multigrid(iv, c_V3_0);
+                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[2] -
+                laplace_multigrid(iv, c_V3_0);
 
             rhs_box(iv, c_V1) += 2. / 3. * pow(psi_0, 6.0) * d_K[0];
             rhs_box(iv, c_V2) += 2. / 3. * pow(psi_0, 6.0) * d_K[1];
@@ -417,7 +419,8 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
                                (pow(Pi_0, 2.0) + 2.0 * V_of_phi))) +
                 1.5 * A2_0 * pow(psi_0, -7.0) +
                 24.0 * M_PI * a_params.G_Newton * abs(rho_gradient) *
-                    pow(psi_0, 1.0) + log(psi_0);
+                    pow(psi_0, 1.0) +
+                log(psi_0);
             // TODO: Add abs of D_i K and other Mom source terms here
         }
     }
@@ -446,10 +449,10 @@ void set_update_psi0(LevelData<FArrayBox> &a_multigrid_vars,
 
             // Update constraint variables for the linear step
             multigrid_vars_box(iv, c_psi_reg) += dpsi_box(iv, c_psi);
-            // these are just linear, so equal instead of add
-            multigrid_vars_box(iv, c_V1_0) = dpsi_box(iv, c_V1);
-            multigrid_vars_box(iv, c_V2_0) = dpsi_box(iv, c_V2);
-            multigrid_vars_box(iv, c_V3_0) = dpsi_box(iv, c_V3);
+            multigrid_vars_box(iv, c_U_0) += dpsi_box(iv, c_U);
+            multigrid_vars_box(iv, c_V1_0) += dpsi_box(iv, c_V1);
+            multigrid_vars_box(iv, c_V2_0) += dpsi_box(iv, c_V2);
+            multigrid_vars_box(iv, c_V3_0) += dpsi_box(iv, c_V3);
         }
     }
 }
@@ -535,8 +538,8 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
 
                 // checked, found errors, should now be right
                 aCoef_box(iv, c_psi) =
-                    - 0.875 * A2_0 * pow(psi_0, -8.0)
-                    - 5.0 / 12.0 * K_0 * K_0 * pow(psi_0, 4.0) +
+                    -0.875 * A2_0 * pow(psi_0, -8.0) -
+                    5.0 / 12.0 * K_0 * K_0 * pow(psi_0, 4.0) +
                     10.0 * M_PI * a_params.G_Newton *
                         (0.5 * Pi_0 * Pi_0 + V_of_phi) * pow(psi_0, 4.0) +
                     10.0 * M_PI * a_params.G_Newton * rho_gradient;

@@ -222,7 +222,8 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             set_rhs(*rhs[ilev], *multigrid_vars[ilev], vectDx[ilev], a_params);
         }
 
-        // check at this point if converged or diverging and if so exit NL iteration
+        // check at this point if converged or diverging and if so exit NL
+        // iteration
         dpsi_norm0 =
             computeNorm(rhs, a_params.refRatio, a_params.coarsestDx,
                         Interval(0, 0)); // TODO JCAurre: not completely sure

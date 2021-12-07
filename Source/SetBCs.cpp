@@ -59,9 +59,10 @@ void ParseValueVi(Real *pos, int *dir, Side::LoHiSide *side, Real *a_values)
     ParmParse pp;
     Real bcVal_Vi;
     pp.get("bc_value_Vi", bcVal_Vi);
-    a_values[0] = bcVal_Vi;
-    a_values[1] = bcVal_Vi;
-    a_values[2] = bcVal_Vi;
+    for (int i = 0; i < NUM_CONSTRAINT_VARS - 1; i++)
+    {
+        a_values[i] = bcVal_Vi;
+    }
     GlobalBCRS::s_valueParsed_Vi = true;
 }
 
@@ -82,9 +83,9 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
 
         const Box valid = a_valid;
         Interval psi_comps(c_psi, c_psi);
-        Interval Vi_comps(c_V1, c_V3);
+        Interval Vi_comps(c_U, c_V3);
         const BCValueHolder psi_bc(ParseValuePsi); // pointer to void function
-        const BCValueHolder Vi_bc(ParseValueVi); // pointer to void function
+        const BCValueHolder Vi_bc(ParseValueVi);   // pointer to void function
 
         for (int i = 0; i < CH_SPACEDIM; ++i)
         {
@@ -95,37 +96,39 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
                 Box ghostBoxHi = adjCellBox(valid, i, Side::Hi, 1);
                 if (!a_domain.domainBox().contains(ghostBoxLo))
                 {
-                    // First for psi values 
+                    // First for psi values
                     if (GlobalBCRS::s_bcLo_psi[i] == 1)
                     {
                         if (!GlobalBCRS::s_printedThatLo_psi[i])
                         {
                             GlobalBCRS::s_printedThatLo_psi[i] = true;
-                            pout() << "Constant Neumann bcs imposed on psi for low "
+                            pout() << "Constant Neumann bcs imposed on psi for "
+                                      "low "
                                       "side direction "
                                    << i << endl;
                         }
-                        NeumBC(a_state, valid, a_dx, a_homogeneous,
-                               psi_bc, i, Side::Lo, psi_comps);
+                        NeumBC(a_state, valid, a_dx, a_homogeneous, psi_bc, i,
+                               Side::Lo, psi_comps);
                     }
                     else if (GlobalBCRS::s_bcLo_psi[i] == 0)
                     {
                         if (!GlobalBCRS::s_printedThatLo_psi[i])
                         {
                             GlobalBCRS::s_printedThatLo_psi[i] = true;
-                            pout() << "Constant Dirichlet bcs imposed on psi for low "
+                            pout() << "Constant Dirichlet bcs imposed on psi "
+                                      "for low "
                                       "side direction "
                                    << i << endl;
                         }
-                        DiriBC(a_state, valid, a_dx, a_homogeneous, psi_bc,
-                               i, Side::Lo, psi_comps);
+                        DiriBC(a_state, valid, a_dx, a_homogeneous, psi_bc, i,
+                               Side::Lo, psi_comps);
                     }
                     else
                     {
                         MayDay::Error("bogus bc flag low side psi");
                     }
 
-                    // Now for Vi values 
+                    // Now for Vi values
                     if (GlobalBCRS::s_bcLo_Vi[i] == 2)
                     {
                         if (!GlobalBCRS::s_printedThatLo_Vi[i])
@@ -136,31 +139,34 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
                                    << i << endl;
                         }
                         // first order extrapolation
-                        ExtrapolateBC(a_state, valid, a_dx, i, Side::Lo, Vi_comps);
+                        ExtrapolateBC(a_state, valid, a_dx, i, Side::Lo,
+                                      Vi_comps);
                     }
                     else if (GlobalBCRS::s_bcLo_Vi[i] == 1)
                     {
                         if (!GlobalBCRS::s_printedThatLo_Vi[i])
                         {
                             GlobalBCRS::s_printedThatLo_Vi[i] = true;
-                            pout() << "Constant Neumann bcs imposed on Vi for low "
-                                      "side direction "
-                                   << i << endl;
+                            pout()
+                                << "Constant Neumann bcs imposed on Vi for low "
+                                   "side direction "
+                                << i << endl;
                         }
-                        NeumBC(a_state, valid, a_dx, a_homogeneous,
-                               Vi_bc, i, Side::Lo, Vi_comps);
+                        NeumBC(a_state, valid, a_dx, a_homogeneous, Vi_bc, i,
+                               Side::Lo, Vi_comps);
                     }
                     else if (GlobalBCRS::s_bcLo_Vi[i] == 0)
                     {
                         if (!GlobalBCRS::s_printedThatLo_Vi[i])
                         {
                             GlobalBCRS::s_printedThatLo_Vi[i] = true;
-                            pout() << "Constant Dirichlet bcs imposed on Vi for low "
+                            pout() << "Constant Dirichlet bcs imposed on Vi "
+                                      "for low "
                                       "side direction "
                                    << i << endl;
                         }
-                        DiriBC(a_state, valid, a_dx, a_homogeneous, Vi_bc,
-                               i, Side::Lo, Vi_comps);
+                        DiriBC(a_state, valid, a_dx, a_homogeneous, Vi_bc, i,
+                               Side::Lo, Vi_comps);
                     }
                     else
                     {
@@ -176,24 +182,26 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
                         if (!GlobalBCRS::s_printedThatHi_psi[i])
                         {
                             GlobalBCRS::s_printedThatHi_psi[i] = true;
-                            pout() << "Constant Neumann bcs imposed on psi for high "
+                            pout() << "Constant Neumann bcs imposed on psi for "
+                                      "high "
                                       "side direction "
                                    << i << endl;
                         }
-                        NeumBC(a_state, valid, a_dx, a_homogeneous, psi_bc,
-                               i, Side::Hi, psi_comps);
+                        NeumBC(a_state, valid, a_dx, a_homogeneous, psi_bc, i,
+                               Side::Hi, psi_comps);
                     }
                     else if (GlobalBCRS::s_bcHi_psi[i] == 0)
                     {
                         if (!GlobalBCRS::s_printedThatHi_psi[i])
                         {
                             GlobalBCRS::s_printedThatHi_psi[i] = true;
-                            pout() << "Constant Dirichlet bcs imposed on psi for high "
+                            pout() << "Constant Dirichlet bcs imposed on psi "
+                                      "for high "
                                       "side direction "
                                    << i << endl;
                         }
-                        DiriBC(a_state, valid, a_dx, a_homogeneous, psi_bc,
-                               i, Side::Hi, psi_comps);
+                        DiriBC(a_state, valid, a_dx, a_homogeneous, psi_bc, i,
+                               Side::Hi, psi_comps);
                     }
                     else
                     {
@@ -206,36 +214,40 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
                         if (!GlobalBCRS::s_printedThatHi_Vi[i])
                         {
                             GlobalBCRS::s_printedThatHi_Vi[i] = true;
-                            pout() << "Extrapolating bcs imposed on Vi for high "
-                                      "side direction "
-                                   << i << endl;
+                            pout()
+                                << "Extrapolating bcs imposed on Vi for high "
+                                   "side direction "
+                                << i << endl;
                         }
                         // first order extrapolation
-                        ExtrapolateBC(a_state, valid, a_dx, i, Side::Hi, Vi_comps);
+                        ExtrapolateBC(a_state, valid, a_dx, i, Side::Hi,
+                                      Vi_comps);
                     }
                     else if (GlobalBCRS::s_bcHi_Vi[i] == 1)
                     {
                         if (!GlobalBCRS::s_printedThatHi_Vi[i])
                         {
                             GlobalBCRS::s_printedThatHi_Vi[i] = true;
-                            pout() << "Constant Neumann bcs imposed on Vi for high "
+                            pout() << "Constant Neumann bcs imposed on Vi for "
+                                      "high "
                                       "side direction "
                                    << i << endl;
                         }
-                        NeumBC(a_state, valid, a_dx, a_homogeneous, Vi_bc,
-                               i, Side::Hi, Vi_comps);
+                        NeumBC(a_state, valid, a_dx, a_homogeneous, Vi_bc, i,
+                               Side::Hi, Vi_comps);
                     }
                     else if (GlobalBCRS::s_bcHi_Vi[i] == 0)
                     {
                         if (!GlobalBCRS::s_printedThatHi_Vi[i])
                         {
                             GlobalBCRS::s_printedThatHi_Vi[i] = true;
-                            pout() << "Constant Dirichlet bcs imposed on psi for high "
+                            pout() << "Constant Dirichlet bcs imposed on psi "
+                                      "for high "
                                       "side direction "
                                    << i << endl;
                         }
-                        DiriBC(a_state, valid, a_dx, a_homogeneous, Vi_bc,
-                               i, Side::Hi, Vi_comps);
+                        DiriBC(a_state, valid, a_dx, a_homogeneous, Vi_bc, i,
+                               Side::Hi, Vi_comps);
                     }
                     else
                     {

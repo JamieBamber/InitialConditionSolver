@@ -75,15 +75,16 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
 
     // set names
     Vector<string> variable_names(totalComp);
-    variable_names[0] =
-        "dpsi_reg"; // JCAurre: name for the rhs and linear solution of constraints
-    variable_names[1] = "dV1";
-    variable_names[2] = "dV2";
-    variable_names[3] = "dV3";
-    variable_names[4] = "rhs_dpsi_reg";
-    variable_names[5] = "rhs_dV1";
-    variable_names[6] = "rhs_dV2";
-    variable_names[7] = "rhs_dV3";
+    variable_names[0] = "dpsi_reg";
+    variable_names[1] = "dU";
+    variable_names[2] = "dV1";
+    variable_names[3] = "dV2";
+    variable_names[4] = "dV3";
+    variable_names[5] = "rhs_dpsi_reg";
+    variable_names[6] = "rhs_dU";
+    variable_names[7] = "rhs_dV1";
+    variable_names[8] = "rhs_dV2";
+    variable_names[9] = "rhs_dV3";
 
     for (int icomp = 0; icomp < NUM_MULTIGRID_VARS; icomp++)
     {
@@ -104,6 +105,7 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
         Interval mgComps(2 * NUM_CONSTRAINT_VARS,
                          2 * NUM_CONSTRAINT_VARS + NUM_MULTIGRID_VARS - 1);
 
+// KC TODO: May be needed to correctly write constraint ghosts 
 /*        if(level == 0) // output boundary cells
         {
             Box grown_domain_box = a_grids[level].physDomain();
