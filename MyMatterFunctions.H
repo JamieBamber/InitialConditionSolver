@@ -3,10 +3,10 @@
  * Please refer to LICENSE in GRChombo's root directory.
  */
 
-#ifndef MYPHIFUNCTION_HPP
-#define MYPHIFUNCTION_HPP
+#ifndef MYMATTERFUNCTIONS_HPP
+#define MYMATTERFUNCTIONS_HPP
 
-Real my_phi_function(RealVect loc, const PoissonParameters &a_params) {
+Real my_phi_function(const RealVect loc, const PoissonParameters &a_params) {
 
   RealVect L = a_params.domainLength;
 
@@ -29,7 +29,7 @@ Real my_phi_function(RealVect loc, const PoissonParameters &a_params) {
   }
 }
 
-Real my_pi_function(RealVect loc, const PoissonParameters &a_params) {
+Real my_Pi_function(const RealVect loc, const PoissonParameters &a_params) {
 
   RealVect L = a_params.domainLength;
 
@@ -51,4 +51,12 @@ Real my_pi_function(RealVect loc, const PoissonParameters &a_params) {
   }
 }
 
-#endif /* MYPHIFUNCTION_HPP */
+Real my_potential_function(const Real &phi_here,
+                           const PoissonParameters &a_params)
+{
+    Real mpl = 1.0;
+    return a_params.pot_Lambda * 
+               pow(1. - exp((phi_here / a_params.pot_mu * pow(mpl, -1.0))), 2.0);
+}
+
+#endif /* MYMATTERFUNCTIONS_HPP */

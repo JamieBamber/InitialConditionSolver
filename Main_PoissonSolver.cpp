@@ -58,8 +58,6 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
     Vector<LevelData<FArrayBox> *> dpsi(nlevels, NULL);
     // the solver vars - coefficients and source
     Vector<LevelData<FArrayBox> *> rhs(nlevels, NULL);
-    // the integrand for integrability condition
-    Vector<LevelData<FArrayBox> *> integrand(nlevels, NULL);
     // the coeff for the I term
     Vector<RefCountedPtr<LevelData<FArrayBox>>> aCoef(nlevels);
     // the coeff for the Laplacian
@@ -86,8 +84,6 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
                                               NUM_CONSTRAINT_VARS, ghosts);
         rhs[ilev] = new LevelData<FArrayBox>(a_grids[ilev], NUM_CONSTRAINT_VARS,
                                              IntVect::Zero);
-        integrand[ilev] = new LevelData<FArrayBox>(
-            a_grids[ilev], NUM_CONSTRAINT_VARS, IntVect::Zero);
         aCoef[ilev] =
             RefCountedPtr<LevelData<FArrayBox>>(new LevelData<FArrayBox>(
                 a_grids[ilev], NUM_CONSTRAINT_VARS, IntVect::Zero));
@@ -96,14 +92,22 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
                 a_grids[ilev], NUM_CONSTRAINT_VARS, IntVect::Zero));
         vectDomains[ilev] = domLev;
         vectDx[ilev] = dxLev;
-        // set initial guess for psi and zero dpsi
-        // and values for other multigrid sources - phi and Aij
-        set_initial_conditions(*multigrid_vars[ilev], *dpsi[ilev], vectDx[ilev],
-                               a_params);
 
+        bool set_matter = true;
         if (a_params.read_from_file != "none")
         {
+            set_matter = false;
+            // just set initial guess for psi and zero dpsi
             readHDF5(*multigrid_vars[ilev], a_grids, a_params, ilev, ghosts);
+            set_initial_conditions(*multigrid_vars[ilev], *dpsi[ilev],
+                                   vectDx[ilev], a_params, set_matter);
+        }
+        else
+        {
+            // set initial guess for psi and zero dpsi
+            // and values for other multigrid matter sources (Kij set below)
+            set_initial_conditions(*multigrid_vars[ilev], *dpsi[ilev],
+                                   vectDx[ilev], a_params, set_matter);
         }
 
         // prepare temp dx, domain vars for next level
@@ -148,27 +152,28 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         pout() << "Main Loop Iteration " << (NL_iter + 1) << " out of "
                << max_NL_iter << endl;
 
-        // This function sets K satisfying rhs and hence also the integrability
-        // condition of Ham for periodic domains
+        // This function sets K per our ansatz depending on periodicity
+        // It also assigns and updates the values of \bar Aij
+        // it can only do this in the unghosted regions of the box at this stage
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
-            set_K_and_integrability(*integrand[ilev], *multigrid_vars[ilev],
-                                    vectDx[ilev], a_params);
+            set_update_Kij(*multigrid_vars[ilev], *rhs[ilev], vectDx[ilev],
+                           a_params);
         }
 
-        // need to fill interlevel and intralevel ghosts first in multigrid_vars
+        // need to fill interlevel and intralevel ghosts in multigrid_vars
+        // so that derivatives can be computed within the grid
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
-            // For intralevel ghosts of K
+            // For intralevel ghosts
             Copier exchange_copier;
             exchange_copier.exchangeDefine(a_grids[ilev], ghosts);
             multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(),
                                            exchange_copier);
         }
-
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
-            // For interlevel ghosts in multigrid vars
+            // For interlevel ghosts
             if (ilev > 0)
             {
                 QuadCFInterp quadCFI(a_grids[ilev], &a_grids[ilev - 1],
@@ -181,35 +186,11 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
-            // For intralevel ghosts of K
+            // For intralevel ghosts again just to be sure!
             Copier exchange_copier;
             exchange_copier.exchangeDefine(a_grids[ilev], ghosts);
             multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(),
                                            exchange_copier);
-        }
-
-        // Check integrability conditions if periodic
-        if (a_params.periodic[0] == 1)
-        {
-            // Calculate values for integrand here with K unset
-            pout() << "Computing integrability... " << endl;
-
-            Real integral_Ham = computeSum(integrand, a_params.refRatio,
-                                           a_params.coarsestDx, Interval(0, 0));
-            Real integral_Mom1 =
-                computeSum(integrand, a_params.refRatio, a_params.coarsestDx,
-                           Interval(1, 1));
-            Real integral_Mom2 =
-                computeSum(integrand, a_params.refRatio, a_params.coarsestDx,
-                           Interval(2, 2));
-            Real integral_Mom3 =
-                computeSum(integrand, a_params.refRatio, a_params.coarsestDx,
-                           Interval(3, 3));
-
-            pout() << "Integral of Ham " << integral_Ham << endl;
-            pout() << "Integral of Mom1 " << integral_Mom1 << endl;
-            pout() << "Integral of Mom2 " << integral_Mom2 << endl;
-            pout() << "Integral of Mom3 " << integral_Mom3 << endl;
         }
 
         // Calculate values for coefficients here - see SetLevelData.cpp
@@ -222,14 +203,30 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             set_rhs(*rhs[ilev], *multigrid_vars[ilev], vectDx[ilev], a_params);
         }
 
+        // Check integrability conditions on rhs if periodic
+        if (a_params.is_periodic)
+        {
+            // Calculate values for integrand here
+            pout() << "Computing integrability of rhs for periodic domain... "
+                   << endl;
+            for (int icomp = 0; icomp < NUM_CONSTRAINT_VARS; icomp++)
+            {
+                Real integral =
+                    computeSum(rhs, a_params.refRatio, a_params.coarsestDx,
+                               Interval(icomp, icomp));
+
+                pout() << "Integral of rhs " << icomp << " is " << integral
+                       << endl;
+                pout() << "(This should be a small number)" << endl;
+            }
+        }
+
         // check at this point if converged or diverging and if so exit NL
         // iteration
-        dpsi_norm0 =
-            computeNorm(rhs, a_params.refRatio, a_params.coarsestDx,
-                        Interval(0, 0)); // TODO JCAurre: not completely sure
-        dpsi_norm1 =
-            computeNorm(rhs, a_params.refRatio, a_params.coarsestDx,
-                        Interval(1, 3)); // TODO JCAurre: not completely sure
+        dpsi_norm0 = computeNorm(rhs, a_params.refRatio, a_params.coarsestDx,
+                                 Interval(0, 0));
+        dpsi_norm1 = computeNorm(rhs, a_params.refRatio, a_params.coarsestDx,
+                                 Interval(1, NUM_CONSTRAINT_VARS - 1));
         pout() << "The norm of rhs Ham before step " << NL_iter << " is "
                << dpsi_norm0 << endl;
         pout() << "The norm of rhs Mom before step " << NL_iter << " is "
@@ -250,7 +247,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         // define the multi level operator
         mlOp.define(a_grids, a_params.refRatio, vectDomains, vectDx, opFactory,
                     lBase);
-        // set the more solver params
+        // set the solver params
         bool homogeneousBC = false;
         solver.define(&mlOp, homogeneousBC);
         solver.m_verbosity = a_params.verbosity;
@@ -270,7 +267,6 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         // need to fill interlevel and intralevel ghosts first in dpsi
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
-
             // For interlevel ghosts in dpsi and multigrid_vars
             if (ilev > 0)
             {
@@ -317,7 +313,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
-            // For intralevel ghosts
+            // For intralevel ghosts again to be sure!
             Copier exchange_copier;
             exchange_copier.exchangeDefine(a_grids[ilev], ghosts);
             multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(),
@@ -356,11 +352,6 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         {
             delete rhs[level];
             rhs[level] = NULL;
-        }
-        if (integrand[level] != NULL)
-        {
-            delete integrand[level];
-            integrand[level] = NULL;
         }
         if (dpsi[level] != NULL)
         {

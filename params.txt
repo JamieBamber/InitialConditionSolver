@@ -52,8 +52,8 @@ is_periodic = 0
 # 2 -> extrapolating at 1st order from within grid
 bc_lo_psi       = 0 0 0
 bc_hi_psi       = 0 0 0
-bc_lo_Vi       = 2 2 2
-bc_hi_Vi       = 2 2 2
+bc_lo_Vi       = 0 0 0
+bc_hi_Vi       = 0 0 0
 #bc_lo       = 1 1 1
 #bc_hi       = 1 1 1
 # And set the constant value of these conditions

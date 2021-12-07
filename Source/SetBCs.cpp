@@ -44,7 +44,6 @@ bool GlobalBCRS::s_trigParsed = false;
 // arguments given pos [x,y,z] position on center of cell edge int dir
 // direction, x being 0 int side -1 for low, +1 = high, fill in the a_values
 // array
-//
 // For the moment these assume the value is constant for all positions and dirs
 void ParseValuePsi(Real *pos, int *dir, Side::LoHiSide *side, Real *a_values)
 {

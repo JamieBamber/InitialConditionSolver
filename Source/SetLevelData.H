@@ -9,15 +9,23 @@
 #include <iostream>
 using std::cerr;
 
-#include "AMRMultiGrid.H"
 #include "DisjointBoxLayout.H"
+#include "DimensionDefinitions.hpp"
 #include "FArrayBox.H"
 #include "GRChomboUserVariables.hpp"
 #include "MultigridUserVariables.hpp"
 #include "ParmParse.H"
 #include "PoissonParameters.H"
-#include "VariableCoeffPoissonOperator.H"
-#include "VariableCoeffPoissonOperatorFactory.H"
+#include "AMRIO.H"
+#include "BRMeshRefine.H"
+#include "BoxIterator.H"
+#include "CONSTANTS.H"
+#include "CoarseAverage.H"
+#include "SetLevelDataGradients.H"
+#include "computeNorm.H"
+#include "parstream.H"
+#include "Tensor.hpp"
+#include <cmath>
 
 // various functions operating on grids to set up data for initial
 // conditions, spatially dependent coefficients and rhs etc
@@ -25,16 +33,17 @@ using std::cerr;
 extern void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
                                    LevelData<FArrayBox> &a_dpsi,
                                    const RealVect &a_dx,
-                                   const PoissonParameters &a_params);
+                                   const PoissonParameters &a_params,
+                                   const bool set_matter = true);
+
+extern void set_update_Kij(LevelData<FArrayBox> &a_multigrid_vars,
+                              LevelData<FArrayBox> &a_rhs,
+                              const RealVect &a_dx,
+                              const PoissonParameters &a_params);
 
 extern void set_rhs(LevelData<FArrayBox> &a_rhs,
                     LevelData<FArrayBox> &a_multigrid_vars,
                     const RealVect &a_dx, const PoissonParameters &a_params);
-
-extern void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
-                              LevelData<FArrayBox> &a_multigrid_vars,
-                              const RealVect &a_dx,
-                              const PoissonParameters &a_params);
 
 extern void set_regrid_condition(LevelData<FArrayBox> &a_condition,
                                  LevelData<FArrayBox> &a_multigrid_vars,

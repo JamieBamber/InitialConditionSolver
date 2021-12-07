@@ -4,23 +4,8 @@
  */
 
 #include "SetLevelData.H"
-#include "AMRIO.H"
-#include "BCFunc.H"
-#include "BRMeshRefine.H"
-#include "BiCGStabSolver.H"
-#include "BoxIterator.H"
-#include "CONSTANTS.H"
-#include "CoarseAverage.H"
-#include "LoadBalance.H"
-#include "MyPhiFunction.H"
-#include "MyPotentialFunction.H"
-#include "PoissonParameters.H"
-#include "SetAij.H"
-#include "SetLevelDataCpp.H"
-#include "VariableCoeffPoissonOperatorFactory.H"
-#include "computeNorm.H"
-#include "parstream.H"
-#include <cmath>
+#include "MyMatterFunctions.H"
+#include "SetPsiAndAij.H"
 
 // Set various LevelData functions across the grid
 
@@ -31,7 +16,8 @@
 // with some initial user specified configuration
 void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
                             LevelData<FArrayBox> &a_dpsi, const RealVect &a_dx,
-                            const PoissonParameters &a_params)
+                            const PoissonParameters &a_params,
+                            const bool set_matter)
 {
 
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
@@ -51,16 +37,16 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
         {
             dpsi_box.setVal(0.0, comp);
         }
-        // Iterate over the box
+
+        // Iterate over the box and set non zero comps
         Box ghosted_box = multigrid_vars_box.box();
         BoxIterator bit(ghosted_box);
         for (bit.begin(); bit.ok(); ++bit)
         {
             // work out location on the grid
             IntVect iv = bit();
-            RealVect loc(iv + 0.5 * RealVect::Unit);
-            loc *= a_dx;
-            loc -= a_params.domainLength / 2.0;
+            RealVect loc;
+            get_loc(loc, iv, a_dx, a_params);
 
             // note that we don't include the singular part of psi
             // for the BHs - this is added at the output data stage
@@ -68,149 +54,100 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
             // as it already satisfies Laplacian(psi) = 0
             multigrid_vars_box(iv, c_psi_reg) = a_params.psi_reg;
 
-            // set phi and pi according to user defined function
-            multigrid_vars_box(iv, c_phi_0) = my_phi_function(loc, a_params);
-            multigrid_vars_box(iv, c_Pi_0) = my_pi_function(loc, a_params);
+            if (set_matter)
+            {
+                // set phi and pi according to user defined function
+                // KC TODO pass whole box here and set matter in
+                // MyMatterFunction?
+                multigrid_vars_box(iv, c_phi_0) =
+                    my_phi_function(loc, a_params);
+                multigrid_vars_box(iv, c_Pi_0) = my_Pi_function(loc, a_params);
+            }
 
             // Note that Aij_0 and K_0 are set below since they require
-            // gradients
+            // gradients of these quantities
         }
     }
-} // end set_initial_conditions
+} // end set_initial_conditions_matter
 
-// Set K_0 and check integrands for periodic cases, update Aij
-void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
-                             LevelData<FArrayBox> &a_multigrid_vars,
-                             const RealVect &a_dx,
-                             const PoissonParameters &a_params)
+// Set values of K_ij - \bar Aij and K, based on current values
+void set_update_Kij(LevelData<FArrayBox> &a_multigrid_vars,
+                    LevelData<FArrayBox> &a_rhs, const RealVect &a_dx,
+                    const PoissonParameters &a_params)
 {
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
 
-    DataIterator dit = a_integrand.dataIterator();
+    // Iterate through the boxes in turn
+    DataIterator dit = a_rhs.dataIterator();
     for (dit.begin(); dit.ok(); ++dit)
     {
         FArrayBox &multigrid_vars_box = a_multigrid_vars[dit()];
-        FArrayBox &integrand_box = a_integrand[dit()];
-        for (int comp = 0; comp < NUM_CONSTRAINT_VARS; comp++)
-        {
-            integrand_box.setVal(0.0, comp);
-        }
-        Box unghosted_box = integrand_box.box();
+        FArrayBox &rhs_box = a_rhs[dit()];
+        Box unghosted_box = rhs_box.box();
 
-        // TODO: Convert these to act at a point not across box
-        // and call in bit loop below
-
-        // calculate the laplacian of psi and V_i across the box
-        FArrayBox laplace_multigrid(unghosted_box, NUM_CONSTRAINT_VARS);
-        get_laplacian(unghosted_box, multigrid_vars_box,
-                      Interval(c_psi_reg, c_V3_0), a_dx, laplace_multigrid,
-                      a_params);
-
-        // calculate gradients for constructing rho and Aij
-        FArrayBox grad_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
-        get_grad(unghosted_box, multigrid_vars_box,
-                 Interval(c_psi_reg, c_phi_0), a_dx, grad_multigrid, a_params);
-
+        // Iterate through the interior of boxes
+        // (ghosts need to be filled later due to gradient terms)
         BoxIterator bit(unghosted_box);
         for (bit.begin(); bit.ok(); ++bit)
         {
+            // work out location on the grid
             IntVect iv = bit();
-            RealVect loc(iv + 0.5 * RealVect::Unit);
-            loc *= a_dx;
-            loc -= a_params.domainLength / 2.0;
-
-            // integrand = -1.5*term + 1.5 * \bar A_ij \bar A^ij psi_0^-12 +
-            // 24 pi rho_grad psi_0^-4  + 12*laplacian(psi_0)*psi^-5
-            // JCAurre: Calculate potential and derivative
-            Real V_of_phi, dVdphi;
-            my_potential_function(V_of_phi, dVdphi,
-                                  multigrid_vars_box(iv, c_phi_0), a_params);
+            RealVect loc;
+            get_loc(loc, iv, a_dx, a_params);
 
             // Calculate the actual value of psi including BH part
+            Real psi_reg = multigrid_vars_box(iv, c_psi_reg);
             Real psi_bh = set_binary_bh_psi(loc, a_params);
-            Real psi_0 = multigrid_vars_box(iv, c_psi_reg) + psi_bh;
+            Real psi_0 = psi_reg + psi_bh;
+            Real laplacian_psi_reg =
+                get_laplacian(iv, multigrid_vars_box, a_dx, c_psi_reg);
 
-            // Assign values of useful quantities
-            // TODO: Use Tensor class not arrays of Reals
-            Real Pi_0 = multigrid_vars_box(iv, c_Pi_0);
-            Real d_phi[3];
-            set_deriv1(d_phi, iv, grad_multigrid, c_phi_0);
-            Real Aij_reg[3][3];
-            Real Aij_bh[3][3];
-            set_Aij_reg(Aij_reg, multigrid_vars_box, iv, loc, a_dx, a_params,
-                        grad_multigrid);
-            set_binary_bh_Aij(Aij_bh, iv, loc, a_params);
-
-            // Compute rhograd from gradients of phi, factors of psi_0
-            // accounted for below
-            Real rho_gradient = 0;
-            for (int i = 0; i < SpaceDim; i++)
-            {
-                rho_gradient += 0.5 * d_phi[i] * d_phi[i];
-            }
-
-            // Also \bar  A_ij \bar A^ij (factors of psi introduced below)
+            // Assign values of Aij
+            Tensor<2, Real> Aij_reg;
+            set_Aij_reg(Aij_reg, multigrid_vars_box, iv, a_dx, a_params);
+            Tensor<2, Real> Aij_bh;
+            set_Aij_bh(Aij_bh, loc, a_params);
+            // This is \bar  A_ij \bar A^ij
             Real A2_0 = 0.0;
-            Real A2_bh = 0.0;
-            for (int i = 0; i < SpaceDim; i++)
+            FOR2(i, j)
             {
-                for (int j = 0; j < SpaceDim; j++)
-                {
-                    A2_0 += (Aij_reg[i][j] + Aij_bh[i][j]) *
-                            (Aij_reg[i][j] + Aij_bh[i][j]);
-                    A2_bh += Aij_bh[i][j] * Aij_bh[i][j];
-                }
+                A2_0 += (Aij_reg[i][j] + Aij_bh[i][j]) *
+                        (Aij_reg[i][j] + Aij_bh[i][j]);
             }
 
-            Real K_0_sq = 0.0;
+            // Assign values of useful matter quantities
+            // KC TODO: Make this a function in MyMatterFunctions?
+            Real V_of_phi = my_potential_function(
+                multigrid_vars_box(iv, c_phi_0), a_params);
+            Real Pi_0 = multigrid_vars_box(iv, c_Pi_0);
+            Tensor<1, Real, SpaceDim> d1_phi =
+                get_d1(iv, multigrid_vars_box, a_dx, c_phi_0);
+            Real d1_phi_squared = 0;
+            FOR1(i) { d1_phi_squared += d1_phi[i] * d1_phi[i]; }
+            Real rho_matter =
+                0.5 * Pi_0 * Pi_0 + V_of_phi +
+                0.5 * d1_phi_squared * d1_phi_squared * pow(psi_0, -4.0);
+
+            // Now work out K using ansatz which sets it to (roughly)
+            // the FRW value based on the local densities
+            Real K_0_squared = 0.0;
             if (a_params.is_periodic)
             {
-                K_0_sq =
-                    1.5 * 8.0 * M_PI * a_params.G_Newton *
-                        (pow(Pi_0, 2.0) + 2.0 * V_of_phi) +
-                    1.5 * A2_0 * pow(psi_0, -12.0) +
-                    24.0 * M_PI * a_params.G_Newton * rho_gradient *
-                        pow(psi_0, -4.0) +
-                    12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
+                K_0_squared = 24.0 * M_PI * a_params.G_Newton * rho_matter +
+                              1.5 * A2_0 * pow(psi_0, -12.0) +
+                              12.0 * laplacian_psi_reg * pow(psi_0, -5.0);
             }
-            else // in non periodic case exclude psi terms
+            else // in non periodic case exclude Aij terms
             {
-                K_0_sq = 1.5 * 8.0 * M_PI * a_params.G_Newton *
-                             (pow(Pi_0, 2.0) + 2.0 * V_of_phi) +
-                         // 1.5 * A2_0 * pow(psi_0, -12.0) +
-                         24.0 * M_PI * a_params.G_Newton * rho_gradient *
-                             pow(psi_0, -4.0);
-                // 12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
+                K_0_squared = 24.0 * M_PI * a_params.G_Newton * rho_matter;
             }
-
-            integrand_box(iv, c_psi) =
-                -1.5 * (2.0 / 3.0 * K_0_sq -
-                        8.0 * M_PI * a_params.G_Newton *
-                            (pow(Pi_0, 2.0) + 2.0 * V_of_phi)) +
-                1.5 * A2_0 * pow(psi_0, -12.0) +
-                24.0 * M_PI * a_params.G_Newton * rho_gradient *
-                    pow(psi_0, -4.0) +
-                12.0 * laplace_multigrid(iv, c_psi_reg) * pow(psi_0, -5.0);
-
-            integrand_box(iv, c_U) = 0.0; // d^i V_i
-
-            integrand_box(iv, c_V1) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[0] -
-                laplace_multigrid(iv, c_V1_0);
-
-            integrand_box(iv, c_V2) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[1] -
-                laplace_multigrid(iv, c_V2_0);
-
-            integrand_box(iv, c_V3) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[2] -
-                laplace_multigrid(iv, c_V3_0);
 
             // Set value for K
-            multigrid_vars_box(iv, c_K_0) = a_params.sign_of_K * sqrt(K_0_sq);
-            // be careful when K=0, maybe discontinuity
+            // be careful if at a point K = 0, may have discontinuity
+            multigrid_vars_box(iv, c_K_0) =
+                a_params.sign_of_K * sqrt(K_0_squared);
 
-            // set values for Aij_0
+            // set values for \bar Aij_0
             multigrid_vars_box(iv, c_A11_0) = Aij_reg[0][0] + Aij_bh[0][0];
             multigrid_vars_box(iv, c_A22_0) = Aij_reg[1][1] + Aij_bh[1][1];
             multigrid_vars_box(iv, c_A33_0) = Aij_reg[2][2] + Aij_bh[2][2];
@@ -219,9 +156,9 @@ void set_K_and_integrability(LevelData<FArrayBox> &a_integrand,
             multigrid_vars_box(iv, c_A23_0) = Aij_reg[1][2] + Aij_bh[1][2];
         }
     }
-} // end set_K_and_integrability
+} // end set_update_Kij
 
-// set the rhs source for the poisson eqn
+// Set rhs for the laplacian
 void set_rhs(LevelData<FArrayBox> &a_rhs,
              LevelData<FArrayBox> &a_multigrid_vars, const RealVect &a_dx,
              const PoissonParameters &a_params)
@@ -238,105 +175,95 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
             rhs_box.setVal(0.0, comp);
         }
         Box unghosted_box = rhs_box.box();
-
-        // TODO: Make these local functions in bit() and use Tensor class
-
-        // calculate the laplacian of Psi across the box
-        FArrayBox laplace_multigrid(unghosted_box, NUM_CONSTRAINT_VARS);
-        get_laplacian(unghosted_box, multigrid_vars_box, Interval(c_psi, c_V3),
-                      a_dx, laplace_multigrid, a_params);
-
-        // calculate gradients for constructing rho and Aij
-        FArrayBox grad_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
-        get_grad(unghosted_box, multigrid_vars_box, Interval(c_psi_reg, c_K_0),
-                 a_dx, grad_multigrid, a_params);
-
-        FArrayBox grad2_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
-        get_grad2(unghosted_box, multigrid_vars_box,
-                  Interval(c_psi_reg, c_Pi_0), a_dx, grad2_multigrid, a_params);
-
-        FArrayBox mixed_grad2_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
-        get_mixed_grad2(unghosted_box, multigrid_vars_box,
-                        Interval(c_psi_reg, c_Pi_0), a_dx,
-                        mixed_grad2_multigrid, a_params);
-
         BoxIterator bit(unghosted_box);
         for (bit.begin(); bit.ok(); ++bit)
         {
+            // work out location on the grid
             IntVect iv = bit();
-            RealVect loc(iv + 0.5 * RealVect::Unit);
-            loc *= a_dx;
-            loc -= a_params.domainLength / 2.0;
+            RealVect loc;
+            get_loc(loc, iv, a_dx, a_params);
 
-            // rhs = term/8 psi_0^5 - 2 pi rho_grad psi_0  - laplacian(psi_0)
-            // JCAurre: Calculate potential and derivative
-            Real V_of_phi, dVdphi;
-            my_potential_function(V_of_phi, dVdphi,
-                                  multigrid_vars_box(iv, c_phi_0), a_params);
-
-            // Calculate useful quantities
+            // Calculate the actual value of psi including BH part
+            Real psi_reg = multigrid_vars_box(iv, c_psi_reg);
             Real psi_bh = set_binary_bh_psi(loc, a_params);
-            Real psi_0 = multigrid_vars_box(iv, c_psi_reg) + psi_bh;
-            Real K_0 = multigrid_vars_box(iv, c_K_0);
-            Real Pi_0 = multigrid_vars_box(iv, c_Pi_0);
-            Real d_K[3], d_phi[3], dd_phi[3][3];
-            set_deriv1(d_K, iv, grad_multigrid, c_K_0);
-            set_deriv1(d_phi, iv, grad_multigrid, c_phi_0);
-            set_deriv2(dd_phi, iv, grad2_multigrid, mixed_grad2_multigrid,
-                       c_phi_0);
+            Real psi_0 = psi_reg + psi_bh;
+            Real laplacian_psi_reg =
+                get_laplacian(iv, multigrid_vars_box, a_dx, c_psi_reg);
 
-            Real Aij_reg[3][3], Aij_bh[3][3];
-            // note that this is \bar A^{ij}, but since conformal metric
-            // if flat we have \bar A^{ij} = \bar A_{ij}
-            set_Aij_reg(Aij_reg, multigrid_vars_box, iv, loc, a_dx, a_params,
-                        grad_multigrid);
-            // this is \bar A_{ij}
-            set_binary_bh_Aij(Aij_bh, iv, loc, a_params);
-
-            // Compute rhograd from gradients of phi, factors of psi0
-            // accounted for below
-            Real rho_gradient = 0;
-            for (int i = 0; i < SpaceDim; i++)
-            {
-                rho_gradient += 0.5 * d_phi[i] * d_phi[i];
-            }
-
-            // Also \bar  A_ij \bar A^ij
+            // Get values of Aij
+            Tensor<2, Real> Aij_reg;
+            set_Aij_reg(Aij_reg, multigrid_vars_box, iv, a_dx, a_params);
+            Tensor<2, Real> Aij_bh;
+            set_Aij_bh(Aij_bh, loc, a_params);
+            // This is \bar  A_ij \bar A^ij
             Real A2_0 = 0.0;
-            for (int i = 0; i < SpaceDim; i++)
+            FOR2(i, j)
             {
-                for (int j = 0; j < SpaceDim; j++)
-                {
-                    A2_0 += (Aij_reg[i][j] + Aij_bh[i][j]) *
-                            (Aij_reg[i][j] + Aij_bh[i][j]);
-                }
+                A2_0 += (Aij_reg[i][j] + Aij_bh[i][j]) *
+                        (Aij_reg[i][j] + Aij_bh[i][j]);
             }
 
+            // Assign values of useful matter quantities
+            // KC TODO: Make this a function in MyMatterFunctions?
+            Real V_of_phi = my_potential_function(
+                multigrid_vars_box(iv, c_phi_0), a_params);
+            Real Pi_0 = multigrid_vars_box(iv, c_Pi_0);
+            Tensor<1, Real, SpaceDim> d1_phi =
+                get_d1(iv, multigrid_vars_box, a_dx, c_phi_0);
+            Real d1_phi_squared = 0;
+            FOR1(i) { d1_phi_squared += d1_phi[i] * d1_phi[i]; }
+            Real rho_matter =
+                0.5 * Pi_0 * Pi_0 + V_of_phi +
+                0.5 * d1_phi_squared * d1_phi_squared * pow(psi_0, -4.0);
+
+            // Get current values for K and derivs
+            Real K_0 = multigrid_vars_box(iv, c_K_0);
+            Real K_0_sq = K_0 * K_0;
+            Tensor<1, Real, SpaceDim> d1_K =
+                get_d1(iv, multigrid_vars_box, a_dx, c_K_0);
+
+            // rhs = -1.5*term + 1.5 * \bar A_ij \bar A^ij psi_0^-12 +
+            // 24 pi rho_grad psi_0^-4  + 12*laplacian(psi_0)*psi^-5
             rhs_box(iv, c_psi) =
-                0.125 *
-                    (2.0 / 3.0 * K_0 * K_0 -
-                     8.0 * M_PI * a_params.G_Newton *
-                         (pow(Pi_0, 2.0) + 2.0 * V_of_phi)) *
-                    pow(psi_0, 5.0) -
-                0.125 * A2_0 * pow(psi_0, -7.0) -
-                2.0 * M_PI * a_params.G_Newton * rho_gradient * psi_0 -
-                laplace_multigrid(iv, c_psi_reg);
+                0.125 * pow(psi_0, 5.0) *
+                    (2.0 / 3.0 * K_0_sq -
+                     16.0 * M_PI * a_params.G_Newton * rho_matter) -
+                0.125 * A2_0 * pow(psi_0, -7.0) - laplacian_psi_reg;
 
-            // non linear form
-            rhs_box(iv, c_U) = 0.0; // will be d^i V_i
+            // Get d_i V_i and laplacians
+            Tensor<1, Real, SpaceDim> d1_V1 =
+                get_d1(iv, multigrid_vars_box, a_dx, c_V1_0);
+            Tensor<1, Real, SpaceDim> d1_V2 =
+                get_d1(iv, multigrid_vars_box, a_dx, c_V2_0);
+            Tensor<1, Real, SpaceDim> d1_V3 =
+                get_d1(iv, multigrid_vars_box, a_dx, c_V3_0);
+
+            Real laplacian_U =
+                get_laplacian(iv, multigrid_vars_box, a_dx, c_U_0);
+            Real laplacian_V1 =
+                get_laplacian(iv, multigrid_vars_box, a_dx, c_V1_0);
+            Real laplacian_V2 =
+                get_laplacian(iv, multigrid_vars_box, a_dx, c_V2_0);
+            Real laplacian_V3 =
+                get_laplacian(iv, multigrid_vars_box, a_dx, c_V3_0);
+
+            // now set the values in the box
+            rhs_box(iv, c_U) = d1_V1[0] + d1_V2[1] + d1_V3[2] - laplacian_U;
             rhs_box(iv, c_V1) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[0] -
-                laplace_multigrid(iv, c_V1_0);
+                pow(psi_0, 6.0) *
+                    (2.0 / 3.0 * d1_K[0] -
+                     8.0 * M_PI * a_params.G_Newton * Pi_0 * d1_phi[0]) -
+                laplacian_V1;
             rhs_box(iv, c_V2) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[1] -
-                laplace_multigrid(iv, c_V2_0);
+                pow(psi_0, 6.0) *
+                    (2.0 / 3.0 * d1_K[1] -
+                     8.0 * M_PI * a_params.G_Newton * Pi_0 * d1_phi[1]) -
+                laplacian_V2;
             rhs_box(iv, c_V3) =
-                -8.0 * M_PI * pow(psi_0, 6.0) * Pi_0 * d_phi[2] -
-                laplace_multigrid(iv, c_V3_0);
-
-            rhs_box(iv, c_V1) += 2. / 3. * pow(psi_0, 6.0) * d_K[0];
-            rhs_box(iv, c_V2) += 2. / 3. * pow(psi_0, 6.0) * d_K[1];
-            rhs_box(iv, c_V3) += 2. / 3. * pow(psi_0, 6.0) * d_K[2];
+                pow(psi_0, 6.0) *
+                    (2.0 / 3.0 * d1_K[2] -
+                     8.0 * M_PI * a_params.G_Newton * Pi_0 * d1_phi[2]) -
+                laplacian_V3;
         }
     }
 } // end set_rhs
@@ -347,7 +274,6 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
                           const RealVect &a_dx,
                           const PoissonParameters &a_params)
 {
-
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
 
     DataIterator dit = a_condition.dataIterator();
@@ -355,73 +281,59 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
     {
         FArrayBox &multigrid_vars_box = a_multigrid_vars[dit()];
         FArrayBox &condition_box = a_condition[dit()];
-        condition_box.setVal(0.0, 0);
+        for (int comp = 0; comp < NUM_CONSTRAINT_VARS; comp++)
+        {
+            condition_box.setVal(0.0, comp);
+        }
         Box unghosted_box = condition_box.box();
-
-        // calculate gradients for constructing rho and Aij
-        FArrayBox grad_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
-        get_grad(unghosted_box, multigrid_vars_box,
-                 Interval(c_psi_reg, c_phi_0), a_dx, grad_multigrid, a_params);
-
         BoxIterator bit(unghosted_box);
         for (bit.begin(); bit.ok(); ++bit)
         {
+            // work out location on the grid
             IntVect iv = bit();
-            RealVect loc(iv + 0.5 * RealVect::Unit);
-            loc *= a_dx;
-            loc -= a_params.domainLength / 2.0;
+            RealVect loc;
+            get_loc(loc, iv, a_dx, a_params);
 
-            // Calculate potential and derivative
-            Real V_of_phi, dVdphi;
-            my_potential_function(V_of_phi, dVdphi,
-                                  multigrid_vars_box(iv, c_phi_0), a_params);
-
-            // Calculate useful quantities
+            // Calculate the actual value of psi including BH part
+            Real psi_reg = multigrid_vars_box(iv, c_psi_reg);
             Real psi_bh = set_binary_bh_psi(loc, a_params);
-            Real psi_0 = multigrid_vars_box(iv, c_psi_reg) + psi_bh;
-            Real K_0 = multigrid_vars_box(iv, c_K_0);
-            Real Pi_0 = multigrid_vars_box(iv, c_Pi_0);
+            Real psi_0 = psi_reg + psi_bh;
+            Real laplacian_psi_reg =
+                get_laplacian(iv, multigrid_vars_box, a_dx, c_psi_reg);
 
-            Real d_phi[3];
-            set_deriv1(d_phi, iv, grad_multigrid, c_phi_0);
-            Real Aij_reg[3][3];
-            Real Aij_bh[3][3];
-            // note that this is \bar A^{ij}, but since conformal metric
-            // if flat we have \bar A^{ij} = \bar A_{ij}
-            set_Aij_reg(Aij_reg, multigrid_vars_box, iv, loc, a_dx, a_params,
-                        grad_multigrid);
-            // this is \bar A_{ij}
-            set_binary_bh_Aij(Aij_bh, iv, loc, a_params);
-
-            // JCAurre: compute rhograd from gradients of phi
-            Real rho_gradient = 0;
-            for (int i = 0; i < SpaceDim; i++)
-            {
-                rho_gradient += 0.5 * d_phi[i] * d_phi[i];
-            }
-
-            // Also \bar  A_ij \bar A^ij
+            // Get values of Aij
+            Tensor<2, Real> Aij_reg;
+            set_Aij_reg(Aij_reg, multigrid_vars_box, iv, a_dx, a_params);
+            Tensor<2, Real> Aij_bh;
+            set_Aij_bh(Aij_bh, loc, a_params);
+            // This is \bar  A_ij \bar A^ij
             Real A2_0 = 0.0;
-            for (int i = 0; i < SpaceDim; i++)
+            FOR2(i, j)
             {
-                for (int j = 0; j < SpaceDim; j++)
-                {
-                    A2_0 += (Aij_reg[i][j] + Aij_bh[i][j]) *
-                            (Aij_reg[i][j] + Aij_bh[i][j]);
-                }
+                A2_0 += (Aij_reg[i][j] + Aij_bh[i][j]) *
+                        (Aij_reg[i][j] + Aij_bh[i][j]);
             }
+
+            // Assign values of useful matter quantities
+            // KC TODO: Make this a function in MyMatterFunctions?
+            Real V_of_phi = my_potential_function(
+                multigrid_vars_box(iv, c_phi_0), a_params);
+            Real Pi_0 = multigrid_vars_box(iv, c_Pi_0);
+            Tensor<1, Real, SpaceDim> d1_phi =
+                get_d1(iv, multigrid_vars_box, a_dx, c_phi_0);
+            Real d1_phi_squared = 0;
+            FOR1(i) { d1_phi_squared += d1_phi[i] * d1_phi[i]; }
+            Real rho_matter =
+                0.5 * Pi_0 * Pi_0 + V_of_phi +
+                0.5 * d1_phi_squared * d1_phi_squared * pow(psi_0, -4.0);
 
             // the condition is similar to the rhs but we take abs
             // value of the contributions and add in BH criteria
             condition_box(iv, 0) =
-                1.5 * abs((2.0 / 3.0 * K_0 * K_0 +
-                           8.0 * M_PI * a_params.G_Newton *
-                               (pow(Pi_0, 2.0) + 2.0 * V_of_phi))) +
-                1.5 * A2_0 * pow(psi_0, -7.0) +
-                24.0 * M_PI * a_params.G_Newton * abs(rho_gradient) *
-                    pow(psi_0, 1.0) +
-                log(psi_0);
-            // TODO: Add abs of D_i K and other Mom source terms here
+                2.0 * M_PI * a_params.G_Newton * rho_matter * pow(psi_0, 5.0) +
+                abs(0.125 * A2_0 * pow(psi_0, -7.0)) + log(psi_0) +
+                abs(8.0 * M_PI * a_params.G_Newton * pow(psi_0, 6.0) * Pi_0 *
+                    d1_phi[0]);
         }
     }
 } // end set_regrid_condition
@@ -483,66 +395,54 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
         {
             FArrayBox &multigrid_vars_box = a_multigrid_vars[dit()];
             Box unghosted_box = aCoef_box.box();
-            // calculate gradients for constructing rho and Aij
-            FArrayBox grad_multigrid(unghosted_box, 3 * NUM_MULTIGRID_VARS);
-            get_grad(unghosted_box, multigrid_vars_box,
-                     Interval(c_psi_reg, c_phi_0), a_dx, grad_multigrid,
-                     a_params);
-
             BoxIterator bit(unghosted_box);
             for (bit.begin(); bit.ok(); ++bit)
             {
+                // work out location on the grid
                 IntVect iv = bit();
-                RealVect loc(iv + 0.5 * RealVect::Unit);
-                loc *= a_dx;
-                loc -= a_params.domainLength / 2.0;
+                RealVect loc;
+                get_loc(loc, iv, a_dx, a_params);
 
-                // Calculate useful quantities
-                Real V_of_phi, dVdphi;
-                my_potential_function(V_of_phi, dVdphi,
-                                      multigrid_vars_box(iv, c_phi_0),
-                                      a_params);
-
-                // Calculate useful quantities
+                // Calculate the actual value of psi including BH part
+                Real psi_reg = multigrid_vars_box(iv, c_psi_reg);
                 Real psi_bh = set_binary_bh_psi(loc, a_params);
-                Real psi_0 = multigrid_vars_box(iv, c_psi_reg) + psi_bh;
-                Real K_0 = multigrid_vars_box(iv, c_K_0);
-                Real Pi_0 = multigrid_vars_box(iv, c_Pi_0);
-                Real d_phi[3];
-                set_deriv1(d_phi, iv, grad_multigrid, c_phi_0);
+                Real psi_0 = psi_reg + psi_bh;
+                Real laplacian_psi_reg =
+                    get_laplacian(iv, multigrid_vars_box, a_dx, c_psi_reg);
 
-                Real Aij_reg[3][3], Aij_bh[3][3];
-                set_Aij_reg(Aij_reg, multigrid_vars_box, iv, loc, a_dx,
-                            a_params, grad_multigrid);
-                set_binary_bh_Aij(Aij_bh, iv, loc, a_params);
-
-                // Compute rhograd from gradients of phi, factors of psi0
-                // accounted for below
-                Real rho_gradient = 0;
-                for (int i = 0; i < SpaceDim; i++)
-                {
-                    rho_gradient += 0.5 * d_phi[i] * d_phi[i];
-                }
-                // Also \bar  A_ij \bar A^ij
+                // Get values of Aij
+                Tensor<2, Real> Aij_reg;
+                set_Aij_reg(Aij_reg, multigrid_vars_box, iv, a_dx, a_params);
+                Tensor<2, Real> Aij_bh;
+                set_Aij_bh(Aij_bh, loc, a_params);
+                // This is \bar  A_ij \bar A^ij
                 Real A2_0 = 0.0;
-                Real A2_bh = 0.0;
-                for (int i = 0; i < SpaceDim; i++)
+                FOR2(i, j)
                 {
-                    for (int j = 0; j < SpaceDim; j++)
-                    {
-                        A2_0 += (Aij_reg[i][j] + Aij_bh[i][j]) *
-                                (Aij_reg[i][j] + Aij_bh[i][j]);
-                        A2_bh += Aij_bh[i][j] * Aij_bh[i][j];
-                    }
+                    A2_0 += (Aij_reg[i][j] + Aij_bh[i][j]) *
+                            (Aij_reg[i][j] + Aij_bh[i][j]);
                 }
+                Real K_0 = multigrid_vars_box(iv, c_K_0);
+
+                // Assign values of useful matter quantities
+                // KC TODO: Make this a function in MyMatterFunctions?
+                Real V_of_phi = my_potential_function(
+                    multigrid_vars_box(iv, c_phi_0), a_params);
+                Real Pi_0 = multigrid_vars_box(iv, c_Pi_0);
+                Tensor<1, Real, SpaceDim> d1_phi =
+                    get_d1(iv, multigrid_vars_box, a_dx, c_phi_0);
+                Real d1_phi_squared = 0;
+                FOR1(i) { d1_phi_squared += d1_phi[i] * d1_phi[i]; }
+                Real rho_matter =
+                    0.5 * Pi_0 * Pi_0 + V_of_phi +
+                    0.5 * d1_phi_squared * d1_phi_squared * pow(psi_0, -4.0);
 
                 // checked, found errors, should now be right
                 aCoef_box(iv, c_psi) =
                     -0.875 * A2_0 * pow(psi_0, -8.0) -
                     5.0 / 12.0 * K_0 * K_0 * pow(psi_0, 4.0) +
-                    10.0 * M_PI * a_params.G_Newton *
-                        (0.5 * Pi_0 * Pi_0 + V_of_phi) * pow(psi_0, 4.0) +
-                    10.0 * M_PI * a_params.G_Newton * rho_gradient;
+                    10.0 * M_PI * a_params.G_Newton * rho_matter *
+                        pow(psi_0, 4.0);
             }
         }
     }
@@ -574,7 +474,6 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
                      LevelData<FArrayBox> &a_multigrid_vars,
                      const PoissonParameters &a_params, const RealVect &a_dx)
 {
-
     CH_assert(a_grchombo_vars.nComp() == NUM_GRCHOMBO_VARS);
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
 
@@ -599,14 +498,14 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
         grchombo_vars_box.setVal(1.0, c_lapse);
 
         // now non constant terms by location
-        Box this_box = grchombo_vars_box.box();
-        BoxIterator bit(this_box);
+        Box ghosted_box = grchombo_vars_box.box();
+        BoxIterator bit(ghosted_box);
         for (bit.begin(); bit.ok(); ++bit)
         {
+            // work out location on the grid
             IntVect iv = bit();
-            RealVect loc(iv + 0.5 * RealVect::Unit);
-            loc *= a_dx;
-            loc -= a_params.domainLength / 2.0;
+            RealVect loc;
+            get_loc(loc, iv, a_dx, a_params);
 
             // GRChombo conformal factor chi = psi^-4
             Real psi_bh = set_binary_bh_psi(loc, a_params);
