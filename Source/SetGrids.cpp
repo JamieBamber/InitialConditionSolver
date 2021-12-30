@@ -85,10 +85,12 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids, PoissonParameters &a_params)
             LevelData<FArrayBox> *temp_multigrid_vars;
             LevelData<FArrayBox> *temp_dpsi;
 
+            //KC TODO: Make this an input
+            IntVect ghosts = 1 * IntVect::Unit;
             temp_multigrid_vars = new LevelData<FArrayBox>(
-                vectGrids[level], NUM_MULTIGRID_VARS, 3 * IntVect::Unit);
+                vectGrids[level], NUM_MULTIGRID_VARS, ghosts);
             temp_dpsi = new LevelData<FArrayBox>(
-                vectGrids[level], NUM_CONSTRAINT_VARS, 3 * IntVect::Unit);
+                vectGrids[level], NUM_CONSTRAINT_VARS);
 
             set_initial_conditions(*temp_multigrid_vars, *temp_dpsi, dxLevel,
                                    a_params, true);

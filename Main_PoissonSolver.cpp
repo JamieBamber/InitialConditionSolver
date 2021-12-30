@@ -46,17 +46,21 @@ using std::cerr;
 int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
                  const PoissonParameters &a_params)
 {
-
     // the params reader
     ParmParse pp;
 
     // create the necessary hierarchy of data components
     int nlevels = a_params.numLevels;
-    // the user set initial conditions - currently including psi, phi, A_ij
+
+    // the user set initial conditions - currently including psi, phi, Pi, K_ij
     Vector<LevelData<FArrayBox> *> multigrid_vars(nlevels, NULL);
-    // the correction to the conformal factor - what the solver solves for
+
+    // the correction to the conformal factor and V^i -
+    // what the solver solves for
     Vector<LevelData<FArrayBox> *> dpsi(nlevels, NULL);
-    // the solver vars - coefficients and source
+
+    // the solver vars:
+    // the rhs source term
     Vector<LevelData<FArrayBox> *> rhs(nlevels, NULL);
     // the coeff for the I term
     Vector<RefCountedPtr<LevelData<FArrayBox>>> aCoef(nlevels);
@@ -71,11 +75,12 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
     RealVect dxLev = RealVect::Unit;
     dxLev *= a_params.coarsestDx;
     ProblemDomain domLev(a_params.coarsestDomain);
-    IntVect ghosts = 3 * IntVect::Unit;
+
+    // currently only one ghost needed for 2nd order stencils
+    IntVect ghosts = 1 * IntVect::Unit;
+    IntVect no_ghosts = IntVect::Zero;
 
     // Declare variables here, with num comps, and ghosts for all
-    // sources NB - we want output data to have 3 ghost cells to match GRChombo,
-    // although not currently needed for 2nd order stencils used here
     for (int ilev = 0; ilev < nlevels; ilev++)
     {
         multigrid_vars[ilev] =
@@ -83,13 +88,13 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         dpsi[ilev] = new LevelData<FArrayBox>(a_grids[ilev],
                                               NUM_CONSTRAINT_VARS, ghosts);
         rhs[ilev] = new LevelData<FArrayBox>(a_grids[ilev], NUM_CONSTRAINT_VARS,
-                                             IntVect::Zero);
+                                             no_ghosts);
         aCoef[ilev] =
             RefCountedPtr<LevelData<FArrayBox>>(new LevelData<FArrayBox>(
-                a_grids[ilev], NUM_CONSTRAINT_VARS, IntVect::Zero));
+                a_grids[ilev], NUM_CONSTRAINT_VARS, no_ghosts));
         bCoef[ilev] =
             RefCountedPtr<LevelData<FArrayBox>>(new LevelData<FArrayBox>(
-                a_grids[ilev], NUM_CONSTRAINT_VARS, IntVect::Zero));
+                a_grids[ilev], NUM_CONSTRAINT_VARS, no_ghosts));
         vectDomains[ilev] = domLev;
         vectDx[ilev] = dxLev;
 
@@ -111,7 +116,6 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             set_initial_conditions(*multigrid_vars[ilev], *dpsi[ilev],
                                    vectDx[ilev], a_params, set_matter);
         }
-        pout() << "Set matter data using analytic data done" << endl;
 
         // prepare temp dx, domain vars for next level
         dxLev /= a_params.refRatio[ilev];
@@ -158,6 +162,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         // This function sets K per our ansatz depending on periodicity
         // It also assigns and updates the values of \bar Aij
         // it can only do this in the unghosted regions of the box at this stage
+        // KC TODO: Make this extrapolate to boundary cells
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
             set_update_Kij(*multigrid_vars[ilev], *rhs[ilev], vectDx[ilev],
@@ -258,9 +263,14 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         solver.m_eps = tolerance;
         solver.m_imax = max_iter;
 
-        // output the data before the solver acts to check starting conditions
-        output_solver_data(dpsi, rhs, multigrid_vars, a_grids, a_params,
-                           NL_iter);
+        // output on first timestep pre solver to check initial data
+        if (NL_iter == 0)
+        {
+            // output the data before the solver acts to check starting
+            // conditions
+            output_solver_data(dpsi, rhs, multigrid_vars, a_grids, a_params,
+                               NL_iter);
+        }
 
         // Engage!
         solver.solve(dpsi, rhs);
@@ -270,7 +280,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         // need to fill interlevel and intralevel ghosts first in dpsi
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
-            // For interlevel ghosts in dpsi and multigrid_vars
+            // For interlevel ghosts in dpsi
             if (ilev > 0)
             {
                 QuadCFInterp quadCFI(a_grids[ilev], &a_grids[ilev - 1],
@@ -322,6 +332,10 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(),
                                            exchange_copier);
         }
+
+        // output the data after the solver acts to check updates
+        output_solver_data(dpsi, rhs, multigrid_vars, a_grids, a_params,
+                           NL_iter + 1);
 
     } // end NL iteration loop
 

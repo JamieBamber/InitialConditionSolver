@@ -94,7 +94,8 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
     // check the domain sizes are the same
     CH_assert(a_dpsi.size() == a_rhs.size());
     CH_assert(a_dpsi.size() == a_multigrid_vars.size());
-    IntVect ghosts = 3 * IntVect::Unit;
+    //KC TODO make this an input
+    IntVect ghosts = 1 * IntVect::Unit;
     Vector<LevelData<FArrayBox> *> tempData(a_dpsi.size(), NULL);
 
     for (int level = 0; level < a_dpsi.size(); level++)
@@ -105,33 +106,20 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
         Interval mgComps(2 * NUM_CONSTRAINT_VARS,
                          2 * NUM_CONSTRAINT_VARS + NUM_MULTIGRID_VARS - 1);
 
-// KC TODO: May be needed to correctly write constraint ghosts 
-/*        if(level == 0) // output boundary cells
-        {
-            Box grown_domain_box = a_grids[level].physDomain();
-            grown_domain_box.grow(3 * IntVect::Unit);
-            Copier boundary_copier;
-            boundary_copier.ghostDefine(
+        ProblemDomain grown_domain_box = a_grids[level].physDomain();
+        grown_domain_box.grow(ghosts);
+        Copier boundary_copier;
+        boundary_copier.ghostDefine(
                 a_dpsi[level]->getBoxes(),
                 a_dpsi[level]->getBoxes(), grown_domain_box,
-                3 * IntVect::Unit, 3 * IntVect::Unit);
-            a_dpsi[level]->copyTo(a_dpsi[level]->interval(), *tempData[level],
+                ghosts, ghosts);
+        a_dpsi[level]->copyTo(a_dpsi[level]->interval(), *tempData[level],
                               dpsiComps, boundary_copier);
-            a_rhs[level]->copyTo(a_rhs[level]->interval(), *tempData[level],
-                             rhsComps, boundary_copier);
-            a_multigrid_vars[level]->copyTo(a_multigrid_vars[level]->interval(),
-                                        *tempData[level], mgComps, boundary_copier);
-        }
-        else
-        {
-*/
-            a_dpsi[level]->copyTo(a_dpsi[level]->interval(), *tempData[level],
-                              dpsiComps);
-            a_rhs[level]->copyTo(a_rhs[level]->interval(), *tempData[level],
+        a_rhs[level]->copyTo(a_rhs[level]->interval(), *tempData[level],
                              rhsComps);
-            a_multigrid_vars[level]->copyTo(a_multigrid_vars[level]->interval(),
-                                        *tempData[level], mgComps);
-//        }
+        a_multigrid_vars[level]->copyTo(a_multigrid_vars[level]->interval(),
+                            *tempData[level], mgComps, boundary_copier);
+
     }
     Real fakeTime = iter * 1.0;
     Real fakeDt = 1.0;

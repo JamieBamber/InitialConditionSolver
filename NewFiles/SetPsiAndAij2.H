@@ -20,23 +20,6 @@ Real get_bh_radius(RealVect &loc_bh, const Real bh_x_offset)
                 loc_bh[2] * loc_bh[2]);
 }
 
-// The Brill Lindquist part of psi
-Real set_binary_bh_psi(const RealVect &loc, const PoissonParameters &a_params)
-{
-    // the Bowen York params
-    Real m1 = a_params.bh1_bare_mass;
-    Real m2 = a_params.bh2_bare_mass;
-
-    // set the BH values - location
-    RealVect loc_bh1 = loc;
-    Real rbh1 = get_bh_radius(loc_bh1, a_params.bh1_offset);
-
-    RealVect loc_bh2 = loc;
-    Real rbh2 = get_bh_radius(loc_bh2, a_params.bh2_offset);
-
-    return m1 / rbh1 + m2 / rbh2;
-}
-
 // Set Aij Bowen York data
 // see Alcubierre pg 110 eqn (3.4.22)
 Real get_Aij(const int i, const int j, const Real &rbh1, const Real &rbh2,
@@ -44,23 +27,17 @@ Real get_Aij(const int i, const int j, const Real &rbh1, const Real &rbh2,
              const RealVect &J2, const RealVect &P1, const RealVect &P2,
              const PoissonParameters &a_params)
 {
-    std::array<std::array<std::array<double, 3>, 3>, 3> epsilon = {0.};
-    epsilon[0][1][2] = 1.0;
-    epsilon[1][2][0] = 1.0;
-    epsilon[2][0][1] = 1.0;
-    epsilon[0][2][1] = -1.0;
-    epsilon[2][1][0] = -1.0;
-    epsilon[1][0][2] = -1.0;
+    Tensor<3, Real> epsilon = TensorAlgebra::epsilon();
 
     Real Aij = 1.5 / rbh1 / rbh1 * (n1[i] * P1[j] + n1[j] * P1[i]) +
                1.5 / rbh2 / rbh2 * (n2[i] * P2[j] + n2[j] * P2[i]);
-    for (int k = 0; k < SpaceDim; k++)
+    FOR1(k)
     {
         Aij +=
             1.5 / rbh1 / rbh1 * (n1[i] * n1[j] - Real(i == j)) * P1[k] * n1[k] +
             1.5 / rbh2 / rbh2 * (n2[i] * n2[j] - Real(i == j)) * P2[k] * n2[k];
 
-        for (int l = 0; l < SpaceDim; l++)
+        FOR1(l)
         {
             Aij += -3.0 / rbh1 / rbh1 / rbh1 *
                        (epsilon[i][l][k] * n1[j] + epsilon[j][l][k] * n1[i]) *
@@ -70,12 +47,11 @@ Real get_Aij(const int i, const int j, const Real &rbh1, const Real &rbh2,
                        n2[l] * J2[k];
         }
     }
-
     return Aij;
 }
 
-void set_Aij_bh(Tensor<2, Real> &Aij, //const IntVect &iv,
-                const RealVect &loc, const PoissonParameters &a_params)
+void set_Aij_bh(Tensor<2, Real> Aij, //const IntVect &iv,
+                       const RealVect &loc, const PoissonParameters &a_params)
 {
     // set the BH values - location
     RealVect loc_bh1 = loc;
@@ -111,49 +87,31 @@ void set_Aij_bh(Tensor<2, Real> &Aij, //const IntVect &iv,
     Aij[2][1] = Aij[1][2];
 }
 
+// The Brill Lindquist part of psi
+Real set_binary_bh_psi(const RealVect &loc, const PoissonParameters &a_params)
+{
+    // the Bowen York params
+    Real m1 = a_params.bh1_bare_mass;
+    Real m2 = a_params.bh2_bare_mass;
+
+    // set the BH values - location
+    RealVect loc_bh1 = loc;
+    Real rbh1 = get_bh_radius(loc_bh1, a_params.bh1_offset);
+
+    RealVect loc_bh2 = loc;
+    Real rbh2 = get_bh_radius(loc_bh2, a_params.bh2_offset);
+
+    return m1 / rbh1 + m2 / rbh2;
+}
+
 // The part of Aij excluding the Brill Lindquist BH Aij
-void set_Aij_reg(Tensor<2, Real> &Aij, 
-                 const FArrayBox &multigrid_vars_box, 
+void set_Aij_reg(Tensor<2, Real> Aij, 
+                 FArrayBox &multigrid_vars_box, 
                  const IntVect &iv,
                  const RealVect &a_dx,
                  const PoissonParameters &a_params)
 {
-    // get the derivs
-    Tensor<2, Real, SpaceDim> d2_U = 
-        get_d2(iv, multigrid_vars_box, a_dx, c_U_0);
-    Tensor<1, Real, SpaceDim> d1_V1 = 
-        get_d1(iv, multigrid_vars_box, a_dx, c_V1_0);
-    Tensor<1, Real, SpaceDim> d1_V2 = 
-        get_d1(iv, multigrid_vars_box, a_dx, c_V2_0);
-    Tensor<1, Real, SpaceDim> d1_V3 = 
-        get_d1(iv, multigrid_vars_box, a_dx, c_V3_0);
-
-    using namespace TensorAlgebra;
-    Real trace = 0.0;
-    FOR1(i)
-    {
-        trace = delta(i,0) * d1_V1[i] 
-              + delta(i,1) * d1_V2[i]
-              + delta(i,2) * d1_V3[i];
-              + d2_U[i][i];
-    }
-
-    // note derivative index j is the last one
-    Tensor<2, Real, SpaceDim> d1_Vi;
-    FOR2(i,j)
-    {
-        d1_Vi[i][j] = delta(i,0) * d1_V1[j]
-                    + delta(i,1) * d1_V2[j]
-                    + delta(i,2) * d1_V3[j];
-    }
-
-    // set the values of Aij
-    FOR2(i,j)
-    {
-        Aij[i][j] = d1_Vi[i][j] + d2_U[i][j]
-                  + d1_Vi[j][i] + d2_U[j][i]
-                  - 2.0 / 3.0 * delta(i,j) * trace;
-    }
+    FOR2(i,j) { Aij[i][j] = 0;}
 }
 
 #endif /* SETAIJ_HPP */

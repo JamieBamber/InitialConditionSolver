@@ -62,10 +62,24 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
                 multigrid_vars_box(iv, c_phi_0) =
                     my_phi_function(loc, a_params);
                 multigrid_vars_box(iv, c_Pi_0) = my_Pi_function(loc, a_params);
-            }
 
-            // Note that Aij_0 and K_0 are set below since they require
-            // gradients of these quantities
+                // Note that Aij_0 and K_0 are set below since they require
+                // gradients of these quantities,
+                // but this sets K_0 in the boundary cells
+                // assuming no derivatives there
+                Real V_of_phi = my_potential_function(
+                    multigrid_vars_box(iv, c_phi_0), a_params);
+                Real Pi_0 = multigrid_vars_box(iv, c_Pi_0);
+                Real d1_phi_squared = 0;
+                Real psi_bh = set_binary_bh_psi(loc, a_params);
+                Real psi_0 = a_params.psi_reg + psi_bh;
+                Real rho_matter = 0.5 * Pi_0 * Pi_0 + V_of_phi +
+                                  0.5 * d1_phi_squared * pow(psi_0, -4.0);
+
+                Real K_0_squared = 24.0 * M_PI * a_params.G_Newton * rho_matter;
+                multigrid_vars_box(iv, c_K_0) =
+                    a_params.sign_of_K * sqrt(K_0_squared);
+            }
         }
     }
 } // end set_initial_conditions
@@ -124,9 +138,8 @@ void set_update_Kij(LevelData<FArrayBox> &a_multigrid_vars,
                 get_d1(iv, multigrid_vars_box, a_dx, c_phi_0);
             Real d1_phi_squared = 0;
             FOR1(i) { d1_phi_squared += d1_phi[i] * d1_phi[i]; }
-            Real rho_matter =
-                0.5 * Pi_0 * Pi_0 + V_of_phi +
-                0.5 * d1_phi_squared * pow(psi_0, -4.0);
+            Real rho_matter = 0.5 * Pi_0 * Pi_0 + V_of_phi +
+                              0.5 * d1_phi_squared * pow(psi_0, -4.0);
 
             // Now work out K using ansatz which sets it to (roughly)
             // the FRW value based on the local densities
@@ -212,9 +225,8 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
                 get_d1(iv, multigrid_vars_box, a_dx, c_phi_0);
             Real d1_phi_squared = 0;
             FOR1(i) { d1_phi_squared += d1_phi[i] * d1_phi[i]; }
-            Real rho_matter =
-                0.5 * Pi_0 * Pi_0 + V_of_phi +
-                0.5 * d1_phi_squared * pow(psi_0, -4.0);
+            Real rho_matter = 0.5 * Pi_0 * Pi_0 + V_of_phi +
+                              0.5 * d1_phi_squared * pow(psi_0, -4.0);
 
             // Get current values for K and derivs
             Real K_0 = multigrid_vars_box(iv, c_K_0);
@@ -320,18 +332,16 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
                 get_d1(iv, multigrid_vars_box, a_dx, c_phi_0);
             Real d1_phi_squared = 0;
             FOR1(i) { d1_phi_squared += d1_phi[i] * d1_phi[i]; }
-            Real rho_matter =
-                0.5 * Pi_0 * Pi_0 + V_of_phi +
-                0.5 * d1_phi_squared * pow(psi_0, -4.0);
+            Real rho_matter = 0.5 * Pi_0 * Pi_0 + V_of_phi +
+                              0.5 * d1_phi_squared * pow(psi_0, -4.0);
 
             // the condition is similar to the rhs but we take abs
             // value of the contributions and add in effect of psi_0 via log
             condition_box(iv, 0) =
                 2.0 * M_PI * a_params.G_Newton * rho_matter +
-                abs(0.125 * A2_0) + 
-                log(psi_0) +
+                abs(0.125 * A2_0) + log(psi_0) +
                 8.0 * M_PI * a_params.G_Newton * abs(Pi_0) *
-                   (abs(d1_phi[0]) + abs(d1_phi[1]) + abs(d1_phi[2]));
+                    (abs(d1_phi[0]) + abs(d1_phi[1]) + abs(d1_phi[2]));
         }
     }
 } // end set_regrid_condition
@@ -431,9 +441,8 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
                     get_d1(iv, multigrid_vars_box, a_dx, c_phi_0);
                 Real d1_phi_squared = 0;
                 FOR1(i) { d1_phi_squared += d1_phi[i] * d1_phi[i]; }
-                Real rho_matter =
-                    0.5 * Pi_0 * Pi_0 + V_of_phi +
-                    0.5 * d1_phi_squared * pow(psi_0, -4.0);
+                Real rho_matter = 0.5 * Pi_0 * Pi_0 + V_of_phi +
+                                  0.5 * d1_phi_squared * pow(psi_0, -4.0);
 
                 // checked, found errors, should now be right
                 aCoef_box(iv, c_psi) =
@@ -496,8 +505,9 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
         grchombo_vars_box.setVal(1.0, c_lapse);
 
         // now non constant terms by location
-        Box ghosted_box = grchombo_vars_box.box();
-        BoxIterator bit(ghosted_box);
+        // KC: TODO SHOULD BE UNGHOSTED BOX??
+        Box solver_ghosted_box = multigrid_vars_box.box();
+        BoxIterator bit(solver_ghosted_box);
         for (bit.begin(); bit.ok(); ++bit)
         {
             // work out location on the grid
