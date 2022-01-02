@@ -259,7 +259,7 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
                 get_laplacian(iv, multigrid_vars_box, a_dx, c_V3_0);
 
             // now set the values in the box
-            rhs_box(iv, c_U) = d1_V1[0] + d1_V2[1] + d1_V3[2] - laplacian_U;
+            rhs_box(iv, c_U) = - 0.25 * (d1_V1[0] + d1_V2[1] + d1_V3[2]) - laplacian_U;
             rhs_box(iv, c_V1) =
                 pow(psi_0, 6.0) *
                     (2.0 / 3.0 * d1_K[0] -

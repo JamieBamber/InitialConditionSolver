@@ -90,7 +90,7 @@ int set_grids(Vector<DisjointBoxLayout> &vectGrids, PoissonParameters &a_params)
             temp_multigrid_vars = new LevelData<FArrayBox>(
                 vectGrids[level], NUM_MULTIGRID_VARS, ghosts);
             temp_dpsi = new LevelData<FArrayBox>(
-                vectGrids[level], NUM_CONSTRAINT_VARS);
+                vectGrids[level], NUM_CONSTRAINT_VARS, ghosts);
 
             set_initial_conditions(*temp_multigrid_vars, *temp_dpsi, dxLevel,
                                    a_params, true);

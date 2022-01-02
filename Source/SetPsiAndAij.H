@@ -3,21 +3,25 @@
  * Please refer to LICENSE in GRChombo's root directory.
  */
 
-#ifndef SETAIJ_HPP
-#define SETAIJ_HPP
+#ifndef SETPSIANDAIJ_HPP
+#define SETPSIANDAIJ_HPP
 
 #include "PoissonParameters.H"
+#include "SetLevelDataGradients.H"
 #include "Tensor.hpp"
 #include "TensorAlgebra.hpp"
 
-// Get the bh radius - input loc_bh should be location on the grid relative
-// to the centre - note that it gets corrected to the actual location
-// (see examples below)
-Real get_bh_radius(RealVect &loc_bh, const Real bh_x_offset)
+// Get the bh radius
+void get_bh_coords(Real &bh_radius, RealVect &loc_bh, 
+                   const RealVect &loc, const RealVect &bh_offset)
 {
-    loc_bh[0] -= bh_x_offset;
-    return sqrt(loc_bh[0] * loc_bh[0] + loc_bh[1] * loc_bh[1] +
-                loc_bh[2] * loc_bh[2]);
+    // set coords
+    loc_bh = loc - bh_offset;
+
+    // set radius
+    Real bh_radius_squared = 0.0;
+    FOR1(i) {bh_radius_squared += loc_bh[i] * loc_bh[i];}
+    bh_radius = sqrt(bh_radius_squared);
 }
 
 // The Brill Lindquist part of psi
@@ -28,90 +32,69 @@ Real set_binary_bh_psi(const RealVect &loc, const PoissonParameters &a_params)
     Real m2 = a_params.bh2_bare_mass;
 
     // set the BH values - location
-    RealVect loc_bh1 = loc;
-    Real rbh1 = get_bh_radius(loc_bh1, a_params.bh1_offset);
+    RealVect loc_bh1;
+    Real rbh1;
+    get_bh_coords(rbh1, loc_bh1, loc, a_params.bh1_offset);
 
-    RealVect loc_bh2 = loc;
-    Real rbh2 = get_bh_radius(loc_bh2, a_params.bh2_offset);
+    RealVect loc_bh2;
+    Real rbh2;
+    get_bh_coords(rbh2, loc_bh2, loc, a_params.bh2_offset);
 
-    return m1 / rbh1 + m2 / rbh2;
+    return 0.5 * (m1 / rbh1 + m2 / rbh2);
 }
 
 // Set Aij Bowen York data
 // see Alcubierre pg 110 eqn (3.4.22)
-Real get_Aij(const int i, const int j, const Real &rbh1, const Real &rbh2,
-             const RealVect &n1, const RealVect &n2, const RealVect &J1,
-             const RealVect &J2, const RealVect &P1, const RealVect &P2,
-             const PoissonParameters &a_params)
-{
-    std::array<std::array<std::array<double, 3>, 3>, 3> epsilon = {0.};
-    epsilon[0][1][2] = 1.0;
-    epsilon[1][2][0] = 1.0;
-    epsilon[2][0][1] = 1.0;
-    epsilon[0][2][1] = -1.0;
-    epsilon[2][1][0] = -1.0;
-    epsilon[1][0][2] = -1.0;
-
-    Real Aij = 1.5 / rbh1 / rbh1 * (n1[i] * P1[j] + n1[j] * P1[i]) +
-               1.5 / rbh2 / rbh2 * (n2[i] * P2[j] + n2[j] * P2[i]);
-    for (int k = 0; k < SpaceDim; k++)
-    {
-        Aij +=
-            1.5 / rbh1 / rbh1 * (n1[i] * n1[j] - Real(i == j)) * P1[k] * n1[k] +
-            1.5 / rbh2 / rbh2 * (n2[i] * n2[j] - Real(i == j)) * P2[k] * n2[k];
-
-        for (int l = 0; l < SpaceDim; l++)
-        {
-            Aij += -3.0 / rbh1 / rbh1 / rbh1 *
-                       (epsilon[i][l][k] * n1[j] + epsilon[j][l][k] * n1[i]) *
-                       n1[l] * J1[k] -
-                   3.0 / rbh2 / rbh2 / rbh2 *
-                       (epsilon[i][l][k] * n2[j] + epsilon[j][l][k] * n2[i]) *
-                       n2[l] * J2[k];
-        }
-    }
-
-    return Aij;
-}
-
 void set_Aij_bh(Tensor<2, Real> &Aij, //const IntVect &iv,
                 const RealVect &loc, const PoissonParameters &a_params)
 {
     // set the BH values - location
-    RealVect loc_bh1 = loc;
-    Real rbh1 = get_bh_radius(loc_bh1, a_params.bh1_offset);
+    RealVect loc_bh1;
+    Real rbh1;
+    get_bh_coords(rbh1, loc_bh1, loc, a_params.bh1_offset);
 
-    RealVect loc_bh2 = loc;
-    Real rbh2 = get_bh_radius(loc_bh2, a_params.bh2_offset);
+    RealVect loc_bh2;
+    Real rbh2;
+    get_bh_coords(rbh2, loc_bh2, loc, a_params.bh2_offset);
 
     RealVect n1 = {loc_bh1[0] / rbh1, loc_bh1[1] / rbh1, loc_bh1[2] / rbh1};
     RealVect n2 = {loc_bh2[0] / rbh2, loc_bh2[1] / rbh2, loc_bh2[2] / rbh2};
 
     // the Bowen York params
-    RealVect J1 = {0.0, 0.0, a_params.bh1_spin};
-    RealVect J2 = {0.0, 0.0, a_params.bh2_spin};
-    RealVect P1 = {0.0, a_params.bh1_momentum, 0.0};
-    RealVect P2 = {0.0, a_params.bh2_momentum, 0.0};
+    RealVect J1 = a_params.bh1_spin;
+    RealVect J2 = a_params.bh2_spin;
+    RealVect P1 = a_params.bh1_momentum;
+    RealVect P2 = a_params.bh2_momentum;
 
-    // set the Aij vars
-    Aij[0][0] =
-        get_Aij(0, 0, rbh1, rbh2, n1, n2, J1, J2, P1, P2, a_params);
-    Aij[1][1] =
-        get_Aij(1, 1, rbh1, rbh2, n1, n2, J1, J2, P1, P2, a_params);
-    Aij[2][2] =
-        get_Aij(2, 2, rbh1, rbh2, n1, n2, J1, J2, P1, P2, a_params);
-    Aij[0][1] =
-        get_Aij(0, 1, rbh1, rbh2, n1, n2, J1, J2, P1, P2, a_params);
-    Aij[0][2] =
-        get_Aij(0, 2, rbh1, rbh2, n1, n2, J1, J2, P1, P2, a_params);
-    Aij[1][2] =
-        get_Aij(1, 2, rbh1, rbh2, n1, n2, J1, J2, P1, P2, a_params);
-    Aij[1][0] = Aij[0][1];
-    Aij[2][0] = Aij[0][2];
-    Aij[2][1] = Aij[1][2];
+    using namespace TensorAlgebra;
+    Tensor<3, Real> epsilon = TensorAlgebra::epsilon();
+
+    FOR2(i,j)
+    {
+        Aij[i][j] = 1.5 / rbh1 / rbh1 * (n1[i] * P1[j] + n1[j] * P1[i]) +
+                    1.5 / rbh2 / rbh2 * (n2[i] * P2[j] + n2[j] * P2[i]);
+
+        FOR1(k)
+        {
+            Aij[i][j] +=
+                1.5 / rbh1 / rbh1 * (n1[i] * n1[j] - delta(i,j)) * P1[k] * n1[k] +
+                1.5 / rbh2 / rbh2 * (n2[i] * n2[j] - delta(i,j)) * P2[k] * n2[k];
+
+            FOR1(l)
+            {
+                Aij[i][j] += -3.0 / rbh1 / rbh1 / rbh1 *
+                           (epsilon[i][l][k] * n1[j] + epsilon[j][l][k] * n1[i]) *
+                           n1[l] * J1[k] -
+                              3.0 / rbh2 / rbh2 / rbh2 *
+                           (epsilon[i][l][k] * n2[j] + epsilon[j][l][k] * n2[i]) *
+                           n2[l] * J2[k];
+            }
+        }
+    }
 }
 
 // The part of Aij excluding the Brill Lindquist BH Aij
+// Using ansatz in B&S Appendix B Eq B.5
 void set_Aij_reg(Tensor<2, Real> &Aij, 
                  const FArrayBox &multigrid_vars_box, 
                  const IntVect &iv,
@@ -128,23 +111,21 @@ void set_Aij_reg(Tensor<2, Real> &Aij,
     Tensor<1, Real, SpaceDim> d1_V3 = 
         get_d1(iv, multigrid_vars_box, a_dx, c_V3_0);
 
-    using namespace TensorAlgebra;
-    Real trace = 0.0;
-    FOR1(i)
-    {
-        trace = delta(i,0) * d1_V1[i] 
-              + delta(i,1) * d1_V2[i]
-              + delta(i,2) * d1_V3[i];
-              + d2_U[i][i];
-    }
-
     // note derivative index j is the last one
+    using namespace TensorAlgebra;
     Tensor<2, Real, SpaceDim> d1_Vi;
     FOR2(i,j)
     {
         d1_Vi[i][j] = delta(i,0) * d1_V1[j]
                     + delta(i,1) * d1_V2[j]
                     + delta(i,2) * d1_V3[j];
+    }
+
+    Real trace = 0.0;
+    FOR1(i)
+    {
+        trace += d1_Vi[i][i] +
+                 d2_U[i][i];
     }
 
     // set the values of Aij
@@ -156,4 +137,4 @@ void set_Aij_reg(Tensor<2, Real> &Aij,
     }
 }
 
-#endif /* SETAIJ_HPP */
+#endif /* SETPSIANDAIJ_HPP */

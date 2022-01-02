@@ -78,12 +78,27 @@ void getPoissonParameters(PoissonParameters &a_params)
     // Initial conditions for the black holes
     pp.get("bh1_bare_mass", a_params.bh1_bare_mass);
     pp.get("bh2_bare_mass", a_params.bh2_bare_mass);
-    pp.get("bh1_spin", a_params.bh1_spin);
-    pp.get("bh2_spin", a_params.bh2_spin);
-    pp.get("bh1_offset", a_params.bh1_offset);
-    pp.get("bh2_offset", a_params.bh2_offset);
-    pp.get("bh1_momentum", a_params.bh1_momentum);
-    pp.get("bh2_momentum", a_params.bh2_momentum);
+    std::vector<double> temp_spin1(SpaceDim);
+    std::vector<double> temp_spin2(SpaceDim);
+    std::vector<double> temp_offset1(SpaceDim);
+    std::vector<double> temp_offset2(SpaceDim);
+    std::vector<double> temp_mom1(SpaceDim);
+    std::vector<double> temp_mom2(SpaceDim);
+    pp.getarr("bh1_spin", temp_spin1, 0, SpaceDim);
+    pp.getarr("bh2_spin", temp_spin2, 0, SpaceDim);
+    pp.getarr("bh1_offset", temp_offset1, 0, SpaceDim);
+    pp.getarr("bh2_offset", temp_offset2, 0, SpaceDim);
+    pp.getarr("bh1_momentum", temp_mom1, 0, SpaceDim);
+    pp.getarr("bh2_momentum", temp_mom2, 0, SpaceDim);
+    for (int idir = 0; idir < SpaceDim; idir++)
+    {
+        a_params.bh1_spin[idir] = temp_spin1[idir];
+        a_params.bh2_spin[idir] = temp_spin2[idir];
+        a_params.bh1_offset[idir] = temp_offset1[idir];
+        a_params.bh2_offset[idir] = temp_offset2[idir];
+        a_params.bh1_momentum[idir] = temp_mom1[idir];
+        a_params.bh2_momentum[idir] = temp_mom2[idir];
+    }
 
     if (abs(a_params.bh1_bare_mass) > 0.0 || abs(a_params.bh2_bare_mass) > 0.0)
     {

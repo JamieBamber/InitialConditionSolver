@@ -15,7 +15,7 @@ Real my_phi_function(const RealVect loc, const PoissonParameters &a_params) {
   {
     Real rr = sqrt(D_TERM(loc[0] * loc[0], +loc[1] * loc[1], +loc[2] * loc[2]));
     return a_params.phi_0 +
-         a_params.phi_amplitude *
+         a_params.phi_amplitude * rr *
              exp(-0.5 * pow(rr / a_params.phi_wavelength, 2.0));
   }
   else
@@ -37,7 +37,7 @@ Real my_Pi_function(const RealVect loc, const PoissonParameters &a_params) {
   if(!a_params.is_periodic)
   {
     Real rr = sqrt(D_TERM(loc[0] * loc[0], +loc[1] * loc[1], +loc[2] * loc[2]));
-    return a_params.pi_0 + a_params.pi_amplitude *
+    return a_params.pi_0 + a_params.pi_amplitude * rr *
                              exp(-0.5 * pow(rr / a_params.pi_wavelength, 2.0));
   }
   else

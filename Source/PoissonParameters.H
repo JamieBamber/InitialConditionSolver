@@ -57,12 +57,12 @@ class PoissonParameters
     Real pi_wavelength;
     Real bh1_bare_mass;
     Real bh2_bare_mass;
-    Real bh1_spin;
-    Real bh2_spin;
-    Real bh1_momentum;
-    Real bh2_momentum;
-    Real bh1_offset;
-    Real bh2_offset;
+    RealVect bh1_spin;
+    RealVect bh2_spin;
+    RealVect bh1_momentum;
+    RealVect bh2_momentum;
+    RealVect bh1_offset;
+    RealVect bh2_offset;
     Real pot_Lambda;
     Real pot_mu;
     Real psi_reg;
