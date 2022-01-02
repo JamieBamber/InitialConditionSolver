@@ -124,16 +124,17 @@ void set_Aij_reg(Tensor<2, Real> &Aij,
     Real trace = 0.0;
     FOR1(i)
     {
-        trace += d1_Vi[i][i] +
-                 d2_U[i][i];
+        trace += d1_Vi[i][i];
+                 //+ d2_U[i][i];
     }
 
     // set the values of Aij
     FOR2(i,j)
     {
-        Aij[i][j] = d1_Vi[i][j] + d2_U[i][j]
-                  + d1_Vi[j][i] + d2_U[j][i]
-                  - 2.0 / 3.0 * delta(i,j) * trace;
+        Aij[i][j] = 0.75 * d1_Vi[i][j] //+ d2_U[i][j]
+                  + 0.75 * d1_Vi[j][i] //+ d2_U[j][i]
+                  //- 2.0 / 3.0 * delta(i,j) * trace;
+                  - 0.5 * delta(i,j) * trace;
     }
 }
 

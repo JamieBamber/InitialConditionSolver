@@ -249,17 +249,16 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
             Tensor<1, Real, SpaceDim> d1_V3 =
                 get_d1(iv, multigrid_vars_box, a_dx, c_V3_0);
 
-            Real laplacian_U =
-                get_laplacian(iv, multigrid_vars_box, a_dx, c_U_0);
             Real laplacian_V1 =
                 get_laplacian(iv, multigrid_vars_box, a_dx, c_V1_0);
             Real laplacian_V2 =
                 get_laplacian(iv, multigrid_vars_box, a_dx, c_V2_0);
             Real laplacian_V3 =
                 get_laplacian(iv, multigrid_vars_box, a_dx, c_V3_0);
+            Real laplacian_U =
+                get_laplacian(iv, multigrid_vars_box, a_dx, c_U_0);
 
             // now set the values in the box
-            rhs_box(iv, c_U) = - 0.25 * (d1_V1[0] + d1_V2[1] + d1_V3[2]) - laplacian_U;
             rhs_box(iv, c_V1) =
                 pow(psi_0, 6.0) *
                     (2.0 / 3.0 * d1_K[0] -
@@ -275,6 +274,7 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
                     (2.0 / 3.0 * d1_K[2] -
                      8.0 * M_PI * a_params.G_Newton * Pi_0 * d1_phi[2]) -
                 laplacian_V3;
+            rhs_box(iv, c_U) = - 0.25 * (d1_V1[0] + d1_V2[1] + d1_V3[2]) - laplacian_U;
         }
     }
 } // end set_rhs
@@ -369,10 +369,10 @@ void set_update_psi0(LevelData<FArrayBox> &a_multigrid_vars,
 
             // Update constraint variables for the linear step
             multigrid_vars_box(iv, c_psi_reg) += dpsi_box(iv, c_psi);
-            multigrid_vars_box(iv, c_U_0) += dpsi_box(iv, c_U);
             multigrid_vars_box(iv, c_V1_0) += dpsi_box(iv, c_V1);
             multigrid_vars_box(iv, c_V2_0) += dpsi_box(iv, c_V2);
             multigrid_vars_box(iv, c_V3_0) += dpsi_box(iv, c_V3);
+            multigrid_vars_box(iv, c_U_0) += dpsi_box(iv, c_U);
         }
     }
 }

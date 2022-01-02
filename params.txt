@@ -34,8 +34,8 @@ numMGsmooth = 4 # number of GSRB smooths before and after MG coarsening
 num_mg     = 1 
 numMGIterations = 4 #this is the number of MG v-cycles in the preconditioner
 max_iterations = 100 #max number of solver iterations
-max_NL_iterations = 20 #non linear outside loop iterations
-tolerance  = 1.0e-6  #solver tolerance for declaring convergence
+max_NL_iterations = 50 #non linear outside loop iterations
+tolerance  = 1.0e-9  #solver tolerance for declaring convergence
 hang       = 1.0e-11  #solver tolerance for deciding when we're hung
 verbosity = 2 # higher number means more verbose output
 
@@ -52,16 +52,14 @@ is_periodic = 0
 # 2 -> extrapolating at 1st order from within grid
 bc_lo_psi       = 0 0 0
 bc_hi_psi       = 0 0 0
-bc_lo_Vi       = 0 0 0
-bc_hi_Vi       = 0 0 0
-#bc_lo       = 1 1 1 
-#bc_hi       = 1 1 1
+bc_lo_Vi       = 2 2 2
+bc_hi_Vi       = 2 2 2
 # And set the constant value of these conditions
-# note bc_value probably 0 because it is applied to dpsi at boundary (not psi)
+# note bc_value probably 0 because it is applied
+# to dpsi at boundary (not psi)
 bc_value_psi = 0.0
 # bc_value applied to Vi for Dirichlet or Neumann
 bc_value_Vi = 0.0
-#bc_value = 0.0
 
 # Q: "Simple, change the gravitational constant of the Universe"
 G_Newton = 1.0 
@@ -71,11 +69,11 @@ G_Newton = 1.0
 
 # scalar field input params
 phi_0 = 0.0
-phi_amplitude = 0.0
-phi_wavelength = 1
+phi_amplitude = 1e-6
+phi_wavelength = 10
 pi_0 = 0.0
-pi_amplitude = 0.0
-pi_wavelength = 1
+pi_amplitude = 1e-6
+pi_wavelength = 10
 
 # potential params
 pot_Lambda = 1e-6
@@ -85,7 +83,7 @@ pot_mu = 1.0
 # initial scale factor a0 = psi_reg**2
 psi_reg = 1.0
 # positive K means collapsing, negative expanding
-sign_of_K = -1
+sign_of_K = 1
 
 # initial conditions for Bowen York binary BH spacetimes
 # can be with or without periodic BCs (assuming periodicity is consistent), 

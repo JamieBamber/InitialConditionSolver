@@ -48,16 +48,16 @@ bool GlobalBCRS::s_trigParsed = false;
 void ParseValuePsi(Real *pos, int *dir, Side::LoHiSide *side, Real *a_values)
 {
     ParmParse pp;
-    Real bcVal_psi;
-    pp.get("bc_value_psi", bcVal_psi);
+    Real bcVal_psi = 0.0;
+    pp.query("bc_value_psi", bcVal_psi);
     a_values[0] = bcVal_psi;
     GlobalBCRS::s_valueParsed_psi = true;
 }
 void ParseValueVi(Real *pos, int *dir, Side::LoHiSide *side, Real *a_values)
 {
     ParmParse pp;
-    Real bcVal_Vi;
-    pp.get("bc_value_Vi", bcVal_Vi);
+    Real bcVal_Vi = 0.0;
+    pp.query("bc_value_Vi", bcVal_Vi);
     for (int i = 0; i < NUM_CONSTRAINT_VARS - 1; i++)
     {
         a_values[i] = bcVal_Vi;

@@ -11,10 +11,10 @@ enum
 {
     c_psi_reg,
 
-    c_U_0,
     c_V1_0,
     c_V2_0,
     c_V3_0,
+    c_U_0,
 
     c_phi_0, // matter field
     c_Pi_0,
@@ -36,7 +36,7 @@ namespace MultigridUserVariables
 static constexpr char const *variable_names[NUM_MULTIGRID_VARS] = {
     "psi_reg",
 
-    "U_0",     "V1_0",  "V2_0",  "V3_0",
+    "V1_0",  "V2_0",  "V3_0", "U_0", 
 
     "phi_0",   "Pi_0",
 
@@ -50,10 +50,10 @@ enum
 {
     c_psi,
 
-    c_U,
     c_V1,
     c_V2,
     c_V3,
+    c_U,
 
     NUM_CONSTRAINT_VARS
 };
@@ -61,7 +61,7 @@ enum
 namespace ConstraintTerms
 {
 static constexpr char const *variable_names[NUM_CONSTRAINT_VARS] = {
-    "psi", "U", "V1", "V2", "V3"};
+    "psi", "V1", "V2", "V3", "U"};
 }
 
 #endif /* MULTIGRIDUSERVARIABLES_HPP */
