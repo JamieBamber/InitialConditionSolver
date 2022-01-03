@@ -36,7 +36,7 @@ namespace MultigridUserVariables
 static constexpr char const *variable_names[NUM_MULTIGRID_VARS] = {
     "psi_reg",
 
-    "V1_0",  "V2_0",  "V3_0", "U_0", 
+    "V1_0",    "V2_0",  "V3_0",  "U_0",
 
     "phi_0",   "Pi_0",
 
@@ -44,13 +44,10 @@ static constexpr char const *variable_names[NUM_MULTIGRID_VARS] = {
 
     "A11_0",   "A12_0", "A13_0", "A22_0", "A23_0", "A33_0"};
 
-    std::array<int, NUM_MULTIGRID_VARS> vars_parity = 
-    {0, 1, 2, 3, 0, 
-     0, 0,
-     0,
-     0, 4, 6, 0, 5, 0};
+static constexpr std::array<int, NUM_MULTIGRID_VARS> const vars_parity = {
+    0, 1, 2, 3, 0, 0, 0, 0, 0, 4, 6, 0, 5, 0};
 
-}
+} // namespace MultigridUserVariables
 
 // assign an enum to each constraint variable
 enum

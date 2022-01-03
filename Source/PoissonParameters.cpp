@@ -178,23 +178,25 @@ void getPoissonParameters(PoissonParameters &a_params)
 
     // Periodicity - for the moment enforce same in all directions
     ProblemDomain crseDom(crseDomBox);
-    pp.get("is_periodic", a_params.is_periodic);
     a_params.periodic.resize(SpaceDim);
-    a_params.periodic.assign(a_params.is_periodic);
+    pp.getarr("is_periodic", a_params.periodic, 0, SpaceDim);
+    a_params.periodic_directions_exist = false;
     for (int dir = 0; dir < SpaceDim; dir++)
     {
-        crseDom.setPeriodic(dir, a_params.is_periodic);
+        crseDom.setPeriodic(dir, a_params.periodic[dir]);
+        if (a_params.periodic[dir])
+        {
+            a_params.periodic_directions_exist = true;
+        }
     }
     a_params.coarsestDomain = crseDom;
-
-    pout() << "periodicity = " << a_params.is_periodic << endl;
 
     // now the boundary read in
     a_params.boundary_params.read_params(pp);
 
     FOR1(idir)
     {
-        // default center to center of grid, may reset below 
+        // default center to center of grid, may reset below
         // depending on boundaries
         a_params.center[idir] = domain_length / 2.0;
 

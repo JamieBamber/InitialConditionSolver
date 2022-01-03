@@ -121,13 +121,15 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
         // fill the boundary cells
         BoundaryConditions solver_boundaries;
-        solver_boundaries.define(vectDx[ilev][0], a_params.center, 
-                                 a_params.boundary_params, domLev,
+        solver_boundaries.define(vectDx[ilev][0], a_params.center,
+                                 a_params.boundary_params, vectDomains[ilev],
                                  num_ghosts);
         // this will populate the multigrid boundaries according to the BCs set
         // some will still just be zeros but this should be ok for now
-        solver_boundaries.fill_multigrid_boundaries(Side::Lo, *multigrid_vars[ilev]);
-        solver_boundaries.fill_multigrid_boundaries(Side::Hi, *multigrid_vars[ilev]);
+        solver_boundaries.fill_multigrid_boundaries(Side::Lo,
+                                                    *multigrid_vars[ilev]);
+        solver_boundaries.fill_multigrid_boundaries(Side::Hi,
+                                                    *multigrid_vars[ilev]);
 
         // prepare temp dx, domain vars for next level
         dxLev /= a_params.refRatio[ilev];
@@ -173,26 +175,46 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
         // This function sets K per our ansatz depending on periodicity
         // It also assigns and updates the values of \bar Aij
-        // it can only do this in the unghosted regions of the box at this stage
-        // KC TODO: Make this extrapolate to boundary cells
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
             set_update_Kij(*multigrid_vars[ilev], *rhs[ilev], vectDx[ilev],
                            a_params);
+            // fill the boundary cells
+            BoundaryConditions solver_boundaries;
+            solver_boundaries.define(vectDx[ilev][0], a_params.center,
+                                     a_params.boundary_params,
+                                     vectDomains[ilev], num_ghosts);
+            // this will populate the multigrid boundaries according to the BCs
+            // set some will still just be zeros but this should be ok for now
+            solver_boundaries.fill_multigrid_boundaries(Side::Lo,
+                                                        *multigrid_vars[ilev]);
+            solver_boundaries.fill_multigrid_boundaries(Side::Hi,
+                                                        *multigrid_vars[ilev]);
         }
 
         // need to fill interlevel and intralevel ghosts in multigrid_vars
         // so that derivatives can be computed within the grid
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
+            BoundaryConditions solver_boundaries;
+            solver_boundaries.define(vectDx[ilev][0], a_params.center,
+                                     a_params.boundary_params,
+                                     vectDomains[ilev], num_ghosts);
             // For intralevel ghosts
+            DisjointBoxLayout grown_grids;
+            if (a_params.boundary_params.nonperiodic_boundaries_exist)
+            {
+                solver_boundaries.expand_grids_to_boundaries(grown_grids, a_grids[ilev]);
+            }
+            else
+            { // nothing to do if periodic BCs
+                grown_grids = a_grids[ilev];
+            }
             Copier exchange_copier;
-            exchange_copier.exchangeDefine(a_grids[ilev], ghosts);
+            exchange_copier.exchangeDefine(grown_grids, ghosts);
             multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(),
                                            exchange_copier);
-        }
-        for (int ilev = 0; ilev < nlevels; ilev++)
-        {
+
             // For interlevel ghosts
             if (ilev > 0)
             {
@@ -202,15 +224,6 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
                 quadCFI.coarseFineInterp(*multigrid_vars[ilev],
                                          *multigrid_vars[ilev - 1]);
             }
-        }
-
-        for (int ilev = 0; ilev < nlevels; ilev++)
-        {
-            // For intralevel ghosts again just to be sure!
-            Copier exchange_copier;
-            exchange_copier.exchangeDefine(a_grids[ilev], ghosts);
-            multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(),
-                                           exchange_copier);
         }
 
         // Calculate values for coefficients here - see SetLevelData.cpp
@@ -224,7 +237,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         }
 
         // Check integrability conditions on rhs if periodic
-        if (a_params.is_periodic)
+        if (a_params.periodic_directions_exist)
         {
             // Calculate values for integrand here
             pout() << "Computing integrability of rhs for periodic domain... "
@@ -292,6 +305,29 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         // need to fill interlevel and intralevel ghosts first in dpsi
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
+            // For intralevel ghosts - this is done in set_update_phi0
+            // but need the exchange copier object to do this
+            BoundaryConditions solver_boundaries;
+            solver_boundaries.define(vectDx[ilev][0], a_params.center,
+                                     a_params.boundary_params,
+                                     vectDomains[ilev], num_ghosts);
+            // For intralevel ghosts
+            DisjointBoxLayout grown_grids;
+            if (a_params.boundary_params.nonperiodic_boundaries_exist)
+            {
+                solver_boundaries.expand_grids_to_boundaries(grown_grids, a_grids[ilev]);
+            }
+            else
+            { // nothing to do if periodic BCs
+                grown_grids = a_grids[ilev];
+            }
+            Copier exchange_copier;
+            exchange_copier.exchangeDefine(grown_grids, ghosts);
+
+            // now the update
+            set_update_psi0(*multigrid_vars[ilev], *dpsi[ilev],
+                            exchange_copier);
+
             // For interlevel ghosts in dpsi
             if (ilev > 0)
             {
@@ -302,30 +338,30 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             }
         }
 
+        // Again update the multigrid ghost values for calculation
+        // of Kij at next step
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
-            // For intralevel ghosts - this is done in set_update_phi0
-            // but need the exchange copier object to do this
-            Copier exchange_copier;
-            exchange_copier.exchangeDefine(a_grids[ilev], ghosts);
-
-            // now the update
-            set_update_psi0(*multigrid_vars[ilev], *dpsi[ilev],
-                            exchange_copier);
-        }
-
-        for (int ilev = 0; ilev < nlevels; ilev++)
-        {
+            BoundaryConditions solver_boundaries;
+            solver_boundaries.define(vectDx[ilev][0], a_params.center,
+                                     a_params.boundary_params,
+                                     vectDomains[ilev], num_ghosts);
             // For intralevel ghosts
+            DisjointBoxLayout grown_grids;
+            if (a_params.boundary_params.nonperiodic_boundaries_exist)
+            {
+                solver_boundaries.expand_grids_to_boundaries(grown_grids, a_grids[ilev]);
+            }
+            else
+            { // nothing to do if periodic BCs
+                grown_grids = a_grids[ilev];
+            }
             Copier exchange_copier;
-            exchange_copier.exchangeDefine(a_grids[ilev], ghosts);
+            exchange_copier.exchangeDefine(grown_grids, ghosts);
             multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(),
                                            exchange_copier);
-        }
 
-        for (int ilev = 0; ilev < nlevels; ilev++)
-        {
-            // For interlevel ghosts in multigrid_vars - for V_i etc
+            // For interlevel ghosts
             if (ilev > 0)
             {
                 QuadCFInterp quadCFI(a_grids[ilev], &a_grids[ilev - 1],
@@ -334,15 +370,6 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
                 quadCFI.coarseFineInterp(*multigrid_vars[ilev],
                                          *multigrid_vars[ilev - 1]);
             }
-        }
-
-        for (int ilev = 0; ilev < nlevels; ilev++)
-        {
-            // For intralevel ghosts again to be sure!
-            Copier exchange_copier;
-            exchange_copier.exchangeDefine(a_grids[ilev], ghosts);
-            multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(),
-                                           exchange_copier);
         }
 
         // output the data after the solver acts to check updates
@@ -358,12 +385,10 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
     // Mayday if result not converged at all - using a fairly generous threshold
     // for this as usually non convergence means everything goes nuts
-    //    if (dpsi_norm0 > 1e-1 || dpsi_norm1 > 1e-1)
-    //    {
-    //        MayDay::Error(
-    //            "NL iterations did not converge - may need a better initial
-    //            guess");
-    //    }
+    if (dpsi_norm0 > 1e-1 || dpsi_norm1 > 1e-1)
+    {
+        MayDay::Error("NL iterations did not converge - may need a better initial guess");
+    }
 
     // now output final data in a form which can be read as a checkpoint file
     // for the GRChombo AMR time dependent runs

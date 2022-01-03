@@ -144,7 +144,7 @@ void set_update_Kij(LevelData<FArrayBox> &a_multigrid_vars,
             // Now work out K using ansatz which sets it to (roughly)
             // the FRW value based on the local densities
             Real K_0_squared = 0.0;
-            if (a_params.is_periodic)
+            if (a_params.periodic_directions_exist)
             {
                 K_0_squared = 24.0 * M_PI * a_params.G_Newton * rho_matter +
                               1.5 * A2_0 * pow(psi_0, -12.0) +
@@ -274,7 +274,8 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
                     (2.0 / 3.0 * d1_K[2] -
                      8.0 * M_PI * a_params.G_Newton * Pi_0 * d1_phi[2]) -
                 laplacian_V3;
-            rhs_box(iv, c_U) = - 0.25 * (d1_V1[0] + d1_V2[1] + d1_V3[2]) - laplacian_U;
+            rhs_box(iv, c_U) =
+                -0.25 * (d1_V1[0] + d1_V2[1] + d1_V3[2]) - laplacian_U;
         }
     }
 } // end set_rhs
@@ -399,7 +400,7 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
 
         // For the non periodic case
         // add back some non trivial psi for the Aij part
-        if (!a_params.is_periodic)
+        if (!a_params.periodic_directions_exist)
         {
             FArrayBox &multigrid_vars_box = a_multigrid_vars[dit()];
             Box unghosted_box = aCoef_box.box();

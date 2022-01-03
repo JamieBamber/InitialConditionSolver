@@ -15,9 +15,9 @@
 
 // Our includes
 #include "DimensionDefinitions.hpp"
-#include "LevelData.H"
-#include "GRParmParse.hpp"
 #include "GRChomboUserVariables.hpp"
+#include "GRParmParse.hpp"
+#include "LevelData.H"
 #include "MultigridUserVariables.hpp"
 #include "VariableType.hpp"
 
@@ -70,8 +70,7 @@ class BoundaryConditions
         bool boundary_conditions_written;
 
         std::array<int, NUM_MULTIGRID_VARS> vars_parity_multigrid;
-        std::array<int, NUM_GRCHOMBO_VARS>
-            vars_parity_grchombo;
+        std::array<int, NUM_GRCHOMBO_VARS> vars_parity_grchombo;
         int extrapolation_order;
         params_t(); // sets the defaults
         void
@@ -129,8 +128,9 @@ class BoundaryConditions
     /// Fill the boundary values appropriately based on the params set
     /// in the direction dir
     void fill_boundary_cells_dir(const Side::LoHiSide a_side,
-                                 const LevelData<FArrayBox> &a_soln, LevelData<FArrayBox> &a_out,
-                                 const int dir, const int boundary_condition,
+                                 const LevelData<FArrayBox> &a_soln,
+                                 LevelData<FArrayBox> &a_out, const int dir,
+                                 const int boundary_condition,
                                  const Interval &a_comps,
                                  const VariableType var_type);
 
@@ -167,8 +167,7 @@ class BoundaryConditions
         const VariableType var_type = VariableType::multigrid) const;
 
     double get_radius(IntVect integer_coords, double dx,
-                  std::array<double, CH_SPACEDIM> center = {0}) const;
-
+                      std::array<double, CH_SPACEDIM> center = {0}) const;
 };
 
 /// This derived class is used by expand_grids_to_boundaries to grow the

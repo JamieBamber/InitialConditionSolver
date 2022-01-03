@@ -193,13 +193,41 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
     {
         HDF5HeaderData level_header;
         // want output data to have 3 ghost cells to match GRChombo
-        IntVect ghost_vector = 3 * IntVect::Unit;
+        int num_ghosts = 3;
+        IntVect ghost_vector = num_ghosts * IntVect::Unit;
         grchombo_vars[level] = new LevelData<FArrayBox>(
             a_grids[level], NUM_GRCHOMBO_VARS, ghost_vector);
 
         // Add in the values of the data in the correct form
         set_output_data(*grchombo_vars[level], *a_multigrid_vars[level],
                         a_params, a_vectDx[level]);
+
+        // fill the boundary cells in all directions
+        BoundaryConditions solver_boundaries;
+        solver_boundaries.define(a_vectDx[level][0], a_params.center,
+                                     a_params.boundary_params,
+                                     a_vectDomains[level], num_ghosts);
+
+        // this will populate the grchombo boundaries according to the BCs
+        solver_boundaries.fill_grchombo_boundaries(Side::Lo,
+                                                        *grchombo_vars[level]);
+        solver_boundaries.fill_grchombo_boundaries(Side::Hi,
+                                                        *grchombo_vars[level]);
+
+        // exchange ghosts to catch any corners
+        DisjointBoxLayout grown_grids;
+        if (a_params.boundary_params.nonperiodic_boundaries_exist)
+        {
+            solver_boundaries.expand_grids_to_boundaries(grown_grids, a_grids[level]);
+        }
+        else
+        { // nothing to do if periodic BCs
+            grown_grids = a_grids[level];
+        }
+        Copier exchange_copier;
+        exchange_copier.exchangeDefine(grown_grids, ghost_vector);
+        grchombo_vars[level]->exchange(grchombo_vars[level]->interval(),
+                                           exchange_copier);
 
         // Now continue the write out
         char level_str[20];

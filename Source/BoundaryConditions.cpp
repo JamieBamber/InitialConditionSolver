@@ -28,7 +28,7 @@ BoundaryConditions::params_t::params_t()
     boundary_conditions_written = false;
     nonperiodic_boundaries_exist = false;
     reflective_boundaries_exist = false;
-		vars_parity_multigrid = MultigridUserVariables::vars_parity;
+    vars_parity_multigrid = MultigridUserVariables::vars_parity;
     vars_parity_grchombo = GRChomboUserVariables::vars_parity;
     extrapolation_order = 1;
 }
@@ -84,7 +84,7 @@ void BoundaryConditions::params_t::set_lo_boundary(
 
 void BoundaryConditions::params_t::read_params(GRParmParse &pp)
 {
-//    using namespace MultigridUserVariables; // for loading the arrays
+    //    using namespace MultigridUserVariables; // for loading the arrays
 
     // still load even if not contained, to ensure printout saying parameters
     // were set to their default values
@@ -232,9 +232,9 @@ int BoundaryConditions::get_var_parity(int a_comp, int a_dir,
 }
 
 /// fill solution boundary conditions, after NL update
-void BoundaryConditions::fill_multigrid_boundaries(const Side::LoHiSide a_side,
-                                                  LevelData<FArrayBox> &a_state,
-                                                  const Interval &a_comps)
+void BoundaryConditions::fill_multigrid_boundaries(
+    const Side::LoHiSide a_side, LevelData<FArrayBox> &a_state,
+    const Interval &a_comps)
 {
     CH_assert(is_defined);
     CH_TIME("BoundaryConditions::fill_multigrid_boundaries");
@@ -249,8 +249,8 @@ void BoundaryConditions::fill_multigrid_boundaries(const Side::LoHiSide a_side,
             int boundary_condition = get_boundary_condition(a_side, idir);
 
             fill_boundary_cells_dir(a_side, a_state, a_state, idir,
-                                        boundary_condition, a_comps,
-                                        VariableType::multigrid);
+                                    boundary_condition, a_comps,
+                                    VariableType::multigrid);
         }
     }
 }
@@ -273,8 +273,8 @@ void BoundaryConditions::fill_grchombo_boundaries(const Side::LoHiSide a_side,
             int boundary_condition = get_boundary_condition(a_side, idir);
 
             fill_boundary_cells_dir(a_side, a_state, a_state, idir,
-                                        boundary_condition, a_comps,
-                                        VariableType::grchombo);
+                                    boundary_condition, a_comps,
+                                    VariableType::grchombo);
         }
     }
 }
@@ -282,9 +282,9 @@ void BoundaryConditions::fill_grchombo_boundaries(const Side::LoHiSide a_side,
 /// Fill the boundary values appropriately based on the params set
 /// in the direction dir
 void BoundaryConditions::fill_boundary_cells_dir(
-    const Side::LoHiSide a_side, const LevelData<FArrayBox> &a_soln, LevelData<FArrayBox> &a_out,
-    const int dir, const int boundary_condition, const Interval &a_comps,
-    const VariableType var_type)
+    const Side::LoHiSide a_side, const LevelData<FArrayBox> &a_soln,
+    LevelData<FArrayBox> &a_out, const int dir, const int boundary_condition,
+    const Interval &a_comps, const VariableType var_type)
 {
     std::vector<int> comps_vector;
     comps_vector.resize(a_comps.size());
@@ -384,8 +384,8 @@ void BoundaryConditions::fill_extrapolating_cell(
     for (int icomp : extrapolating_comps)
     {
         // current radius
-        double radius = get_radius(
-            iv, m_dx, {m_center[0], m_center[1], m_center[2]});
+        double radius =
+            get_radius(iv, m_dx, {m_center[0], m_center[1], m_center[2]});
 
         // vector of 2 nearest values and radii within the grid
         std::array<double, 2> value_at_point;
@@ -614,8 +614,9 @@ void BoundaryConditions::expand_grids_to_boundaries(
     a_out_grids.close();
 }
 
-double BoundaryConditions::get_radius(IntVect integer_coords, double dx,
-                  std::array<double, CH_SPACEDIM> center) const
+double
+BoundaryConditions::get_radius(IntVect integer_coords, double dx,
+                               std::array<double, CH_SPACEDIM> center) const
 {
     double xx = (integer_coords[0] + 0.5) * dx - center[0];
     double yy = (integer_coords[1] + 0.5) * dx - center[1];

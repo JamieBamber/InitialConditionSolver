@@ -36,8 +36,8 @@ class PoissonParameters
     Real refineThresh;
     int coefficient_average_type;
     int verbosity;
-    int is_periodic;
     Vector<int> periodic;
+    bool periodic_directions_exist;
     int domBcType;
     int maxLevel;
     int numLevels;

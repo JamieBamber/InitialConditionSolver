@@ -11,7 +11,7 @@ Real my_phi_function(const RealVect loc, const PoissonParameters &a_params) {
   RealVect L = a_params.domainLength;
 
   // gaussian - use with Dirichlet BCs
-  if(!a_params.is_periodic)
+  if(!a_params.periodic_directions_exist)
   {
     Real rr = sqrt(D_TERM(loc[0] * loc[0], +loc[1] * loc[1], +loc[2] * loc[2]));
     return a_params.phi_0 +
@@ -34,7 +34,7 @@ Real my_Pi_function(const RealVect loc, const PoissonParameters &a_params) {
   RealVect L = a_params.domainLength;
 
   // gaussian - use with Dirichlet BCs
-  if(!a_params.is_periodic)
+  if(!a_params.periodic_directions_exist)
   {
     Real rr = sqrt(D_TERM(loc[0] * loc[0], +loc[1] * loc[1], +loc[2] * loc[2]));
     return a_params.pi_0 - a_params.pi_amplitude * loc[1] * rr *
