@@ -6,6 +6,7 @@
 #include "AMRIO.H"
 #include "BRMeshRefine.H"
 #include "BiCGStabSolver.H"
+#include "BoundaryConditions.hpp"
 #include "DebugDump.H"
 #include "FABView.H"
 #include "FArrayBox.H"
@@ -77,7 +78,8 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
     ProblemDomain domLev(a_params.coarsestDomain);
 
     // currently only one ghost needed for 2nd order stencils
-    IntVect ghosts = 1 * IntVect::Unit;
+    int num_ghosts = 1;
+    IntVect ghosts = num_ghosts * IntVect::Unit;
     IntVect no_ghosts = IntVect::Zero;
 
     // Declare variables here, with num comps, and ghosts for all
@@ -116,6 +118,16 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             set_initial_conditions(*multigrid_vars[ilev], *dpsi[ilev],
                                    vectDx[ilev], a_params, set_matter);
         }
+
+        // fill the boundary cells
+        BoundaryConditions solver_boundaries;
+        solver_boundaries.define(vectDx[ilev][0], a_params.center, 
+                                 a_params.boundary_params, domLev,
+                                 num_ghosts);
+        // this will populate the multigrid boundaries according to the BCs set
+        // some will still just be zeros but this should be ok for now
+        solver_boundaries.fill_multigrid_boundaries(Side::Lo, *multigrid_vars[ilev]);
+        solver_boundaries.fill_multigrid_boundaries(Side::Hi, *multigrid_vars[ilev]);
 
         // prepare temp dx, domain vars for next level
         dxLev /= a_params.refRatio[ilev];

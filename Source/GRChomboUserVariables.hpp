@@ -71,6 +71,14 @@ static constexpr char const *variable_names[NUM_GRCHOMBO_VARS] = {
     "B1",     "B2",     "B3",
 
     "phi",    "Pi"};
+
+    std::array<int, NUM_GRCHOMBO_VARS> vars_parity = 
+    {0, 0, 4, 6, 0, 5, 0,
+     0, 0, 4, 6, 0, 5, 0,
+     0, 1, 2, 3, 0, 1, 2, 3, 
+     1, 2, 3,
+     0, 0};
+
 }
 
 #endif /* GRCHOMBOUSERVARIABLES_HPP */

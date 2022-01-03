@@ -69,10 +69,10 @@ G_Newton = 1.0
 
 # scalar field input params
 phi_0 = 0.0
-phi_amplitude = 1e-6
+phi_amplitude = 1e-4
 phi_wavelength = 10
 pi_0 = 0.0
-pi_amplitude = 1e-6
+pi_amplitude = 1e-4
 pi_wavelength = 10
 
 # potential params

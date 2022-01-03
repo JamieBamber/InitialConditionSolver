@@ -24,7 +24,7 @@
 // function to read in the key params for solver
 void getPoissonParameters(PoissonParameters &a_params)
 {
-    ParmParse pp;
+    GRParmParse pp;
 
     // problem specific params
     pp.get("alpha", a_params.alpha);
@@ -188,4 +188,25 @@ void getPoissonParameters(PoissonParameters &a_params)
     a_params.coarsestDomain = crseDom;
 
     pout() << "periodicity = " << a_params.is_periodic << endl;
+
+    // now the boundary read in
+    a_params.boundary_params.read_params(pp);
+
+    FOR1(idir)
+    {
+        // default center to center of grid, may reset below 
+        // depending on boundaries
+        a_params.center[idir] = domain_length / 2.0;
+
+        if ((a_params.boundary_params.lo_boundary[idir] ==
+             BoundaryConditions::REFLECTIVE_BC) &&
+            (a_params.boundary_params.hi_boundary[idir] !=
+             BoundaryConditions::REFLECTIVE_BC))
+            a_params.center[idir] = 0.;
+        else if ((a_params.boundary_params.hi_boundary[idir] ==
+                  BoundaryConditions::REFLECTIVE_BC) &&
+                 (a_params.boundary_params.lo_boundary[idir] !=
+                  BoundaryConditions::REFLECTIVE_BC))
+            a_params.center[idir] = domain_length;
+    }
 }

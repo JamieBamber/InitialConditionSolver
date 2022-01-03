@@ -15,9 +15,11 @@
 using std::cerr;
 
 #include "AMRMultiGrid.H"
+#include "BoundaryConditions.hpp"
 #include "DisjointBoxLayout.H"
 #include "FArrayBox.H"
 #include "ParmParse.H"
+#include "GRParmParse.hpp"
 #include "VariableCoeffPoissonOperator.H"
 
 /// Class for solver input parameters
@@ -43,6 +45,8 @@ class PoissonParameters
     Vector<int> refRatio;
     ProblemDomain coarsestDomain;
     Real coarsestDx;
+    std::array<double, SpaceDim> center; // grid center
+    BoundaryConditions::params_t boundary_params; // set boundaries in each dir
     RealVect domainLength;
     RealVect probLo;
     RealVect probHi;
