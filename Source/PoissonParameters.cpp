@@ -211,4 +211,8 @@ void getPoissonParameters(PoissonParameters &a_params)
                   BoundaryConditions::REFLECTIVE_BC))
             a_params.center[idir] = domain_length;
     }
+
+    pout() << "grid center set to " << a_params.center[0] << " " 
+           << a_params.center[1] << " " << a_params.center[2] << endl;
+
 }

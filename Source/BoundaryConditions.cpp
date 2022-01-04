@@ -384,12 +384,12 @@ void BoundaryConditions::fill_extrapolating_cell(
     for (int icomp : extrapolating_comps)
     {
         // current radius
-        double radius =
-            get_radius(iv, m_dx, {m_center[0], m_center[1], m_center[2]});
+ //       double radius =
+ //           get_radius(iv, m_dx, {m_center[0], m_center[1], m_center[2]});
 
         // vector of 2 nearest values and radii within the grid
         std::array<double, 2> value_at_point;
-        std::array<double, 2> r_at_point;
+   //     std::array<double, 2> r_at_point;
         // how many units are we from domain boundary?
         int units_from_edge = 0;
         if (a_side == Side::Hi)
@@ -413,8 +413,8 @@ void BoundaryConditions::fill_extrapolating_cell(
                     }
                 }
                 value_at_point[i] = out_box(iv_tmp, icomp);
-                r_at_point[i] = get_radius(
-                    iv_tmp, m_dx, {m_center[0], m_center[1], m_center[2]});
+         //       r_at_point[i] = get_radius(
+           //         iv_tmp, m_dx, {m_center[0], m_center[1], m_center[2]});
             }
         }
         else // Lo side
@@ -438,26 +438,23 @@ void BoundaryConditions::fill_extrapolating_cell(
                     }
                 }
                 value_at_point[i] = out_box(iv_tmp, icomp);
-                r_at_point[i] = get_radius(
-                    iv_tmp, m_dx, {m_center[0], m_center[1], m_center[2]});
+         //       r_at_point[i] = get_radius(
+           //         iv_tmp, m_dx, {m_center[0], m_center[1], m_center[2]});
             }
         }
 
-        // assume some radial dependence and fit it
+        // assume some dependence and fit it
         double analytic_change = 0.0;
         // comp = const
         if (order == 0)
         {
             analytic_change = 0.0;
         }
-        // comp = B + A*r
+        // linear comp = B + A*x
         else if (order == 1)
         {
-            double delta_r_in_domain = r_at_point[1] - r_at_point[0];
-            double A =
-                (value_at_point[1] - value_at_point[0]) / delta_r_in_domain;
-            double delta_r_here = radius - r_at_point[0];
-            analytic_change = A * delta_r_here;
+            double A = value_at_point[0] - value_at_point[1];
+            analytic_change = A * units_from_edge;
         }
         // other orders not supported yet
         else
@@ -467,6 +464,7 @@ void BoundaryConditions::fill_extrapolating_cell(
 
         // set the value here to the extrapolated value
         out_box(iv, icomp) = value_at_point[0] + analytic_change;
+
     }
 }
 

@@ -214,6 +214,16 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
         solver_boundaries.fill_grchombo_boundaries(Side::Hi,
                                                         *grchombo_vars[level]);
 
+        // fill interlevel ghosts from coarser level
+        if (level > 0)
+        {
+            QuadCFInterp quadCFI(a_grids[level], &a_grids[level - 1],
+                                     a_vectDx[level][0], a_params.refRatio[level],
+                                     NUM_GRCHOMBO_VARS, a_vectDomains[level]);
+            quadCFI.coarseFineInterp(*grchombo_vars[level],
+                                         *grchombo_vars[level - 1]);
+        }
+
         // exchange ghosts to catch any corners
         DisjointBoxLayout grown_grids;
         if (a_params.boundary_params.nonperiodic_boundaries_exist)

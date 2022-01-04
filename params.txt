@@ -16,7 +16,7 @@ beta  = -1.0
 L = 256
 N = 64 64 64
 # number of AMR refinement levels is max_level + 1
-max_level    = 2
+max_level    = 3
 # Threshold for AMR refinement, based on magnitude of rhs
 refine_threshold = 0.5
 #min box size
@@ -31,11 +31,11 @@ output_path = Outputs/
 # Setup multigrid params
 numMGsmooth = 4 # number of GSRB smooths before and after MG coarsening
 #preCondSolverDepth = 1
-num_mg     = 1 
+num_mg     = 1
 numMGIterations = 4 #this is the number of MG v-cycles in the preconditioner
 max_iterations = 100 #max number of solver iterations
-max_NL_iterations = 50 #non linear outside loop iterations
-tolerance  = 1.0e-9  #solver tolerance for declaring convergence
+max_NL_iterations = 20 #non linear outside loop iterations
+tolerance  = 1.0e-10  #solver tolerance for declaring convergence
 hang       = 1.0e-11  #solver tolerance for deciding when we're hung
 verbosity = 2 # higher number means more verbose output
 
@@ -51,19 +51,20 @@ is_periodic = 0 0 0
 # 0 = static (zeros), 1 = reflective, 2 = extrapolating
 hi_boundary = 2 2 2
 lo_boundary = 2 2 2
+extrapolation_order = 1
 # Note that by default dpsi will have constant zero Dirichlet BCs
 # And the V_i comps will have a constant 1st order extrapolation
 # (Or they will be reflective if set to be above) 
 
-# if not periodic, then what?
+# set conditions on the solver vars
 # 0 -> const Dirichlet (value)
 # 1 -> const Neumann (gradient)
 # 2 -> extrapolating at 1st order from within grid
 bc_lo_psi       = 0 0 0
 bc_hi_psi       = 0 0 0
-bc_lo_Vi       = 2 2 2
-bc_hi_Vi       = 2 2 2
-# And set the constant value of these conditions
+bc_lo_Vi       = 0 0 0
+bc_hi_Vi       = 1 1 1
+# And set the constant value of these conditions if 0 or 1
 # note bc_value probably 0 because it is applied
 # to dpsi at boundary (not psi)
 bc_value_psi = 0.0
@@ -78,10 +79,10 @@ G_Newton = 1.0
 
 # scalar field input params
 phi_0 = 0.0
-phi_amplitude = 1e-6
+phi_amplitude = 1e-4
 phi_wavelength = 10
 pi_0 = 0.0
-pi_amplitude = 1e-6
+pi_amplitude = 1e-4
 pi_wavelength = 10
 
 # potential params

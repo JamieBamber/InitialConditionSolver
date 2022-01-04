@@ -82,10 +82,12 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
 
         const Box valid = a_valid;
         Interval psi_comps(c_psi, c_psi);
-        Interval Vi_comps(c_U, c_V3);
+        Interval Vi_comps(c_V1, c_U);
         const BCValueHolder psi_bc(ParseValuePsi); // pointer to void function
         const BCValueHolder Vi_bc(ParseValueVi);   // pointer to void function
 
+        doNothingBC(a_state, valid, a_domain.domainBox(), a_dx, a_homogeneous);
+/*
         for (int i = 0; i < CH_SPACEDIM; ++i)
         {
             // periodic? If not, check if Dirichlet or Neumann
@@ -256,5 +258,6 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
             } // else - is periodic
 
         } // close for idir
+*/
     }
 }
