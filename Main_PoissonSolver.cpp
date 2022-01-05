@@ -15,7 +15,7 @@
 #include "MultilevelLinearOp.H"
 #include "ParmParse.H"
 #include "PoissonParameters.H"
-#include "ReadHDF5.H"
+#include "ReadInput.H"
 #include "SetBCs.H"
 #include "SetGrids.H"
 #include "SetLevelData.H"
@@ -101,28 +101,13 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         vectDx[ilev] = dxLev;
 
         bool set_matter = true;
-        if (a_params.read_from_file != "none")
+        if (a_params.readin_matter_data)
         {
             pout() << "Set matter data using read in" << endl;
             set_matter = false;
             // just set initial guess for psi and zero dpsi
-            readHDF5(*multigrid_vars[ilev], a_grids, a_params, ilev, ghosts);
             set_initial_conditions(*multigrid_vars[ilev], *dpsi[ilev],
                                    vectDx[ilev], a_params, set_matter);
-
-            // fill the boundary cells in case needed (eg, because no ghosts in input)
-            BoundaryConditions solver_boundaries;
-            solver_boundaries.define(vectDx[ilev][0], a_params.center,
-                                     a_params.boundary_params, vectDomains[ilev],
-                                     num_ghosts);
-
-            // this will populate the multigrid boundaries according to the BCs set
-            // some will still just be zeros but this should be ok for now
-            solver_boundaries.fill_multigrid_boundaries(Side::Lo,
-                                             *multigrid_vars[ilev]);
-
-            solver_boundaries.fill_multigrid_boundaries(Side::Hi,
-                                             *multigrid_vars[ilev]);
         }
         else
         {
@@ -137,6 +122,30 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         dxLev /= a_params.refRatio[ilev];
         domLev.refine(a_params.refRatio[ilev]);
     }
+
+    // read in the data and make sure boundary cells filled
+    if (a_params.readin_matter_data)
+    {
+            read_matter_data(multigrid_vars, a_grids, a_params, a_params.input_filename);
+
+        for (int ilev = 0; ilev < nlevels; ilev++)
+        {
+            // fill the boundary cells in case needed (eg, because no ghosts in input)
+            BoundaryConditions solver_boundaries;
+            solver_boundaries.define(vectDx[ilev][0], a_params.center,
+                                     a_params.boundary_params, vectDomains[ilev],
+                                     num_ghosts);
+
+            // this will populate the multigrid boundaries according to the BCs set
+            // some will still just be zeros but this should be ok for now
+            solver_boundaries.fill_multigrid_boundaries(Side::Lo,
+                                             *multigrid_vars[ilev]);
+
+            solver_boundaries.fill_multigrid_boundaries(Side::Hi,
+                                             *multigrid_vars[ilev]);
+        }
+    }
+
 
     // set up linear operator
     int lBase = 0;
@@ -189,13 +198,9 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             // this will populate the multigrid boundaries according to the BCs
             // in particular it will fill cells for Aij, and updated K
             solver_boundaries.fill_multigrid_boundaries(Side::Lo,
-                                         *multigrid_vars[ilev], Interval(c_A11_0, c_A33_0));
+                                         *multigrid_vars[ilev], Interval(c_K_0, c_A33_0));
             solver_boundaries.fill_multigrid_boundaries(Side::Hi,
-                                         *multigrid_vars[ilev], Interval(c_A11_0, c_A33_0));
-//            solver_boundaries.fill_multigrid_boundaries(Side::Lo,
-//                                         *multigrid_vars[ilev], Interval(c_V1_0, c_U_0));
-//            solver_boundaries.fill_multigrid_boundaries(Side::Hi,
-//                                         *multigrid_vars[ilev], Interval(c_V1_0, c_U_0));
+                                         *multigrid_vars[ilev], Interval(c_K_0, c_A33_0));
         }
 
         // need to fill interlevel and intralevel ghosts in multigrid_vars
@@ -230,10 +235,6 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             exchange_copier.exchangeDefine(grown_grids, ghosts);
             multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(),
                                            exchange_copier);
-            //solver_boundaries.fill_multigrid_boundaries(Side::Lo,
-            //                             *multigrid_vars[ilev], Interval(c_V1_0, c_U_0));
-            //solver_boundaries.fill_multigrid_boundaries(Side::Hi,
-            //                             *multigrid_vars[ilev], Interval(c_V1_0, c_U_0));
         }
 
         // Calculate values for coefficients here - see SetLevelData.cpp
@@ -346,11 +347,6 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             // now the update
             set_update_psi0(*multigrid_vars[ilev], *dpsi[ilev],
                             exchange_copier);
-            //solver_boundaries.fill_multigrid_boundaries(Side::Lo,
-            //                             *multigrid_vars[ilev], Interval(c_V1_0, c_U_0));
-            //solver_boundaries.fill_multigrid_boundaries(Side::Hi,
-            //                             *multigrid_vars[ilev], Interval(c_V1_0, c_U_0));
-
         }
 
         // Again update the multigrid ghost values for calculation
@@ -385,10 +381,6 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             exchange_copier.exchangeDefine(grown_grids, ghosts);
             multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(),
                                            exchange_copier);
-            //solver_boundaries.fill_multigrid_boundaries(Side::Lo,
-            //                             *multigrid_vars[ilev], Interval(c_V1_0, c_U_0));
-            //solver_boundaries.fill_multigrid_boundaries(Side::Hi,
-            //                             *multigrid_vars[ilev], Interval(c_V1_0, c_U_0));
         }
 
         // output the data after the solver acts to check updates
@@ -411,7 +403,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
     // now output final data in a form which can be read as a checkpoint file
     // for the GRChombo AMR time dependent runs
-    output_final_data(multigrid_vars, a_grids, vectDx, vectDomains, a_params);
+    output_final_data(multigrid_vars, a_grids, vectDx, vectDomains, a_params, a_params.output_filename);
 
     // clean up data
     for (int level = 0; level < multigrid_vars.size(); level++)
@@ -465,14 +457,13 @@ int main(int argc, char *argv[])
 
         // set up the grids, using the rhs for tagging to decide
         // where needs additional levels
-        pout() << "Setup grids" << endl;
-        if (params.read_from_file == "none")
+        if (params.readin_matter_data)
         {
-            set_grids(grids, params);
+            read_grids(grids, params, params.input_filename);
         }
         else
         {
-            readgrids(grids, params);
+            set_grids(grids, params);
         }
 
         // Solve the equations!

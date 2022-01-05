@@ -22,47 +22,36 @@
 #include <cmath>
 
 // Global BCRS definitions
-std::vector<bool> GlobalBCRS::s_printedThatLo_psi =
-    std::vector<bool>(SpaceDim, false);
-std::vector<bool> GlobalBCRS::s_printedThatHi_psi =
-    std::vector<bool>(SpaceDim, false);
-std::vector<bool> GlobalBCRS::s_printedThatLo_Vi =
-    std::vector<bool>(SpaceDim, false);
-std::vector<bool> GlobalBCRS::s_printedThatHi_Vi =
-    std::vector<bool>(SpaceDim, false);
-std::vector<int> GlobalBCRS::s_bcLo_psi = std::vector<int>();
-std::vector<int> GlobalBCRS::s_bcHi_psi = std::vector<int>();
-std::vector<int> GlobalBCRS::s_bcLo_Vi = std::vector<int>();
-std::vector<int> GlobalBCRS::s_bcHi_Vi = std::vector<int>();
-RealVect GlobalBCRS::s_trigvec = RealVect::Zero;
+std::vector<int> GlobalBCRS::s_bcLo = std::vector<int>();
+std::vector<int> GlobalBCRS::s_bcHi = std::vector<int>();
 bool GlobalBCRS::s_areBCsParsed = false;
-bool GlobalBCRS::s_valueParsed_psi = false;
-bool GlobalBCRS::s_valueParsed_Vi = false;
-bool GlobalBCRS::s_trigParsed = false;
+bool GlobalBCRS::s_valueParsed_single = false;
+bool GlobalBCRS::s_valueParsed_vector = false;
 
 // BCValueHolder functions, ie a void-type function with the 4
 // arguments given pos [x,y,z] position on center of cell edge int dir
 // direction, x being 0 int side -1 for low, +1 = high, fill in the a_values
 // array
 // For the moment these assume the value is constant for all positions and dirs
-void ParseValuePsi(Real *pos, int *dir, Side::LoHiSide *side, Real *a_values)
+void ParseSingleValue(Real *pos, int *dir, Side::LoHiSide *side, Real *a_values)
 {
     ParmParse pp;
-    Real bcVal_psi = 0.0;
-    pp.query("bc_value_psi", bcVal_psi);
-    a_values[0] = bcVal_psi;
-    GlobalBCRS::s_valueParsed_psi = true;
+    Real bcVal = 0.0;
+    pp.query("bc_value", bcVal);
+    a_values[0] = bcVal;
+    GlobalBCRS::s_valueParsed_single = true;
 }
-void ParseValueVi(Real *pos, int *dir, Side::LoHiSide *side, Real *a_values)
+
+void ParseVectorValue(Real *pos, int *dir, Side::LoHiSide *side, Real *a_values)
 {
     ParmParse pp;
-    Real bcVal_Vi = 0.0;
-    pp.query("bc_value_Vi", bcVal_Vi);
-    for (int i = 0; i < NUM_CONSTRAINT_VARS - 1; i++)
+    Real bcVal_vector = 0.0;
+    pp.query("bc_value_vector", bcVal_vector);
+    for (int icomp = 0; icomp < NUM_CONSTRAINT_VARS; icomp++)
     {
-        a_values[i] = bcVal_Vi;
+        a_values[icomp] = bcVal_vector;
     }
-    GlobalBCRS::s_valueParsed_Vi = true;
+    GlobalBCRS::s_valueParsed_vector = true;
 }
 
 void ParseBC(FArrayBox &a_state, const Box &a_valid,
@@ -73,191 +62,121 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
         if (!GlobalBCRS::s_areBCsParsed)
         {
             ParmParse pp;
-            pp.getarr("bc_lo_psi", GlobalBCRS::s_bcLo_psi, 0, SpaceDim);
-            pp.getarr("bc_hi_psi", GlobalBCRS::s_bcHi_psi, 0, SpaceDim);
-            pp.getarr("bc_lo_Vi", GlobalBCRS::s_bcLo_Vi, 0, SpaceDim);
-            pp.getarr("bc_hi_Vi", GlobalBCRS::s_bcHi_Vi, 0, SpaceDim);
+            pp.getarr("lo_boundary", GlobalBCRS::s_bcLo, 0, SpaceDim);
+            pp.getarr("hi_boundary", GlobalBCRS::s_bcHi, 0, SpaceDim);
             GlobalBCRS::s_areBCsParsed = true;
         }
 
         const Box valid = a_valid;
-        Interval psi_comps(c_psi, c_psi);
-        Interval Vi_comps(c_V1, c_U);
-        const BCValueHolder psi_bc(ParseValuePsi); // pointer to void function
-        const BCValueHolder Vi_bc(ParseValueVi);   // pointer to void function
+        BCValueHolder single_bc(ParseSingleValue); // pointer to void function
+        BCValueHolder vector_bc(ParseVectorValue); // pointer to void function
 
-        doNothingBC(a_state, valid, a_domain.domainBox(), a_dx, a_homogeneous);
-/*
-        for (int i = 0; i < CH_SPACEDIM; ++i)
+        // this boundary condition leaves the boundary cells set as they are
+        // initially (so zeros as set in the InitialConditions)
+        // doNothingBC(a_state, valid, a_domain.domainBox(), a_dx,
+        // a_homogeneous);
+
+        // This sets all the comps to zero in the BCs
+        // which is the default
+        ZeroBC(a_state, valid, a_domain.domainBox(), a_dx, a_homogeneous,
+               a_state.interval());
+
+        // One can impose alternatives
+        // on different components, using the functions defined in BCFunc.H
+        // Here we will use them to impose reflective BCs by setting even parity
+        // vars to Neumann and odd parity vars to Dirichlet
+        for (int idir = 0; idir < CH_SPACEDIM; ++idir)
         {
-            // periodic? If not, check if Dirichlet or Neumann
-            if (!a_domain.isPeriodic(i))
+            // not periodic and reflective
+            if (!a_domain.isPeriodic(idir) && (GlobalBCRS::s_bcLo[idir] == 1 ||
+                                               GlobalBCRS::s_bcHi[idir] == 1))
             {
-                Box ghostBoxLo = adjCellBox(valid, i, Side::Lo, 1);
-                Box ghostBoxHi = adjCellBox(valid, i, Side::Hi, 1);
-                if (!a_domain.domainBox().contains(ghostBoxLo))
+                int num_ghosts = 1;
+                Box ghostBoxLo = adjCellBox(valid, idir, Side::Lo, num_ghosts);
+                Box ghostBoxHi = adjCellBox(valid, idir, Side::Hi, num_ghosts);
+                if (!a_domain.domainBox().contains(ghostBoxLo) &&
+                    GlobalBCRS::s_bcLo[idir] == 1)
                 {
-                    // First for psi values
-                    if (GlobalBCRS::s_bcLo_psi[i] == 1)
+                    Interval psi_comp = Interval(c_psi, c_psi);
+                    NeumBC(a_state, valid, a_dx, a_homogeneous, single_bc, idir,
+                           Side::Lo, psi_comp);
+
+                    FOR1(Vi_dir)
                     {
-                        if (!GlobalBCRS::s_printedThatLo_psi[i])
+                        Interval Vi_comp =
+                            Interval(c_V1 + Vi_dir, c_V1 + Vi_dir);
+                        if (Vi_dir == idir)
                         {
-                            GlobalBCRS::s_printedThatLo_psi[i] = true;
-                            pout() << "Constant Neumann bcs imposed on psi for "
-                                      "low "
-                                      "side direction "
-                                   << i << endl;
+                            DiriBC(a_state, valid, a_dx, a_homogeneous,
+                                   single_bc, idir, Side::Lo, Vi_comp);
                         }
-                        NeumBC(a_state, valid, a_dx, a_homogeneous, psi_bc, i,
-                               Side::Lo, psi_comps);
-                    }
-                    else if (GlobalBCRS::s_bcLo_psi[i] == 0)
-                    {
-                        if (!GlobalBCRS::s_printedThatLo_psi[i])
+                        else
                         {
-                            GlobalBCRS::s_printedThatLo_psi[i] = true;
-                            pout() << "Constant Dirichlet bcs imposed on psi "
-                                      "for low "
-                                      "side direction "
-                                   << i << endl;
+                            NeumBC(a_state, valid, a_dx, a_homogeneous,
+                                   single_bc, idir, Side::Lo, Vi_comp);
                         }
-                        DiriBC(a_state, valid, a_dx, a_homogeneous, psi_bc, i,
-                               Side::Lo, psi_comps);
-                    }
-                    else
-                    {
-                        MayDay::Error("bogus bc flag low side psi");
                     }
 
-                    // Now for Vi values
-                    if (GlobalBCRS::s_bcLo_Vi[i] == 2)
-                    {
-                        if (!GlobalBCRS::s_printedThatLo_Vi[i])
-                        {
-                            GlobalBCRS::s_printedThatLo_Vi[i] = true;
-                            pout() << "Extrapolating bcs imposed on Vi for low "
-                                      "side direction "
-                                   << i << endl;
-                        }
-                        // first order extrapolation
-                        ExtrapolateBC(a_state, valid, a_dx, i, Side::Lo,
-                                      Vi_comps);
-                    }
-                    else if (GlobalBCRS::s_bcLo_Vi[i] == 1)
-                    {
-                        if (!GlobalBCRS::s_printedThatLo_Vi[i])
-                        {
-                            GlobalBCRS::s_printedThatLo_Vi[i] = true;
-                            pout()
-                                << "Constant Neumann bcs imposed on Vi for low "
-                                   "side direction "
-                                << i << endl;
-                        }
-                        NeumBC(a_state, valid, a_dx, a_homogeneous, Vi_bc, i,
-                               Side::Lo, Vi_comps);
-                    }
-                    else if (GlobalBCRS::s_bcLo_Vi[i] == 0)
-                    {
-                        if (!GlobalBCRS::s_printedThatLo_Vi[i])
-                        {
-                            GlobalBCRS::s_printedThatLo_Vi[i] = true;
-                            pout() << "Constant Dirichlet bcs imposed on Vi "
-                                      "for low "
-                                      "side direction "
-                                   << i << endl;
-                        }
-                        DiriBC(a_state, valid, a_dx, a_homogeneous, Vi_bc, i,
-                               Side::Lo, Vi_comps);
-                    }
-                    else
-                    {
-                        MayDay::Error("bogus bc flag low side Vi");
-                    }
+                    Interval U_comp = Interval(c_U, c_U);
+                    NeumBC(a_state, valid, a_dx, a_homogeneous, single_bc, idir,
+                           Side::Lo, U_comp);
                 }
 
-                if (!a_domain.domainBox().contains(ghostBoxHi))
+                if (!a_domain.domainBox().contains(ghostBoxHi) &&
+                    GlobalBCRS::s_bcLo[idir] == 1)
                 {
-                    // First for psi
-                    if (GlobalBCRS::s_bcHi_psi[i] == 1)
+                    Interval psi_comp = Interval(c_psi, c_psi);
+                    NeumBC(a_state, valid, a_dx, a_homogeneous, single_bc, idir,
+                           Side::Hi, psi_comp);
+
+                    FOR1(Vi_dir)
                     {
-                        if (!GlobalBCRS::s_printedThatHi_psi[i])
+                        Interval Vi_comp =
+                            Interval(c_V1 + Vi_dir, c_V1 + Vi_dir);
+                        if (Vi_dir == idir)
                         {
-                            GlobalBCRS::s_printedThatHi_psi[i] = true;
-                            pout() << "Constant Neumann bcs imposed on psi for "
-                                      "high "
-                                      "side direction "
-                                   << i << endl;
+                            DiriBC(a_state, valid, a_dx, a_homogeneous,
+                                   single_bc, idir, Side::Hi, Vi_comp);
                         }
-                        NeumBC(a_state, valid, a_dx, a_homogeneous, psi_bc, i,
-                               Side::Hi, psi_comps);
-                    }
-                    else if (GlobalBCRS::s_bcHi_psi[i] == 0)
-                    {
-                        if (!GlobalBCRS::s_printedThatHi_psi[i])
+                        else
                         {
-                            GlobalBCRS::s_printedThatHi_psi[i] = true;
-                            pout() << "Constant Dirichlet bcs imposed on psi "
-                                      "for high "
-                                      "side direction "
-                                   << i << endl;
+                            NeumBC(a_state, valid, a_dx, a_homogeneous,
+                                   single_bc, idir, Side::Hi, Vi_comp);
                         }
-                        DiriBC(a_state, valid, a_dx, a_homogeneous, psi_bc, i,
-                               Side::Hi, psi_comps);
-                    }
-                    else
-                    {
-                        MayDay::Error("bogus bc flag high side psi");
                     }
 
-                    // Now for Vi
-                    if (GlobalBCRS::s_bcHi_Vi[i] == 2)
-                    {
-                        if (!GlobalBCRS::s_printedThatHi_Vi[i])
-                        {
-                            GlobalBCRS::s_printedThatHi_Vi[i] = true;
-                            pout()
-                                << "Extrapolating bcs imposed on Vi for high "
-                                   "side direction "
-                                << i << endl;
-                        }
-                        // first order extrapolation
-                        ExtrapolateBC(a_state, valid, a_dx, i, Side::Hi,
-                                      Vi_comps);
-                    }
-                    else if (GlobalBCRS::s_bcHi_Vi[i] == 1)
-                    {
-                        if (!GlobalBCRS::s_printedThatHi_Vi[i])
-                        {
-                            GlobalBCRS::s_printedThatHi_Vi[i] = true;
-                            pout() << "Constant Neumann bcs imposed on Vi for "
-                                      "high "
-                                      "side direction "
-                                   << i << endl;
-                        }
-                        NeumBC(a_state, valid, a_dx, a_homogeneous, Vi_bc, i,
-                               Side::Hi, Vi_comps);
-                    }
-                    else if (GlobalBCRS::s_bcHi_Vi[i] == 0)
-                    {
-                        if (!GlobalBCRS::s_printedThatHi_Vi[i])
-                        {
-                            GlobalBCRS::s_printedThatHi_Vi[i] = true;
-                            pout() << "Constant Dirichlet bcs imposed on psi "
-                                      "for high "
-                                      "side direction "
-                                   << i << endl;
-                        }
-                        DiriBC(a_state, valid, a_dx, a_homogeneous, Vi_bc, i,
-                               Side::Hi, Vi_comps);
-                    }
-                    else
-                    {
-                        MayDay::Error("bogus bc flag high side Vi");
-                    }
+                    Interval U_comp = Interval(c_U, c_U);
+                    NeumBC(a_state, valid, a_dx, a_homogeneous, single_bc, idir,
+                           Side::Hi, U_comp);
                 }
             } // else - is periodic
+        }     // close for idir
+    }
+}
 
-        } // close for idir
-*/
+void ZeroBC(FArrayBox &a_state, const Box &a_valid,
+            const ProblemDomain &a_domain, Real a_dx, bool a_homogeneous,
+            Interval a_interval)
+{
+    for (int idir = 0; idir < SpaceDim; idir++)
+    {
+        for (SideIterator sit; sit.ok(); ++sit)
+        {
+            int num_ghosts = 1;
+            Box toRegion = adjCellBox(a_valid, idir, sit(), num_ghosts);
+            toRegion &= a_state.box();
+
+            for (BoxIterator bit(toRegion); bit.ok(); ++bit)
+            {
+                const IntVect &ivTo = bit();
+
+                for (int icomp = a_interval.begin(); icomp <= a_interval.end();
+                     icomp++)
+                {
+                    // Set BCs to zero
+                    a_state(ivTo, icomp) = 0.0;
+                }
+            }
+        }
     }
 }

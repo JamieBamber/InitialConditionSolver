@@ -263,18 +263,18 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
             rhs_box(iv, c_V1) =
                 pow(psi_0, 6.0) *
                     (2.0 / 3.0 * d1_K[0] -
-                     8.0 * M_PI * a_params.G_Newton * Pi_0 * d1_phi[0]) 
-                - laplacian_V1;
+                     8.0 * M_PI * a_params.G_Newton * Pi_0 * d1_phi[0]) -
+                laplacian_V1;
             rhs_box(iv, c_V2) =
                 pow(psi_0, 6.0) *
                     (2.0 / 3.0 * d1_K[1] -
-                     8.0 * M_PI * a_params.G_Newton * Pi_0 * d1_phi[1])
-                - laplacian_V2;
+                     8.0 * M_PI * a_params.G_Newton * Pi_0 * d1_phi[1]) -
+                laplacian_V2;
             rhs_box(iv, c_V3) =
                 pow(psi_0, 6.0) *
                     (2.0 / 3.0 * d1_K[2] -
-                     8.0 * M_PI * a_params.G_Newton * Pi_0 * d1_phi[2])
-                 - laplacian_V3;
+                     8.0 * M_PI * a_params.G_Newton * Pi_0 * d1_phi[2]) -
+                laplacian_V3;
             rhs_box(iv, c_U) =
                 -0.25 * (d1_V1[0] + d1_V2[1] + d1_V3[2]) - laplacian_U;
         }

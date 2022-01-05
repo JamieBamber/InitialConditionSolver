@@ -142,17 +142,10 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
                        const Vector<DisjointBoxLayout> &a_grids,
                        const Vector<RealVect> &a_vectDx,
                        const Vector<ProblemDomain> &a_vectDomains,
-                       const PoissonParameters &a_params)
+                       const PoissonParameters &a_params,
+                       const string filename = "InitialConditionsFinal.3d.hdf5")
 {
 #ifdef CH_USE_HDF5
-
-#if CH_SPACEDIM == 2
-    string filename(a_params.output_path);
-    filename += "InitialConditionsFinal.2d.hdf5";
-#else
-    string filename(a_params.output_path);
-    filename += "InitialConditionsFinal.3d.hdf5";
-#endif
 
     // set up full data and write to hdf5 file ready for GRChombo
     HDF5Handle handle(filename, HDF5Handle::CREATE);

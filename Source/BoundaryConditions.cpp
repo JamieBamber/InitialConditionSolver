@@ -22,8 +22,8 @@
 BoundaryConditions::params_t::params_t()
 {
     // set defaults
-    hi_boundary.fill(STATIC_BC);
-    lo_boundary.fill(STATIC_BC);
+    hi_boundary.fill(EXTRAPOLATING_BC);
+    lo_boundary.fill(EXTRAPOLATING_BC);
     is_periodic.fill(true);
     boundary_conditions_written = false;
     nonperiodic_boundaries_exist = false;
@@ -162,9 +162,8 @@ void BoundaryConditions::write_boundary_conditions(const params_t &a_params)
     pout() << "The boundary params chosen are:  " << endl;
     pout() << "---------------------------------" << endl;
 
-    std::map<int, std::string> bc_names = {{STATIC_BC, "Static"},
-                                           {REFLECTIVE_BC, "Reflective"},
-                                           {EXTRAPOLATING_BC, "Extrapolating"}};
+    std::map<int, std::string> bc_names = {{EXTRAPOLATING_BC, "Extrapolating"},
+                                           {REFLECTIVE_BC, "Reflective"}};
     FOR(idir)
     {
         if (!a_params.is_periodic[idir])
@@ -317,14 +316,11 @@ void BoundaryConditions::fill_boundary_cells_dir(
             IntVect iv = bit();
             switch (boundary_condition)
             {
-            // simplest case - boundary values are set to zero
-            case STATIC_BC:
+            // simplest case - boundary values are extrapolated
+            case EXTRAPOLATING_BC:
             {
-                for (int icomp = a_comps.begin(); icomp <= a_comps.end();
-                     ++icomp)
-                {
-                    out_box(iv, icomp) = 0.0;
-                }
+                fill_extrapolating_cell(out_box, iv, a_side, dir, comps_vector,
+                                        m_params.extrapolation_order);
                 break;
             }
             // Enforce a reflective symmetry in some direction
@@ -332,12 +328,6 @@ void BoundaryConditions::fill_boundary_cells_dir(
             {
                 fill_reflective_cell(out_box, iv, a_side, dir, comps_vector,
                                      var_type);
-                break;
-            }
-            case EXTRAPOLATING_BC:
-            {
-                fill_extrapolating_cell(out_box, iv, a_side, dir, comps_vector,
-                                        m_params.extrapolation_order);
                 break;
             }
             default:
@@ -383,13 +373,9 @@ void BoundaryConditions::fill_extrapolating_cell(
 {
     for (int icomp : extrapolating_comps)
     {
-        // current radius
- //       double radius =
- //           get_radius(iv, m_dx, {m_center[0], m_center[1], m_center[2]});
-
         // vector of 2 nearest values and radii within the grid
         std::array<double, 2> value_at_point;
-   //     std::array<double, 2> r_at_point;
+
         // how many units are we from domain boundary?
         int units_from_edge = 0;
         if (a_side == Side::Hi)
@@ -413,8 +399,6 @@ void BoundaryConditions::fill_extrapolating_cell(
                     }
                 }
                 value_at_point[i] = out_box(iv_tmp, icomp);
-         //       r_at_point[i] = get_radius(
-           //         iv_tmp, m_dx, {m_center[0], m_center[1], m_center[2]});
             }
         }
         else // Lo side
@@ -438,8 +422,6 @@ void BoundaryConditions::fill_extrapolating_cell(
                     }
                 }
                 value_at_point[i] = out_box(iv_tmp, icomp);
-         //       r_at_point[i] = get_radius(
-           //         iv_tmp, m_dx, {m_center[0], m_center[1], m_center[2]});
             }
         }
 
@@ -464,7 +446,6 @@ void BoundaryConditions::fill_extrapolating_cell(
 
         // set the value here to the extrapolated value
         out_box(iv, icomp) = value_at_point[0] + analytic_change;
-
     }
 }
 
@@ -610,18 +591,4 @@ void BoundaryConditions::expand_grids_to_boundaries(
     ExpandGridsToBoundaries expand_grids_to_boundaries(*this);
     a_out_grids.transform(expand_grids_to_boundaries);
     a_out_grids.close();
-}
-
-double
-BoundaryConditions::get_radius(IntVect integer_coords, double dx,
-                               std::array<double, CH_SPACEDIM> center) const
-{
-    double xx = (integer_coords[0] + 0.5) * dx - center[0];
-    double yy = (integer_coords[1] + 0.5) * dx - center[1];
-    double zz = (integer_coords[2] + 0.5) * dx - center[2];
-
-    double r = sqrt(xx * xx + yy * yy + zz * zz);
-
-    const double minimum_r = 1e-6;
-    return max(r, minimum_r);
 }

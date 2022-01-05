@@ -25,23 +25,16 @@
 #include "UsingNamespace.H"
 
 /// Class which deals with the boundaries at the edge of the physical domain in
-/// cases where they are not periodic. Currently only options are static BCs,
-/// sommerfeld (outgoing radiation) and reflective. The conditions can differ in
-/// the high and low directions.
-/// In cases where different variables/boundaries are required, the user should
-/// (usually) write their own conditions class which inherits from this one.
-/// Note that these conditions enforce a certain rhs based on the current values
-/// of the grid variables. (Another option would be to enforce grid values, e.g.
-/// by extrapolating from within the grid.)
+/// cases where they are not periodic. Currently only options are extrapolating
+/// and reflective
 class BoundaryConditions
 {
   public:
     /// enum for possible boundary states
     enum
     {
-        STATIC_BC,
-        REFLECTIVE_BC,
-        EXTRAPOLATING_BC
+        EXTRAPOLATING_BC,
+        REFLECTIVE_BC
     };
 
     /// enum for possible parity states
@@ -115,12 +108,12 @@ class BoundaryConditions
     get_var_parity(int a_comp, int a_dir, const params_t &a_params,
                    const VariableType var_type = VariableType::multigrid);
 
-    /// enforce solution boundary conditions, e.g. after interpolation
+    /// enforce solution boundary conditions on multigrid vars
     void fill_multigrid_boundaries(
         const Side::LoHiSide a_side, LevelData<FArrayBox> &a_state,
         const Interval &a_comps = Interval(0, NUM_MULTIGRID_VARS - 1));
 
-    /// fill grchombo boundaries - used in AMRInterpolator
+    /// fill grchombo boundaries - used to fill output ghosts
     void fill_grchombo_boundaries(
         const Side::LoHiSide a_side, LevelData<FArrayBox> &a_state,
         const Interval &a_comps = Interval(0, NUM_GRCHOMBO_VARS - 1));
@@ -165,9 +158,6 @@ class BoundaryConditions
         FArrayBox &out_box, const IntVect iv, const Side::LoHiSide a_side,
         const int dir, const std::vector<int> &reflective_comps,
         const VariableType var_type = VariableType::multigrid) const;
-
-    double get_radius(IntVect integer_coords, double dx,
-                      std::array<double, CH_SPACEDIM> center = {0}) const;
 };
 
 /// This derived class is used by expand_grids_to_boundaries to grow the

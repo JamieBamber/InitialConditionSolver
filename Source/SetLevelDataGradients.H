@@ -29,7 +29,7 @@ inline void get_loc(RealVect &a_out_loc, const IntVect &a_iv,
 {
     a_out_loc = a_iv + 0.5 * RealVect::Unit;
     a_out_loc *= a_dx;
-    a_out_loc -= a_params.domainLength / 2.0;
+    FOR1(i) {a_out_loc[i] -= a_params.center[i];}
 }
 
 // computes the Laplacian of component a_comp at a point a_iv in a box of data

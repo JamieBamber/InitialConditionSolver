@@ -35,15 +35,16 @@ void getPoissonParameters(PoissonParameters &a_params)
            << endl;
 
     // Read from hdf5 file
-    if (pp.contains("read_from_file"))
+    if (pp.contains("input_filename"))
     {
-        pp.get("read_from_file", a_params.read_from_file);
+        pp.get("input_filename", a_params.input_filename);
+        a_params.readin_matter_data = true;
     }
     else
     {
-        a_params.read_from_file = "none";
+        a_params.input_filename = "";
+        a_params.readin_matter_data = false;
     }
-
     if (pp.contains("output_path"))
     {
         pp.get("output_path", a_params.output_path);
@@ -51,6 +52,17 @@ void getPoissonParameters(PoissonParameters &a_params)
     else
     {
         a_params.output_path = "";
+    }
+
+    if (pp.contains("output_filename"))
+    {
+        string filename;
+        pp.get("output_filename", filename);
+        a_params.output_filename = a_params.output_path + filename;
+    }
+    else
+    {
+        a_params.output_filename = a_params.output_path + "OutputDataFinal.3d.hdf5";
     }
 
     // Initial conditions for the scalar field
@@ -128,7 +140,9 @@ void getPoissonParameters(PoissonParameters &a_params)
     a_params.refRatio.assign(2);
     Real domain_length;
     pp.get("L", domain_length);
-    a_params.coarsestDx = domain_length / a_params.nCells[0];
+    int max_cells = max(a_params.nCells[0], a_params.nCells[1]);
+    max_cells = max(a_params.nCells[2], max_cells);
+    a_params.coarsestDx = domain_length / max_cells;
     for (int idir = 0; idir < SpaceDim; idir++)
     {
         a_params.domainLength[idir] =
@@ -212,7 +226,6 @@ void getPoissonParameters(PoissonParameters &a_params)
             a_params.center[idir] = domain_length;
     }
 
-    pout() << "grid center set to " << a_params.center[0] << " " 
+    pout() << "grid center set to " << a_params.center[0] << " "
            << a_params.center[1] << " " << a_params.center[2] << endl;
-
 }
