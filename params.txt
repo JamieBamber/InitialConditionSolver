@@ -14,7 +14,7 @@ beta  = -1.0
 
 # AMR grid params - grid length and number of cells by direction
 L = 256
-N = 64 64 32
+N = 64 64 64
 # number of AMR refinement levels is max_level + 1
 max_level    = 5
 # Threshold for AMR refinement, based on magnitude of rhs
@@ -33,7 +33,7 @@ numMGsmooth = 4 # number of GSRB smooths before and after MG coarsening
 num_mg     = 1
 numMGIterations = 4 #this is the number of MG v-cycles in the preconditioner
 max_iterations = 100 #max number of solver iterations
-max_NL_iterations = 20 #non linear outside loop iterations
+max_NL_iterations = 4 #non linear outside loop iterations
 tolerance  = 1.0e-10  #solver tolerance for declaring convergence
 hang       = 1.0e-11  #solver tolerance for deciding when we're hung
 verbosity = 2 # higher number means more verbose output
@@ -50,14 +50,15 @@ is_periodic = 0 0 0
 # 0 = extrapolating, with zero dpsi and dVi at boundaries
 # 1 = reflective, with parity set as in UserVariables files
 hi_boundary = 0 0 0
-lo_boundary = 0 0 1
+lo_boundary = 0 0 0
 extrapolation_order = 1
 
 # Q: "Simple, change the gravitational constant of the Universe"
 G_Newton = 1.0 
 
 # Read from hdf5 file?
-#input_filename = InitialConditionsFinal.3d.hdf5
+input_filename = Outputs/SourceData_chk000001.3d.hdf5
+#input_filename = Outputs/SourceData_plt000001.3d.hdf5
 output_path = Outputs/
 output_filename = InitialConditionsFinal.3d.hdf5
 
@@ -84,19 +85,19 @@ sign_of_K = 1
 # if you don't want BHs just set masses and momenta/spins to zero
 
 #BH1
-bh1_bare_mass = 0.5
+bh1_bare_mass = 1.0
 # spin about each axis (this is J_i)
-bh1_spin = 0.0 0.0 0.0
+bh1_spin = 0.0 0.0 0.5
 # boost in each direction (this is P_i)
-bh1_momentum = 0.0 -0.1 0.0
+bh1_momentum = 0.0 0.0 0.0
 # offset from center in x direction
-bh1_offset = 10.0 0.0 0.0
+bh1_offset = 0.0 0.0 0.0
 
 #BH2
-bh2_bare_mass = 0.5
+bh2_bare_mass = 0.0
 # spin about each axis (this is J_i)
 bh2_spin = 0.0 0.0 0.0
 # boost in each direction (this is P_i)
-bh2_momentum = 0.0 0.1 0.0
+bh2_momentum = 0.0 0.0 0.0
 # offset from center (coords x^i)
-bh2_offset = -10.0 0.0 0.0
+bh2_offset = 0.0 0.0 0.0

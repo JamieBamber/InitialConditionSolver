@@ -73,13 +73,12 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
 
         // this boundary condition leaves the boundary cells set as they are
         // initially (so zeros as set in the InitialConditions)
-        // doNothingBC(a_state, valid, a_domain.domainBox(), a_dx,
-        // a_homogeneous);
+        doNothingBC(a_state, valid, a_domain.domainBox(), a_dx, a_homogeneous);
 
         // This sets all the comps to zero in the BCs
         // which is the default
-        ZeroBC(a_state, valid, a_domain.domainBox(), a_dx, a_homogeneous,
-               a_state.interval());
+        //ZeroBC(a_state, valid, a_domain.domainBox(), a_dx, a_homogeneous,
+        //       a_state.interval());
 
         // One can impose alternatives
         // on different components, using the functions defined in BCFunc.H

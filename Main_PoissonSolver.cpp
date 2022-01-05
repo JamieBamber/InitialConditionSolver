@@ -126,26 +126,53 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
     // read in the data and make sure boundary cells filled
     if (a_params.readin_matter_data)
     {
-            read_matter_data(multigrid_vars, a_grids, a_params, a_params.input_filename);
+        read_matter_data(multigrid_vars, a_grids, a_params,
+                         a_params.input_filename);
 
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
-            // fill the boundary cells in case needed (eg, because no ghosts in input)
+            // fill the boundary cells in case needed (eg, because no ghosts in
+            // input)
             BoundaryConditions solver_boundaries;
             solver_boundaries.define(vectDx[ilev][0], a_params.center,
-                                     a_params.boundary_params, vectDomains[ilev],
-                                     num_ghosts);
+                                     a_params.boundary_params,
+                                     vectDomains[ilev], num_ghosts);
 
-            // this will populate the multigrid boundaries according to the BCs set
-            // some will still just be zeros but this should be ok for now
+            // this will populate the multigrid boundaries according to the BCs
+            // set some will still just be zeros but this should be ok for now
             solver_boundaries.fill_multigrid_boundaries(Side::Lo,
-                                             *multigrid_vars[ilev]);
+                                                        *multigrid_vars[ilev]);
 
             solver_boundaries.fill_multigrid_boundaries(Side::Hi,
-                                             *multigrid_vars[ilev]);
+                                                        *multigrid_vars[ilev]);
+
+            // For interlevel ghosts
+            if (ilev > 0)
+            {
+                QuadCFInterp quadCFI(a_grids[ilev], &a_grids[ilev - 1],
+                                     vectDx[ilev][0], a_params.refRatio[ilev],
+                                     NUM_MULTIGRID_VARS, vectDomains[ilev]);
+                quadCFI.coarseFineInterp(*multigrid_vars[ilev],
+                                         *multigrid_vars[ilev - 1]);
+            }
+
+            // For intralevel ghosts
+            DisjointBoxLayout grown_grids;
+            if (a_params.boundary_params.nonperiodic_boundaries_exist)
+            {
+                solver_boundaries.expand_grids_to_boundaries(grown_grids,
+                                                             a_grids[ilev]);
+            }
+            else
+            { // nothing to do if periodic BCs
+                grown_grids = a_grids[ilev];
+            }
+            Copier exchange_copier;
+            exchange_copier.exchangeDefine(grown_grids, ghosts);
+            multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(),
+                                           exchange_copier);
         }
     }
-
 
     // set up linear operator
     int lBase = 0;
@@ -197,10 +224,10 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
                                      vectDomains[ilev], num_ghosts);
             // this will populate the multigrid boundaries according to the BCs
             // in particular it will fill cells for Aij, and updated K
-            solver_boundaries.fill_multigrid_boundaries(Side::Lo,
-                                         *multigrid_vars[ilev], Interval(c_K_0, c_A33_0));
-            solver_boundaries.fill_multigrid_boundaries(Side::Hi,
-                                         *multigrid_vars[ilev], Interval(c_K_0, c_A33_0));
+            solver_boundaries.fill_multigrid_boundaries(
+                Side::Lo, *multigrid_vars[ilev], Interval(c_K_0, c_A33_0));
+            solver_boundaries.fill_multigrid_boundaries(
+                Side::Hi, *multigrid_vars[ilev], Interval(c_K_0, c_A33_0));
         }
 
         // need to fill interlevel and intralevel ghosts in multigrid_vars
@@ -225,7 +252,8 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             DisjointBoxLayout grown_grids;
             if (a_params.boundary_params.nonperiodic_boundaries_exist)
             {
-                solver_boundaries.expand_grids_to_boundaries(grown_grids, a_grids[ilev]);
+                solver_boundaries.expand_grids_to_boundaries(grown_grids,
+                                                             a_grids[ilev]);
             }
             else
             { // nothing to do if periodic BCs
@@ -335,7 +363,8 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             DisjointBoxLayout grown_grids;
             if (a_params.boundary_params.nonperiodic_boundaries_exist)
             {
-                solver_boundaries.expand_grids_to_boundaries(grown_grids, a_grids[ilev]);
+                solver_boundaries.expand_grids_to_boundaries(grown_grids,
+                                                             a_grids[ilev]);
             }
             else
             { // nothing to do if periodic BCs
@@ -371,7 +400,8 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             DisjointBoxLayout grown_grids;
             if (a_params.boundary_params.nonperiodic_boundaries_exist)
             {
-                solver_boundaries.expand_grids_to_boundaries(grown_grids, a_grids[ilev]);
+                solver_boundaries.expand_grids_to_boundaries(grown_grids,
+                                                             a_grids[ilev]);
             }
             else
             { // nothing to do if periodic BCs
@@ -398,12 +428,14 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
     // for this as usually non convergence means everything goes nuts
     if (dpsi_norm0 > 1e-1 || dpsi_norm1 > 1e-1)
     {
-        MayDay::Error("NL iterations did not converge - may need a better initial guess");
+        MayDay::Error(
+            "NL iterations did not converge - may need a better initial guess");
     }
 
     // now output final data in a form which can be read as a checkpoint file
     // for the GRChombo AMR time dependent runs
-    output_final_data(multigrid_vars, a_grids, vectDx, vectDomains, a_params, a_params.output_filename);
+    output_final_data(multigrid_vars, a_grids, vectDx, vectDomains, a_params,
+                      a_params.output_filename);
 
     // clean up data
     for (int level = 0; level < multigrid_vars.size(); level++)

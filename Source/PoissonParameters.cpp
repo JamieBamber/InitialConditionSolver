@@ -62,7 +62,8 @@ void getPoissonParameters(PoissonParameters &a_params)
     }
     else
     {
-        a_params.output_filename = a_params.output_path + "OutputDataFinal.3d.hdf5";
+        a_params.output_filename =
+            a_params.output_path + "OutputDataFinal.3d.hdf5";
     }
 
     // Initial conditions for the scalar field
