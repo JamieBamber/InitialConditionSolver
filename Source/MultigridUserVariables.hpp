@@ -62,10 +62,14 @@ enum
     NUM_CONSTRAINT_VARS
 };
 
-namespace ConstraintTerms
+namespace ConstraintUserVariables
 {
 static constexpr char const *variable_names[NUM_CONSTRAINT_VARS] = {
     "psi", "V1", "V2", "V3", "U"};
-}
+
+static constexpr std::array<int, NUM_CONSTRAINT_VARS> const vars_parity = {
+    0, 1, 2, 3, 0};
+
+} // namespace ConstraintUserVariables
 
 #endif /* MULTIGRIDUSERVARIABLES_HPP */

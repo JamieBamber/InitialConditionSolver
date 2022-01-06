@@ -61,9 +61,9 @@ class BoundaryConditions
         bool reflective_boundaries_exist;
         bool extrapolating_boundaries_exist;
         bool boundary_conditions_written;
-
         std::array<int, NUM_MULTIGRID_VARS> vars_parity_multigrid;
         std::array<int, NUM_GRCHOMBO_VARS> vars_parity_grchombo;
+        std::array<int, NUM_CONSTRAINT_VARS> vars_parity_constraint;
         int extrapolation_order;
         params_t(); // sets the defaults
         void
@@ -78,7 +78,6 @@ class BoundaryConditions
     double m_dx;            // The grid spacing
     int m_num_ghosts;       // the number of ghosts (usually 3)
     params_t m_params;      // the boundary params
-    RealVect m_center;      // the position of the center of the grid
     ProblemDomain m_domain; // the problem domain (excludes boundary cells)
     Box m_domain_box;       // The box representing the domain
     bool is_defined; // whether the BoundaryConditions class members are defined
@@ -88,8 +87,7 @@ class BoundaryConditions
     BoundaryConditions() { is_defined = false; }
 
     /// define function sets members and is_defined set to true
-    void define(double a_dx, std::array<double, CH_SPACEDIM> a_center,
-                const params_t &a_params, ProblemDomain a_domain,
+    void define(double a_dx, const params_t &a_params, ProblemDomain a_domain,
                 int a_num_ghosts);
 
     /// write out boundary params (used during setup for debugging)
@@ -117,6 +115,11 @@ class BoundaryConditions
     void fill_grchombo_boundaries(
         const Side::LoHiSide a_side, LevelData<FArrayBox> &a_state,
         const Interval &a_comps = Interval(0, NUM_GRCHOMBO_VARS - 1));
+
+    /// fill constraint box - used to fill output ghosts
+    void fill_constraint_box(
+        const Side::LoHiSide a_side, FArrayBox &a_state,
+        const Interval &a_comps = Interval(0, NUM_CONSTRAINT_VARS - 1));
 
     /// Fill the boundary values appropriately based on the params set
     /// in the direction dir
@@ -153,6 +156,10 @@ class BoundaryConditions
                                  const Side::LoHiSide a_side, const int dir,
                                  const std::vector<int> &extrapolating_comps,
                                  const int order = 1) const;
+
+    void fill_zero_cell(FArrayBox &out_box, const IntVect iv,
+                        const Side::LoHiSide a_side, const int dir,
+                        const std::vector<int> &extrapolating_comps) const;
 
     void fill_reflective_cell(
         FArrayBox &out_box, const IntVect iv, const Side::LoHiSide a_side,

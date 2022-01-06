@@ -205,7 +205,7 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
 
         // fill the boundary cells in all directions
         BoundaryConditions solver_boundaries;
-        solver_boundaries.define(a_vectDx[level][0], a_params.center,
+        solver_boundaries.define(a_vectDx[level][0],
                                      a_params.boundary_params,
                                      a_vectDomains[level], num_ghosts);
 

@@ -7,6 +7,7 @@
 #include "BRMeshRefine.H"
 #include "BiCGStabSolver.H"
 #include "BoundaryConditions.hpp"
+#include "CoarseAverage.H"
 #include "DebugDump.H"
 #include "FABView.H"
 #include "FArrayBox.H"
@@ -134,7 +135,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             // fill the boundary cells in case needed (eg, because no ghosts in
             // input)
             BoundaryConditions solver_boundaries;
-            solver_boundaries.define(vectDx[ilev][0], a_params.center,
+            solver_boundaries.define(vectDx[ilev][0],
                                      a_params.boundary_params,
                                      vectDomains[ilev], num_ghosts);
 
@@ -158,15 +159,9 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
             // For intralevel ghosts
             DisjointBoxLayout grown_grids;
-            if (a_params.boundary_params.nonperiodic_boundaries_exist)
-            {
-                solver_boundaries.expand_grids_to_boundaries(grown_grids,
-                                                             a_grids[ilev]);
-            }
-            else
-            { // nothing to do if periodic BCs
-                grown_grids = a_grids[ilev];
-            }
+            solver_boundaries.expand_grids_to_boundaries(grown_grids,
+                                                         a_grids[ilev]);
+
             Copier exchange_copier;
             exchange_copier.exchangeDefine(grown_grids, ghosts);
             multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(),
@@ -212,29 +207,49 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
                << max_NL_iter << endl;
 
         // This function sets K per our ansatz depending on periodicity
-        // It also assigns and updates the values of \bar Aij
+        // It also assigns and updates the values of \bar Aij in the domain
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
             set_update_Kij(*multigrid_vars[ilev], *rhs[ilev], vectDx[ilev],
                            a_params);
-            // fill the boundary cells
-            BoundaryConditions solver_boundaries;
-            solver_boundaries.define(vectDx[ilev][0], a_params.center,
-                                     a_params.boundary_params,
-                                     vectDomains[ilev], num_ghosts);
-            // this will populate the multigrid boundaries according to the BCs
-            // in particular it will fill cells for Aij, and updated K
-            solver_boundaries.fill_multigrid_boundaries(
-                Side::Lo, *multigrid_vars[ilev], Interval(c_K_0, c_A33_0));
-            solver_boundaries.fill_multigrid_boundaries(
-                Side::Hi, *multigrid_vars[ilev], Interval(c_K_0, c_A33_0));
         }
 
         // need to fill interlevel and intralevel ghosts in multigrid_vars
         // so that derivatives can be computed within the grid
+        // also want to correct coarser levels for finer data
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
-            // For interlevel ghosts
+            // on all but the top levels, interpolate the data from fine to
+            // coarse within the domain
+            if (ilev < nlevels - 1)
+            {
+                CoarseAverage coarse_average;
+                coarse_average.define(a_grids[ilev + 1], NUM_MULTIGRID_VARS,
+                                      a_params.refRatio[ilev + 1]);
+                coarse_average.averageToCoarse(*multigrid_vars[ilev],
+                                               *multigrid_vars[ilev + 1]);
+            }
+
+            // fill the boundary cells and ghosts
+            BoundaryConditions solver_boundaries;
+            solver_boundaries.define(vectDx[ilev][0],
+                                     a_params.boundary_params,
+                                     vectDomains[ilev], num_ghosts);
+
+            // this will populate the multigrid boundaries according to the BCs
+            // in particular it will fill cells for Aij, and updated K, and psi
+            // and Vi which is important for the reflective case
+            solver_boundaries.fill_multigrid_boundaries(
+                Side::Lo, *multigrid_vars[ilev]);//, Interval(c_K_0, c_A33_0));
+            solver_boundaries.fill_multigrid_boundaries(
+                Side::Hi, *multigrid_vars[ilev]);//, Interval(c_K_0, c_A33_0));
+
+            // To define an exchange copier to cover the outer ghosts
+            DisjointBoxLayout grown_grids;
+            solver_boundaries.expand_grids_to_boundaries(grown_grids,
+                                                         a_grids[ilev]);
+
+            // Fill the interlevel ghosts from a coarser level
             if (ilev > 0)
             {
                 QuadCFInterp quadCFI(a_grids[ilev], &a_grids[ilev - 1],
@@ -244,21 +259,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
                                          *multigrid_vars[ilev - 1]);
             }
 
-            BoundaryConditions solver_boundaries;
-            solver_boundaries.define(vectDx[ilev][0], a_params.center,
-                                     a_params.boundary_params,
-                                     vectDomains[ilev], num_ghosts);
-            // For intralevel ghosts
-            DisjointBoxLayout grown_grids;
-            if (a_params.boundary_params.nonperiodic_boundaries_exist)
-            {
-                solver_boundaries.expand_grids_to_boundaries(grown_grids,
-                                                             a_grids[ilev]);
-            }
-            else
-            { // nothing to do if periodic BCs
-                grown_grids = a_grids[ilev];
-            }
+            // exchange the interior ghosts
             Copier exchange_copier;
             exchange_copier.exchangeDefine(grown_grids, ghosts);
             multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(),
@@ -356,7 +357,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             // For intralevel ghosts - this is done in set_update_phi0
             // but need the exchange copier object to do this
             BoundaryConditions solver_boundaries;
-            solver_boundaries.define(vectDx[ilev][0], a_params.center,
+            solver_boundaries.define(vectDx[ilev][0],
                                      a_params.boundary_params,
                                      vectDomains[ilev], num_ghosts);
             // For intralevel ghosts
@@ -393,9 +394,17 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
             }
 
             BoundaryConditions solver_boundaries;
-            solver_boundaries.define(vectDx[ilev][0], a_params.center,
+            solver_boundaries.define(vectDx[ilev][0],
                                      a_params.boundary_params,
                                      vectDomains[ilev], num_ghosts);
+
+            // Update the solver vars in the boundary cells, esp
+            // for reflective since dpsi boundary cells output as zero 
+            solver_boundaries.fill_multigrid_boundaries(
+                Side::Lo, *multigrid_vars[ilev], Interval(c_psi_reg, c_U_0));
+            solver_boundaries.fill_multigrid_boundaries(
+                Side::Hi, *multigrid_vars[ilev], Interval(c_psi_reg, c_U_0));
+
             // For intralevel ghosts
             DisjointBoxLayout grown_grids;
             if (a_params.boundary_params.nonperiodic_boundaries_exist)

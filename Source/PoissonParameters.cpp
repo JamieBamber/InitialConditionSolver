@@ -191,7 +191,7 @@ void getPoissonParameters(PoissonParameters &a_params)
     a_params.probHi = RealVect::Zero;
     a_params.probHi += a_params.domainLength;
 
-    // Periodicity - for the moment enforce same in all directions
+    // Periodicity
     ProblemDomain crseDom(crseDomBox);
     a_params.periodic.resize(SpaceDim);
     pp.getarr("is_periodic", a_params.periodic, 0, SpaceDim);

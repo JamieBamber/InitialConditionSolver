@@ -30,6 +30,7 @@ BoundaryConditions::params_t::params_t()
     reflective_boundaries_exist = false;
     vars_parity_multigrid = MultigridUserVariables::vars_parity;
     vars_parity_grchombo = GRChomboUserVariables::vars_parity;
+    vars_parity_constraint = ConstraintUserVariables::vars_parity;
     extrapolation_order = 1;
 }
 
@@ -84,8 +85,6 @@ void BoundaryConditions::params_t::set_lo_boundary(
 
 void BoundaryConditions::params_t::read_params(GRParmParse &pp)
 {
-    //    using namespace MultigridUserVariables; // for loading the arrays
-
     // still load even if not contained, to ensure printout saying parameters
     // were set to their default values
     std::array<bool, CH_SPACEDIM> isPeriodic;
@@ -117,9 +116,7 @@ void BoundaryConditions::params_t::read_params(GRParmParse &pp)
 }
 
 /// define function sets members and is_defined set to true
-void BoundaryConditions::define(double a_dx,
-                                std::array<double, CH_SPACEDIM> a_center,
-                                const params_t &a_params,
+void BoundaryConditions::define(double a_dx, const params_t &a_params,
                                 ProblemDomain a_domain, int a_num_ghosts)
 {
     m_dx = a_dx;
@@ -127,7 +124,6 @@ void BoundaryConditions::define(double a_dx,
     m_domain = a_domain;
     m_domain_box = a_domain.domainBox();
     m_num_ghosts = a_num_ghosts;
-    FOR(i) { m_center[i] = a_center[i]; }
     is_defined = true;
 }
 
@@ -151,6 +147,15 @@ void BoundaryConditions::write_reflective_conditions(int idir,
         if (parity == -1)
         {
             pout() << GRChomboUserVariables::variable_names[icomp] << "    ";
+        }
+    }
+    for (int icomp = 0; icomp < NUM_CONSTRAINT_VARS; icomp++)
+    {
+        int parity =
+            get_var_parity(icomp, idir, a_params, VariableType::constraint);
+        if (parity == -1)
+        {
+            pout() << ConstraintUserVariables::variable_names[icomp] << "    ";
         }
     }
 }
@@ -207,9 +212,20 @@ int BoundaryConditions::get_var_parity(int a_comp, int a_dir,
                                        const params_t &a_params,
                                        const VariableType var_type)
 {
-    int comp_parity = (var_type == VariableType::multigrid
-                           ? a_params.vars_parity_multigrid[a_comp]
-                           : a_params.vars_parity_grchombo[a_comp]);
+    int comp_parity = 0;
+
+    if (var_type == VariableType::multigrid)
+    {
+        comp_parity = a_params.vars_parity_multigrid[a_comp];
+    }
+    else if (var_type == VariableType::grchombo)
+    {
+        comp_parity = a_params.vars_parity_grchombo[a_comp];
+    }
+    else if (var_type == VariableType::constraint)
+    {
+        comp_parity = a_params.vars_parity_constraint[a_comp];
+    }
 
     int vars_parity = 1;
     if ((a_dir == 0) && (comp_parity == ODD_X || comp_parity == ODD_XY ||
@@ -276,6 +292,68 @@ void BoundaryConditions::fill_grchombo_boundaries(const Side::LoHiSide a_side,
                                     VariableType::grchombo);
         }
     }
+}
+
+// Used in multigrid solver to update BCs
+void BoundaryConditions::fill_constraint_box(const Side::LoHiSide a_side,
+                                             FArrayBox &a_state,
+                                             const Interval &a_comps)
+{
+    CH_assert(is_defined);
+    CH_TIME("BoundaryConditions::fill_constraint_box");
+
+    // cycle through the directions
+    FOR(idir)
+    {
+        // only do something if this direction is not periodic and solution
+        // boundary enforced in this direction
+        if (!m_params.is_periodic[idir])
+        {
+            int boundary_condition = get_boundary_condition(a_side, idir);
+
+            std::vector<int> comps_vector;
+            comps_vector.resize(a_comps.size());
+            std::iota(comps_vector.begin(), comps_vector.end(),
+                      a_comps.begin());
+
+            Box this_box = a_state.box();
+            IntVect offset_lo = -this_box.smallEnd() + m_domain_box.smallEnd();
+            IntVect offset_hi = +this_box.bigEnd() - m_domain_box.bigEnd();
+
+            // reduce box to the intersection of the box and the
+            // problem domain ie remove all outer ghost cells
+            this_box &= m_domain_box;
+            // get the boundary box (may be Empty)
+            Box boundary_box =
+                get_boundary_box(a_side, idir, offset_lo, offset_hi, this_box);
+
+            // now we have the appropriate box, fill it!
+            BoxIterator bit(boundary_box);
+            for (bit.begin(); bit.ok(); ++bit)
+            {
+                IntVect iv = bit();
+                switch (boundary_condition)
+                {
+                // simplest case - boundary values are extrapolated
+                case EXTRAPOLATING_BC:
+                {
+                    fill_zero_cell(a_state, iv, a_side, idir, comps_vector);
+                    break;
+                }
+                // Enforce a reflective symmetry in some direction
+                case REFLECTIVE_BC:
+                {
+                    fill_reflective_cell(a_state, iv, a_side, idir, comps_vector,
+                                         VariableType::constraint);
+                    break;
+                }
+                default:
+                    MayDay::Error(
+                        "BoundaryCondition::Supplied boundary not supported.");
+                } // end switch
+            }     // end iterate over box
+        }         // end isperiodic
+    } // end idir
 }
 
 /// Fill the boundary values appropriately based on the params set
@@ -363,6 +441,17 @@ void BoundaryConditions::fill_reflective_cell(
     {
         int parity = get_var_parity(icomp, dir, var_type);
         out_box(iv, icomp) = parity * out_box(iv_copy, icomp);
+    }
+}
+
+void BoundaryConditions::fill_zero_cell(
+    FArrayBox &out_box, const IntVect iv, const Side::LoHiSide a_side,
+    const int dir, const std::vector<int> &zero_comps) const
+{
+    // replace value with zero
+    for (int icomp : zero_comps)
+    {
+        out_box(iv, icomp) = 0.0;
     }
 }
 
