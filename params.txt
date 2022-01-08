@@ -33,7 +33,7 @@ numMGsmooth = 4 # number of GSRB smooths before and after MG coarsening
 num_mg     = 1
 numMGIterations = 4 #this is the number of MG v-cycles in the preconditioner
 max_iterations = 100 #max number of solver iterations
-max_NL_iterations = 10 #non linear outside loop iterations
+max_NL_iterations = 5 #non linear outside loop iterations
 tolerance  = 1.0e-10  #solver tolerance for declaring convergence
 hang       = 1.0e-11  #solver tolerance for deciding when we're hung
 verbosity = 2 # higher number means more verbose output
@@ -57,8 +57,8 @@ extrapolation_order = 1
 G_Newton = 1.0 
 
 # Read from hdf5 file?
-input_filename = Outputs/SourceData_chk000001.3d.hdf5
-#input_filename = Outputs/SourceData_plt000001.3d.hdf5
+#input_filename = Outputs/SourceData_chk000001.3d.hdf5
+input_filename = Outputs/SourceData_plt000001.3d.hdf5
 output_path = Outputs/
 output_filename = InitialConditionsFinal.3d.hdf5
 
@@ -87,7 +87,7 @@ sign_of_K = 1
 #BH1
 bh1_bare_mass = 1.0
 # spin about each axis (this is J_i)
-bh1_spin = 0.0 0.0 0.5
+bh1_spin = 0.0 0.0 5.0
 # boost in each direction (this is P_i)
 bh1_momentum = 0.0 0.0 0.0
 # offset from center in x direction

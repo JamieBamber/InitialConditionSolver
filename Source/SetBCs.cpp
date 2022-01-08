@@ -42,14 +42,14 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
         BoundaryConditions solver_boundaries;
         int num_ghosts = 1;
         std::array<double, 3> center = {0.0, 0.0, 0.0};
-        solver_boundaries.define(a_dx, GlobalBCRS::s_boundary_params,
-                                 a_domain, num_ghosts);
+        solver_boundaries.define(a_dx, GlobalBCRS::s_boundary_params, a_domain,
+                                 num_ghosts);
 
         // this will populate the multigrid boundaries according to the BCs
         // in particular it will fill cells for Aij, and updated K
         solver_boundaries.fill_constraint_box(Side::Lo, a_state,
-                                                    Interval(c_psi, c_U));
+                                              Interval(c_psi, c_U));
         solver_boundaries.fill_constraint_box(Side::Hi, a_state,
-                                                    Interval(c_psi, c_U));
+                                              Interval(c_psi, c_U));
     }
 }

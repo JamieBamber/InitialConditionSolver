@@ -249,7 +249,7 @@ int BoundaryConditions::get_var_parity(int a_comp, int a_dir,
 /// fill solution boundary conditions, after NL update
 void BoundaryConditions::fill_multigrid_boundaries(
     const Side::LoHiSide a_side, LevelData<FArrayBox> &a_state,
-    const Interval &a_comps)
+    const Interval &a_comps, const bool filling_solver_vars)
 {
     CH_assert(is_defined);
     CH_TIME("BoundaryConditions::fill_multigrid_boundaries");
@@ -263,9 +263,9 @@ void BoundaryConditions::fill_multigrid_boundaries(
         {
             int boundary_condition = get_boundary_condition(a_side, idir);
 
-            fill_boundary_cells_dir(a_side, a_state, a_state, idir,
-                                    boundary_condition, a_comps,
-                                    VariableType::multigrid);
+            fill_boundary_cells_dir(
+                a_side, a_state, a_state, idir, boundary_condition, a_comps,
+                VariableType::multigrid, filling_solver_vars);
         }
     }
 }
@@ -343,7 +343,8 @@ void BoundaryConditions::fill_constraint_box(const Side::LoHiSide a_side,
                 // Enforce a reflective symmetry in some direction
                 case REFLECTIVE_BC:
                 {
-                    fill_reflective_cell(a_state, iv, a_side, idir, comps_vector,
+                    fill_reflective_cell(a_state, iv, a_side, idir,
+                                         comps_vector,
                                          VariableType::constraint);
                     break;
                 }
@@ -353,7 +354,7 @@ void BoundaryConditions::fill_constraint_box(const Side::LoHiSide a_side,
                 } // end switch
             }     // end iterate over box
         }         // end isperiodic
-    } // end idir
+    }             // end idir
 }
 
 /// Fill the boundary values appropriately based on the params set
@@ -361,7 +362,8 @@ void BoundaryConditions::fill_constraint_box(const Side::LoHiSide a_side,
 void BoundaryConditions::fill_boundary_cells_dir(
     const Side::LoHiSide a_side, const LevelData<FArrayBox> &a_soln,
     LevelData<FArrayBox> &a_out, const int dir, const int boundary_condition,
-    const Interval &a_comps, const VariableType var_type)
+    const Interval &a_comps, const VariableType var_type,
+    const bool filling_solver_vars)
 {
     std::vector<int> comps_vector;
     comps_vector.resize(a_comps.size());
@@ -397,8 +399,16 @@ void BoundaryConditions::fill_boundary_cells_dir(
             // simplest case - boundary values are extrapolated
             case EXTRAPOLATING_BC:
             {
-                fill_extrapolating_cell(out_box, iv, a_side, dir, comps_vector,
-                                        m_params.extrapolation_order);
+                if (filling_solver_vars)
+                {
+                    fill_zero_cell(out_box, iv, a_side, dir, comps_vector);
+                }
+                else
+                {
+                    fill_extrapolating_cell(out_box, iv, a_side, dir,
+                                            comps_vector,
+                                            m_params.extrapolation_order);
+                }
                 break;
             }
             // Enforce a reflective symmetry in some direction

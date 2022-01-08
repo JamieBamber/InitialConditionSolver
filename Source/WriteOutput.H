@@ -94,7 +94,7 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
     // check the domain sizes are the same
     CH_assert(a_dpsi.size() == a_rhs.size());
     CH_assert(a_dpsi.size() == a_multigrid_vars.size());
-    //KC TODO make this an input
+    // Solver only has second order stencils so 1 ghost
     IntVect ghosts = 1 * IntVect::Unit;
     Vector<LevelData<FArrayBox> *> tempData(a_dpsi.size(), NULL);
 
@@ -156,14 +156,6 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
     header.m_int["iteration"] = 0;
     header.m_real["time"] = 0.0;
 
-    Vector<string> variable_names(NUM_GRCHOMBO_VARS);
-    for (int icomp = 0; icomp < NUM_GRCHOMBO_VARS; icomp++)
-    {
-        variable_names[icomp] =
-            GRChomboUserVariables::variable_names[icomp];
-    }
-
-
     for (int level = 0; level < a_multigrid_vars.size(); ++level)
     {
         char headername1[100];
@@ -176,34 +168,36 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
         header.m_int[headername2] = 1;
     }
 
-//    header.m_int["num_components"] = NUM_GRCHOMBO_VARS;
-//
-//    char comp_str[30];
-//    for (int comp = 0; comp < NUM_GRCHOMBO_VARS; ++comp)
-//    {
-//        sprintf(comp_str, "component_%d", comp);
-//        header.m_string[comp_str] = GRChomboUserVariables::variable_names[comp];
-//    }
+    header.m_int["num_components"] = NUM_GRCHOMBO_VARS;
+
+    char comp_str[30];
+    for (int comp = 0; comp < NUM_GRCHOMBO_VARS; ++comp)
+    {
+        sprintf(comp_str, "component_%d", comp);
+        header.m_string[comp_str] = GRChomboUserVariables::variable_names[comp];
+    }
 
     // write header data to file
     header.writeToFile(handle);
 
-    // loop over levels to setup the data
+    // want output data to have 3 ghost cells to match GRChombo
+    int num_ghosts = 3;
+    IntVect ghost_vector = num_ghosts * IntVect::Unit;
+
+    // loop over levels to prepare the output data
     Vector<LevelData<FArrayBox> *> grchombo_vars(a_multigrid_vars.size(), NULL);
     for (int level = 0; level < a_multigrid_vars.size(); level++)
     {
-        HDF5HeaderData level_header;
-        // want output data to have 3 ghost cells to match GRChombo
-        int num_ghosts = 3;
-        IntVect ghost_vector = num_ghosts * IntVect::Unit;
         grchombo_vars[level] = new LevelData<FArrayBox>(
             a_grids[level], NUM_GRCHOMBO_VARS, ghost_vector);
 
-        // Add in the values of the data in the correct form
+        // Set the values of the grchombo vars from the multigrid data
+        // within the domain
         set_output_data(*grchombo_vars[level], *a_multigrid_vars[level],
                         a_params, a_vectDx[level]);
 
-        // fill the boundary cells in all directions
+        // fill the boundary cells in all directions (may have more ghosts
+        // than in solver so will need to fill them appropriately)
         BoundaryConditions solver_boundaries;
         solver_boundaries.define(a_vectDx[level][0],
                                      a_params.boundary_params,
@@ -215,11 +209,11 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
         solver_boundaries.fill_grchombo_boundaries(Side::Hi,
                                                         *grchombo_vars[level]);
 
-        // exchange ghosts to catch any corners
         DisjointBoxLayout grown_grids;
         if (a_params.boundary_params.nonperiodic_boundaries_exist)
         {
-            solver_boundaries.expand_grids_to_boundaries(grown_grids, a_grids[level]);
+            solver_boundaries.expand_grids_to_boundaries(grown_grids,
+                                                         a_grids[level]);
         }
         else
         { // nothing to do if periodic BCs
@@ -227,10 +221,24 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
         }
         Copier exchange_copier;
         exchange_copier.exchangeDefine(grown_grids, ghost_vector);
-
         grchombo_vars[level]->exchange(grchombo_vars[level]->interval(),
                                            exchange_copier);
-/*
+
+        // fill interlevel ghosts from coarser level
+        if (level > 0)
+        {
+            QuadCFInterp quadCFI(a_grids[level], &a_grids[level - 1],
+                                     a_vectDx[level][0], a_params.refRatio[level],
+                                     NUM_GRCHOMBO_VARS, a_vectDomains[level]);
+            quadCFI.coarseFineInterp(*grchombo_vars[level],
+                                         *grchombo_vars[level - 1]);
+        }
+    }
+
+    // Now write out the data
+    for (int level = 0; level < a_multigrid_vars.size(); level++)
+    {
+        HDF5HeaderData level_header;
         // Now continue the write out
         char level_str[20];
         sprintf(level_str, "%d", level);
@@ -246,45 +254,24 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
         level_header.m_real["time"] = 0.0;
         level_header.m_box["prob_domain"] = a_vectDomains[level].domainBox();
 
-        // Setup the periodicity info - for now set as non periodic, 
-        // can overwrite in GRChombo
+        // Setup the periodicity info
         for (int dir = 0; dir < SpaceDim; ++dir)
         {
+            bool periodic = a_params.periodic[dir];
             char dir_str[20];
             sprintf(dir_str, "%d", dir);
             const std::string periodic_label =
                 std::string("is_periodic_") + dir_str;
-            level_header.m_int[periodic_label] = false;
+            level_header.m_int[periodic_label] = periodic;
         }
 
         level_header.writeToFile(handle);
         write(handle, a_grids[level]);
         write(handle, *grchombo_vars[level], "data", ghost_vector);
-*/
-    }
-
-    for (int level = 0; level < a_multigrid_vars.size(); level++)
-    {
-        // fill interlevel ghosts from coarser level
-        if (level > 0)
-        {
-            QuadCFInterp quadCFI(a_grids[level], &a_grids[level - 1],
-                                     a_vectDx[level][0], a_params.refRatio[level],
-                                     NUM_GRCHOMBO_VARS, a_vectDomains[level]);
-            quadCFI.coarseFineInterp(*grchombo_vars[level],
-                                         *grchombo_vars[level - 1]);
-        }
     }
 
     // shut the file
     handle.close();
-
-    double fakeDt = 0.25 * a_params.coarsestDx;
-    double fakeTime = 0.0;
-    WriteAMRHierarchyHDF5(filename, a_grids, grchombo_vars, variable_names,
-                          a_params.coarsestDomain.domainBox(),
-                          a_params.coarsestDx, fakeDt, fakeTime,
-                          a_params.refRatio, a_params.numLevels);
 
     // clean up temporary storage
     for (int level = 0; level < a_multigrid_vars.size(); level++)

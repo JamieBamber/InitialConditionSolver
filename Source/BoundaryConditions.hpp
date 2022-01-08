@@ -109,7 +109,8 @@ class BoundaryConditions
     /// enforce solution boundary conditions on multigrid vars
     void fill_multigrid_boundaries(
         const Side::LoHiSide a_side, LevelData<FArrayBox> &a_state,
-        const Interval &a_comps = Interval(0, NUM_MULTIGRID_VARS - 1));
+        const Interval &a_comps = Interval(0, NUM_MULTIGRID_VARS - 1),
+        const bool filling_solver_vars = false);
 
     /// fill grchombo boundaries - used to fill output ghosts
     void fill_grchombo_boundaries(
@@ -128,7 +129,8 @@ class BoundaryConditions
                                  LevelData<FArrayBox> &a_out, const int dir,
                                  const int boundary_condition,
                                  const Interval &a_comps,
-                                 const VariableType var_type);
+                                 const VariableType var_type,
+                                 const bool filling_solver_vars = false);
 
     /// Get the boundary condition for a_dir and a_side
     int get_boundary_condition(const Side::LoHiSide a_side, const int a_dir);

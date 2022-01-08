@@ -507,7 +507,6 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
         grchombo_vars_box.setVal(1.0, c_lapse);
 
         // now non constant terms by location
-        // KC: TODO SHOULD BE UNGHOSTED BOX??
         Box solver_ghosted_box = multigrid_vars_box.box();
         BoxIterator bit(solver_ghosted_box);
         for (bit.begin(); bit.ok(); ++bit)
