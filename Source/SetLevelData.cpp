@@ -238,14 +238,14 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
             // rhs terms
             if (a_params.periodic_directions_exist)
             {
-                // rhs is set so that K cancels all terms
+                // K is set so that it cancels all rhs terms
                 rhs_box(iv, c_psi) = 0.0;
             }
             else
             {
-                // rhs is set to cancel matter terms only
+                // K is set to cancel matter terms only
                 rhs_box(iv, c_psi) =
-                    0.125 * A2_0 * pow(psi_0, -7.0) - laplacian_psi_reg;
+                    - 0.125 * A2_0 * pow(psi_0, -7.0) - laplacian_psi_reg;
             }
             // Get d_i V_i and laplacians
             Tensor<1, Real, SpaceDim> d1_V1 =
