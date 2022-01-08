@@ -322,7 +322,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         bool homogeneousBC = false;
         solver.define(&mlOp, homogeneousBC);
         solver.m_verbosity = a_params.verbosity;
-        solver.m_normType = 0;
+        solver.m_normType = 2;
         solver.m_eps = tolerance;
         solver.m_imax = max_iter;
 

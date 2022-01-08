@@ -204,7 +204,7 @@ void set_tag_cells(Vector<LevelData<FArrayBox> *> &vect_tagging_criterion,
         DisjointBoxLayout level_domain = level_tagging_criterion.getBoxes();
         DataIterator dit = level_tagging_criterion.dataIterator();
 
-        // KC: this seems an odd way to refine - would expect theshold to
+        // KC: this seems an odd way to refine - would expect threshold to
         // decrease with higher levels. It seems to work ok so leave it for now.
         Real max_tagging_criterion = 0;
         max_tagging_criterion = norm(level_tagging_criterion,

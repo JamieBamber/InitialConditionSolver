@@ -236,12 +236,17 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
                 get_d1(iv, multigrid_vars_box, a_dx, c_K_0);
 
             // rhs terms
-            rhs_box(iv, c_psi) =
-                0.125 * pow(psi_0, 5.0) *
-                    (2.0 / 3.0 * K_0_sq -
-                     16.0 * M_PI * a_params.G_Newton * rho_matter) -
-                0.125 * A2_0 * pow(psi_0, -7.0) - laplacian_psi_reg;
-
+            if (a_params.periodic_directions_exist)
+            {
+                // rhs is set so that K cancels all terms
+                rhs_box(iv, c_psi) = 0.0;
+            }
+            else
+            {
+                // rhs is set to cancel matter terms only
+                rhs_box(iv, c_psi) =
+                    0.125 * A2_0 * pow(psi_0, -7.0) - laplacian_psi_reg;
+            }
             // Get d_i V_i and laplacians
             Tensor<1, Real, SpaceDim> d1_V1 =
                 get_d1(iv, multigrid_vars_box, a_dx, c_V1_0);
@@ -394,64 +399,72 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
              iconstraint++)
         {
             // this prevents small amounts of noise in the sources
-            // activating the zero modes - Garfinkle trick!
-            // Seems to work best to set this relative to the tolerance
-            aCoef_box.setVal(-100.0 * a_params.tolerance, iconstraint);
+            // activating the zero modes - (Garfinkle trick)
+            if (a_params.periodic_directions_exist)
+            {
+                // Seems to work best to set this relative to the tolerance
+                aCoef_box.setVal(-100.0 * a_params.tolerance, iconstraint);
+            }
+            else
+            {
+                aCoef_box.setVal(0.0, iconstraint);
+            }
         }
 
-        // For the non periodic case
         // add back some non trivial psi for the Aij part
-        if (!a_params.periodic_directions_exist)
+        FArrayBox &multigrid_vars_box = a_multigrid_vars[dit()];
+        Box unghosted_box = aCoef_box.box();
+        BoxIterator bit(unghosted_box);
+        for (bit.begin(); bit.ok(); ++bit)
         {
-            FArrayBox &multigrid_vars_box = a_multigrid_vars[dit()];
-            Box unghosted_box = aCoef_box.box();
-            BoxIterator bit(unghosted_box);
-            for (bit.begin(); bit.ok(); ++bit)
+            // work out location on the grid
+            IntVect iv = bit();
+            RealVect loc;
+            get_loc(loc, iv, a_dx, a_params);
+
+            // Calculate the actual value of psi including BH part
+            Real psi_reg = multigrid_vars_box(iv, c_psi_reg);
+            Real psi_bh = set_binary_bh_psi(loc, a_params);
+            Real psi_0 = psi_reg + psi_bh;
+            Real laplacian_psi_reg =
+                get_laplacian(iv, multigrid_vars_box, a_dx, c_psi_reg);
+
+            // Get values of Aij
+            Tensor<2, Real> Aij_reg;
+            set_Aij_reg(Aij_reg, multigrid_vars_box, iv, a_dx, a_params);
+            Tensor<2, Real> Aij_bh;
+            set_Aij_bh(Aij_bh, loc, a_params);
+            // This is \bar  A_ij \bar A^ij
+            Real A2_0 = 0.0;
+            FOR2(i, j)
             {
-                // work out location on the grid
-                IntVect iv = bit();
-                RealVect loc;
-                get_loc(loc, iv, a_dx, a_params);
+                A2_0 += (Aij_reg[i][j] + Aij_bh[i][j]) *
+                        (Aij_reg[i][j] + Aij_bh[i][j]);
+            }
+            Real K_0 = multigrid_vars_box(iv, c_K_0);
 
-                // Calculate the actual value of psi including BH part
-                Real psi_reg = multigrid_vars_box(iv, c_psi_reg);
-                Real psi_bh = set_binary_bh_psi(loc, a_params);
-                Real psi_0 = psi_reg + psi_bh;
-                Real laplacian_psi_reg =
-                    get_laplacian(iv, multigrid_vars_box, a_dx, c_psi_reg);
+            // Assign values of useful matter quantities
+            // KC TODO: Make this a function in MyMatterFunctions?
+            Real V_of_phi = my_potential_function(
+                multigrid_vars_box(iv, c_phi_0), a_params);
+            Real Pi_0 = multigrid_vars_box(iv, c_Pi_0);
+            Tensor<1, Real, SpaceDim> d1_phi =
+                get_d1(iv, multigrid_vars_box, a_dx, c_phi_0);
+            Real d1_phi_squared = 0;
+            FOR1(i) { d1_phi_squared += d1_phi[i] * d1_phi[i]; }
+            Real rho_matter = 0.5 * Pi_0 * Pi_0 + V_of_phi +
+                              0.5 * d1_phi_squared * pow(psi_0, -4.0);
 
-                // Get values of Aij
-                Tensor<2, Real> Aij_reg;
-                set_Aij_reg(Aij_reg, multigrid_vars_box, iv, a_dx, a_params);
-                Tensor<2, Real> Aij_bh;
-                set_Aij_bh(Aij_bh, loc, a_params);
-                // This is \bar  A_ij \bar A^ij
-                Real A2_0 = 0.0;
-                FOR2(i, j)
-                {
-                    A2_0 += (Aij_reg[i][j] + Aij_bh[i][j]) *
-                            (Aij_reg[i][j] + Aij_bh[i][j]);
-                }
-                Real K_0 = multigrid_vars_box(iv, c_K_0);
-
-                // Assign values of useful matter quantities
-                // KC TODO: Make this a function in MyMatterFunctions?
-                Real V_of_phi = my_potential_function(
-                    multigrid_vars_box(iv, c_phi_0), a_params);
-                Real Pi_0 = multigrid_vars_box(iv, c_Pi_0);
-                Tensor<1, Real, SpaceDim> d1_phi =
-                    get_d1(iv, multigrid_vars_box, a_dx, c_phi_0);
-                Real d1_phi_squared = 0;
-                FOR1(i) { d1_phi_squared += d1_phi[i] * d1_phi[i]; }
-                Real rho_matter = 0.5 * Pi_0 * Pi_0 + V_of_phi +
-                                  0.5 * d1_phi_squared * pow(psi_0, -4.0);
-
-                // checked, found errors, should now be right
-                aCoef_box(iv, c_psi) =
-                    -0.875 * A2_0 * pow(psi_0, -8.0) -
-                    5.0 / 12.0 * K_0 * K_0 * pow(psi_0, 4.0) +
-                    10.0 * M_PI * a_params.G_Newton * rho_matter *
-                        pow(psi_0, 4.0);
+            // checked, found errors, should now be right
+            if (a_params.periodic_directions_exist)
+            {
+                aCoef_box(iv, c_psi) += // TODO: CHECKME
+                    -1.5 * A2_0 * pow(psi_0, -8.0);
+            }
+            else
+            {
+                // add back the terms in A2
+                aCoef_box(iv, c_psi) += -0.875 * A2_0 * pow(psi_0, -8.0);
             }
         }
     }

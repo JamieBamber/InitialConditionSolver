@@ -87,9 +87,11 @@ void VariableCoeffPoissonOperatorFactory::define(
     m_domains.resize(a_grids.size());
     m_domains[0] = a_coarseDomain;
 
+    int num_ghosts = 1;
+    IntVect ghosts = num_ghosts * IntVect::Unit;
     m_exchangeCopiers.resize(a_grids.size());
-    m_exchangeCopiers[0].exchangeDefine(a_grids[0], IntVect::Unit);
-    m_exchangeCopiers[0].trimEdges(a_grids[0], IntVect::Unit);
+    m_exchangeCopiers[0].exchangeDefine(a_grids[0], ghosts);
+    m_exchangeCopiers[0].trimEdges(a_grids[0], ghosts);
 
     m_cfregion.resize(a_grids.size());
     m_cfregion[0].define(a_grids[0], m_domains[0]);
@@ -101,8 +103,8 @@ void VariableCoeffPoissonOperatorFactory::define(
         m_domains[i] = m_domains[i - 1];
         m_domains[i].refine(m_refRatios[i - 1]);
 
-        m_exchangeCopiers[i].exchangeDefine(a_grids[i], IntVect::Unit);
-        m_exchangeCopiers[i].trimEdges(a_grids[i], IntVect::Unit);
+        m_exchangeCopiers[i].exchangeDefine(a_grids[i], ghosts);
+        m_exchangeCopiers[i].trimEdges(a_grids[i], ghosts);
 
         m_cfregion[i].define(a_grids[i], m_domains[i]);
     }

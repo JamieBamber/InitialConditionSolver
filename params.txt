@@ -36,7 +36,7 @@ max_iterations = 100 #max number of solver iterations
 max_NL_iterations = 5 #non linear outside loop iterations
 tolerance  = 1.0e-10  #solver tolerance for declaring convergence
 hang       = 1.0e-11  #solver tolerance for deciding when we're hung
-verbosity = 2 # higher number means more verbose output
+verbosity = 10 # higher number means more verbose output
 
 # how to average face-centered coefficients to coarser multigrid levels
 #coefficient_average_type = arithmetic
@@ -58,17 +58,17 @@ G_Newton = 1.0
 
 # Read from hdf5 file?
 #input_filename = Outputs/SourceData_chk000001.3d.hdf5
-input_filename = Outputs/SourceData_plt000001.3d.hdf5
+#input_filename = Outputs/SourceData_plt000001.3d.hdf5
 output_path = Outputs/
 output_filename = InitialConditionsFinal.3d.hdf5
 
 # scalar field input params
 phi_0 = 0.0
-phi_amplitude = 1e-6
-phi_wavelength = 10
+phi_amplitude = 0e-6
+phi_wavelength = 1.0
 pi_0 = 0.0
 pi_amplitude = 1e-6
-pi_wavelength = 10
+pi_wavelength = 7.0
 
 # potential params
 pot_Lambda = 1e-6
@@ -85,9 +85,9 @@ sign_of_K = 1
 # if you don't want BHs just set masses and momenta/spins to zero
 
 #BH1
-bh1_bare_mass = 1.0
+bh1_bare_mass = 0.0
 # spin about each axis (this is J_i)
-bh1_spin = 0.0 0.0 5.0
+bh1_spin = 0.0 0.0 0.0
 # boost in each direction (this is P_i)
 bh1_momentum = 0.0 0.0 0.0
 # offset from center in x direction
