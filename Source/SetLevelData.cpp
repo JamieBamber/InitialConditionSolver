@@ -23,7 +23,6 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
 
     DataIterator dit = a_multigrid_vars.dataIterator();
-    const DisjointBoxLayout &grids = a_multigrid_vars.disjointBoxLayout();
     for (dit.begin(); dit.ok(); ++dit)
     {
         // These contain the vars in the boxes, set them all to zero
@@ -217,21 +216,11 @@ void set_rhs(LevelData<FArrayBox> &a_rhs,
                         (Aij_reg[i][j] + Aij_bh[i][j]);
             }
 
-            // Assign values of useful matter quantities
-            // KC TODO: Make this a function in MyMatterFunctions?
-            Real V_of_phi = my_potential_function(
-                multigrid_vars_box(iv, c_phi_0), a_params);
+	    // Momentum matter comps
+	    // TODO: Make matter function for S_i
             Real Pi_0 = multigrid_vars_box(iv, c_Pi_0);
             Tensor<1, Real, SpaceDim> d1_phi =
                 get_d1(iv, multigrid_vars_box, a_dx, c_phi_0);
-            Real d1_phi_squared = 0;
-            FOR1(i) { d1_phi_squared += d1_phi[i] * d1_phi[i]; }
-            Real rho_matter = 0.5 * Pi_0 * Pi_0 + V_of_phi +
-                              0.5 * d1_phi_squared * pow(psi_0, -4.0);
-
-            // Get current values for K and derivs
-            Real K_0 = multigrid_vars_box(iv, c_K_0);
-            Real K_0_sq = K_0 * K_0;
             Tensor<1, Real, SpaceDim> d1_K =
                 get_d1(iv, multigrid_vars_box, a_dx, c_K_0);
 
@@ -346,7 +335,7 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
             // value of the contributions and add in effect of psi_0 via log
             condition_box(iv, 0) =
                 2.0 * M_PI * a_params.G_Newton * rho_matter +
-                abs(0.125 * A2_0) + log(psi_0) +
+                abs(0.125 * A2_0) + log(psi_0) + laplacian_psi_reg +
                 8.0 * M_PI * a_params.G_Newton * abs(Pi_0) *
                     (abs(d1_phi[0]) + abs(d1_phi[1]) + abs(d1_phi[2]));
         }
@@ -426,8 +415,6 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
             Real psi_reg = multigrid_vars_box(iv, c_psi_reg);
             Real psi_bh = set_binary_bh_psi(loc, a_params);
             Real psi_0 = psi_reg + psi_bh;
-            Real laplacian_psi_reg =
-                get_laplacian(iv, multigrid_vars_box, a_dx, c_psi_reg);
 
             // Get values of Aij
             Tensor<2, Real> Aij_reg;
@@ -441,21 +428,7 @@ void set_a_coef(LevelData<FArrayBox> &a_aCoef,
                 A2_0 += (Aij_reg[i][j] + Aij_bh[i][j]) *
                         (Aij_reg[i][j] + Aij_bh[i][j]);
             }
-            Real K_0 = multigrid_vars_box(iv, c_K_0);
 
-            // Assign values of useful matter quantities
-            // KC TODO: Make this a function in MyMatterFunctions?
-            Real V_of_phi = my_potential_function(
-                multigrid_vars_box(iv, c_phi_0), a_params);
-            Real Pi_0 = multigrid_vars_box(iv, c_Pi_0);
-            Tensor<1, Real, SpaceDim> d1_phi =
-                get_d1(iv, multigrid_vars_box, a_dx, c_phi_0);
-            Real d1_phi_squared = 0;
-            FOR1(i) { d1_phi_squared += d1_phi[i] * d1_phi[i]; }
-            Real rho_matter = 0.5 * Pi_0 * Pi_0 + V_of_phi +
-                              0.5 * d1_phi_squared * pow(psi_0, -4.0);
-
-            // checked, found errors, should now be right
             if (a_params.periodic_directions_exist)
             {
                 aCoef_box(iv, c_psi) += // TODO: CHECKME
@@ -477,7 +450,6 @@ void set_b_coef(LevelData<FArrayBox> &a_bCoef,
 {
 
     CH_assert(a_bCoef.nComp() == NUM_CONSTRAINT_VARS);
-    int comp_number = 0;
 
     for (DataIterator dit = a_bCoef.dataIterator(); dit.ok(); ++dit)
     {
@@ -499,7 +471,6 @@ void set_output_data(LevelData<FArrayBox> &a_grchombo_vars,
     CH_assert(a_grchombo_vars.nComp() == NUM_GRCHOMBO_VARS);
     CH_assert(a_multigrid_vars.nComp() == NUM_MULTIGRID_VARS);
 
-    const DisjointBoxLayout &grids = a_grchombo_vars.disjointBoxLayout();
     DataIterator dit = a_grchombo_vars.dataIterator();
     for (dit.begin(); dit.ok(); ++dit)
     {
