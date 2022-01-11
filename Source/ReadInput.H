@@ -110,8 +110,8 @@ void read_matter_data(Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
     {
         // note no need to account for ghosts as these will be filled elsewhere
         // TODO: Could make this general for any matter type
-        Interval sourceComps(c_phi_in, c_Pi_in);
-        Interval multigridComps(c_phi_0, c_Pi_0);
+        Interval sourceComps(c_phi_Re_in, c_Pi_Im_in);
+        Interval multigridComps(c_phi_Re_0, c_Pi_Im_0);
         temp_data[level]->copyTo(sourceComps, 
                           *a_multigrid_vars[level],
                           multigridComps);

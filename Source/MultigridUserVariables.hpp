@@ -16,8 +16,10 @@ enum
     c_V3_0,
     c_U_0,
 
-    c_phi_0, // matter field
-    c_Pi_0,
+    c_phi_Re_0, // matter field
+    c_Pi_Re_0,
+    c_phi_Im_0, 
+    c_Pi_Im_0,
 
     c_K_0,
 
@@ -38,14 +40,14 @@ static constexpr char const *variable_names[NUM_MULTIGRID_VARS] = {
 
     "V1_0",    "V2_0",  "V3_0",  "U_0",
 
-    "phi_0",   "Pi_0",
+    "phi_Re_0",   "Pi_Re_0", "phi_Im_0",   "Pi_Im_0",
 
     "K_0",
 
     "A11_0",   "A12_0", "A13_0", "A22_0", "A23_0", "A33_0"};
 
 static constexpr std::array<int, NUM_MULTIGRID_VARS> const vars_parity = {
-    0, 1, 2, 3, 0, 0, 0, 0, 0, 4, 6, 0, 5, 0};
+    0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 4, 6, 0, 5, 0};
 
 } // namespace MultigridUserVariables
 

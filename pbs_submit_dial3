@@ -1,0 +1,48 @@
+#!/bin/bash -l
+
+#SBATCH --job-name=RSBH1
+#SBATCH -o output%j
+#SBATCH -e error%j
+#SBATCH -p devel
+#SBATCH -A dp092
+
+# Number of nodes
+#SBATCH --nodes=4
+# Dial3 has 128 cores per node so product of these = 128
+#SBATCH --tasks-per-node=64
+#SBATCH --cpus-per-task=2
+###SBATCH --ntasks=128
+
+# run for time hh:mm:ss
+#SBATCH --time=01:00:00
+
+# turn on all mail notification
+#SBATCH --mail-type=NONE
+
+# Remove all previously loaded modules.
+module purge
+
+# Load your desired modules here
+module load arm/forge/21.0.2
+module load PrgEnv-cray
+module load cray-pmi cray-pmi-lib
+module swap cray-mpich/8.1.4 cray-mpich-ucx/8.1.4
+module swap craype-network-ofi craype-network-ucx
+module load cray-libsci/21.04.1.1
+module load cray-hdf5-parallel/1.12.0.2
+
+module list
+
+export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
+#export PE_LIBSCI_OMP_REQUIRES_openmp=
+
+# we set OMP_NUM_THREADS to the number cpu cores per MPI task
+export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
+export OMP_PLACES=cores
+
+# we execute the job and time it
+export application=/home/dc-bamb1/InitialConditionSolver/Main_PoissonSolver3d.Linux.64.CC.ftn.OPTHIGH.MPI.OPENMPCC.ex
+time srun --distribution=block:block --hint=nomultithread $application ../params.txt
+
+# Finish the script and Exit.
+exit 0

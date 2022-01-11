@@ -43,8 +43,10 @@ enum
     c_B2,
     c_B3,
 
-    c_phi, // matter field added
-    c_Pi,  //(minus) conjugate momentum
+    c_phi_Re, // matter field added
+    c_Pi_Re,  //(minus) conjugate momentum
+    c_phi_Im, // matter field added
+    c_Pi_Im,  //(minus) conjugate momentum
 
     NUM_GRCHOMBO_VARS
 };
@@ -70,11 +72,11 @@ static constexpr char const *variable_names[NUM_GRCHOMBO_VARS] = {
 
     "B1",     "B2",     "B3",
 
-    "phi",    "Pi"};
+    "phi_Re",    "Pi_Re", "phi_Im",    "Pi_Im"};
 
 static constexpr std::array<int, NUM_GRCHOMBO_VARS> const vars_parity = {
     0, 0, 4, 6, 0, 5, 0, 0, 0, 4, 6, 0, 5, 0,
-    0, 1, 2, 3, 0, 1, 2, 3, 1, 2, 3, 0, 0};
+    0, 1, 2, 3, 0, 1, 2, 3, 1, 2, 3, 0, 0, 0, 0};
 
 } // namespace GRChomboUserVariables
 
