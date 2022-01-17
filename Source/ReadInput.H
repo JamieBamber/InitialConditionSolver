@@ -45,9 +45,20 @@ static void enableFpExceptions();
 
 using std::cerr;
 
+/// This function just extracts the time
+void read_time(Real &time, const string filename = "SourceData.3d.hdf5")
+{
+#ifdef CH_USE_HDF5
+    HDF5Handle handle(filename, HDF5Handle::OPEN_RDONLY);
+    HDF5HeaderData header;
+    header.readFromFile(handle);
+    time = header.m_real["time"];
+#endif
+}
+
 /// This function reads in the grid data
 void read_grids(Vector<DisjointBoxLayout> &a_grids,
-                    const PoissonParameters &a_params,
+                    PoissonParameters &a_params,
                     const string filename = "SourceData.3d.hdf5")
 {
 #ifdef CH_USE_HDF5
@@ -64,6 +75,9 @@ void read_grids(Vector<DisjointBoxLayout> &a_grids,
     ReadAMRHierarchyHDF5(filename, a_grids, temp_data, variable_names,
                           temp_domain_box, dx, dt, time,
                           temp_ref_ratio, temp_num_levels);
+
+    // store time
+    a_params.time = time;
 
     int max_temp_level = temp_data.size();
     // clean up temporary storage

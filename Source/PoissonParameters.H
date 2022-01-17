@@ -75,6 +75,9 @@ class PoissonParameters
     std::string input_filename;
     std::string output_filename;
     std::string output_path;
+    //
+    Real omega_binary;
+    Real time;
 };
 
 /// get stuff from input file

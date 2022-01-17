@@ -1,6 +1,6 @@
 #!/bin/bash -l
 
-#SBATCH --job-name=RSBH1
+#SBATCH --job-name=ICSC
 #SBATCH -o output%j
 #SBATCH -e error%j
 #SBATCH -p devel
@@ -41,7 +41,7 @@ export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
 export OMP_PLACES=cores
 
 # we execute the job and time it
-export application=/home/dc-bamb1/InitialConditionSolver/Main_PoissonSolver3d.Linux.64.CC.ftn.OPTHIGH.MPI.OPENMPCC.ex
+export application=/home/dc-bamb1/InitialConditionSolver_complex/Main_PoissonSolver3d.Linux.64.CC.ftn.OPTHIGH.MPI.OPENMPCC.ex
 time srun --distribution=block:block --hint=nomultithread $application ../params.txt
 
 # Finish the script and Exit.

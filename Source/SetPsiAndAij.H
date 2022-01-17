@@ -11,12 +11,25 @@
 #include "Tensor.hpp"
 #include "TensorAlgebra.hpp"
 
+RealVect rotate_z(const RealVect &v, const Real &omega, const Real &time)
+{
+   // rotate a 3D vector by omega * time about z axis
+   RealVect v_out;
+   v_out[2] = v[2];
+   v_out[0] = v[0] * cos(omega * time) - v[1] * sin(omega * time);
+   v_out[1] = v[1] * cos(omega * time) + v[0] * sin(omega * time);
+   return v_out;
+}
+
 // Get the bh radius
 void get_bh_coords(Real &bh_radius, RealVect &loc_bh, 
-                   const RealVect &loc, const RealVect &bh_offset)
+                   const RealVect &loc, const RealVect &bh_offset, const Real &omega, const Real &time)
 {
     // set coords
-    loc_bh = loc - bh_offset;
+
+    // rotated bh_offset
+    RealVect bh_offset_now = rotate_z(bh_offset, omega, time);
+    loc_bh = loc - bh_offset_now;
 
     // set radius
     Real bh_radius_squared = 0.0;
@@ -34,11 +47,11 @@ Real set_binary_bh_psi(const RealVect &loc, const PoissonParameters &a_params)
     // set the BH values - location
     RealVect loc_bh1;
     Real rbh1;
-    get_bh_coords(rbh1, loc_bh1, loc, a_params.bh1_offset);
+    get_bh_coords(rbh1, loc_bh1, loc, a_params.bh1_offset, a_params.omega_binary, a_params.time);
 
     RealVect loc_bh2;
     Real rbh2;
-    get_bh_coords(rbh2, loc_bh2, loc, a_params.bh2_offset);
+    get_bh_coords(rbh2, loc_bh2, loc, a_params.bh2_offset, a_params.omega_binary, a_params.time);
 
     return 0.5 * (m1 / rbh1 + m2 / rbh2);
 }
@@ -51,11 +64,11 @@ void set_Aij_bh(Tensor<2, Real> &Aij, //const IntVect &iv,
     // set the BH values - location
     RealVect loc_bh1;
     Real rbh1;
-    get_bh_coords(rbh1, loc_bh1, loc, a_params.bh1_offset);
+    get_bh_coords(rbh1, loc_bh1, loc, a_params.bh1_offset, a_params.omega_binary, a_params.time);
 
     RealVect loc_bh2;
     Real rbh2;
-    get_bh_coords(rbh2, loc_bh2, loc, a_params.bh2_offset);
+    get_bh_coords(rbh2, loc_bh2, loc, a_params.bh2_offset, a_params.omega_binary, a_params.time);
 
     RealVect n1 = {loc_bh1[0] / rbh1, loc_bh1[1] / rbh1, loc_bh1[2] / rbh1};
     RealVect n2 = {loc_bh2[0] / rbh2, loc_bh2[1] / rbh2, loc_bh2[2] / rbh2};
@@ -63,8 +76,8 @@ void set_Aij_bh(Tensor<2, Real> &Aij, //const IntVect &iv,
     // the Bowen York params
     RealVect J1 = a_params.bh1_spin;
     RealVect J2 = a_params.bh2_spin;
-    RealVect P1 = a_params.bh1_momentum;
-    RealVect P2 = a_params.bh2_momentum;
+    RealVect P1 = rotate_z(a_params.bh1_momentum, a_params.omega_binary, a_params.time);
+    RealVect P2 = rotate_z(a_params.bh2_momentum, a_params.omega_binary, a_params.time);
 
     using namespace TensorAlgebra;
     Tensor<3, Real> epsilon = TensorAlgebra::epsilon();

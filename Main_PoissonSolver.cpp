@@ -104,7 +104,7 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
         bool set_matter = true;
         if (a_params.readin_matter_data)
         {
-            pout() << "Set matter data using read in" << endl;
+            pout() << "Set initial conditions using read in" << endl;
             set_matter = false;
             // just set initial guess for psi and zero dpsi
             set_initial_conditions(*multigrid_vars[ilev], *dpsi[ilev],
@@ -127,16 +127,21 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
     // read in the data and make sure boundary cells filled
     if (a_params.readin_matter_data)
     {
+	pout() << "Reading in matter data:" << endl;
         read_matter_data(multigrid_vars, a_grids, a_params,
                          a_params.input_filename);
+	pout() << "done" << endl;
 
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
-            // fill the boundary cells in case needed (eg, because no ghosts in
+            pout() << "ilev = " << ilev << endl;
+	    // fill the boundary cells in case needed (eg, because no ghosts in
             // input)
+	    pout() << "num_ghosts = " << num_ghosts << endl;
             BoundaryConditions solver_boundaries;
             solver_boundaries.define(vectDx[ilev][0], a_params.boundary_params,
                                      vectDomains[ilev], num_ghosts);
+	    pout() << "done solver_boundaries.define( " << endl;
 
             // this will populate the multigrid boundaries according to the BCs
             // set some will still just be zeros but this should be ok for now
@@ -145,8 +150,10 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
             solver_boundaries.fill_multigrid_boundaries(Side::Hi,
                                                         *multigrid_vars[ilev]);
+	    pout() << "solver_boundaries.fill_multigrid_boundaries( " << endl;
 
             // For interlevel ghosts
+	    pout() << "starting quadCFI" << endl;
             if (ilev > 0)
             {
                 QuadCFInterp quadCFI(a_grids[ilev], &a_grids[ilev - 1],
@@ -155,17 +162,21 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
                 quadCFI.coarseFineInterp(*multigrid_vars[ilev],
                                          *multigrid_vars[ilev - 1]);
             }
+	    pout() << "done quadCFI" << endl;
 
             // For intralevel ghosts
             DisjointBoxLayout grown_grids;
             solver_boundaries.expand_grids_to_boundaries(grown_grids,
                                                          a_grids[ilev]);
-
+	    pout() << "done solver_boundaries.expand_grids_to_boundaries(" << endl;
+	
             Copier exchange_copier;
             exchange_copier.exchangeDefine(grown_grids, ghosts);
+	    pout() << "done exchange_copier.exchangeDefine(grown_grids, ghosts);" << endl;
             multigrid_vars[ilev]->exchange(multigrid_vars[ilev]->interval(),
                                            exchange_copier);
         }
+	pout() << "filled boundary cells" << endl;
     }
 
     // set up linear operator

@@ -89,6 +89,7 @@ void getPoissonParameters(PoissonParameters &a_params)
     pp.get("sign_of_K", a_params.sign_of_K);
 
     // Initial conditions for the black holes
+    pp.get("omega_binary", a_params.omega_binary);
     pp.get("bh1_bare_mass", a_params.bh1_bare_mass);
     pp.get("bh2_bare_mass", a_params.bh2_bare_mass);
     std::vector<double> temp_spin1(SpaceDim);

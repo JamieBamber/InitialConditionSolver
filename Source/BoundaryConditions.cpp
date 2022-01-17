@@ -338,6 +338,7 @@ void BoundaryConditions::fill_constraint_box(const Side::LoHiSide a_side,
                 case EXTRAPOLATING_BC:
                 {
                     fill_zero_cell(a_state, iv, a_side, idir, comps_vector);
+		    // ideally we would do fill_extrapolating_cell here, but that gives NaNs
                     break;
                 }
                 // Enforce a reflective symmetry in some direction
