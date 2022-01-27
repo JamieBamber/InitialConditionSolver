@@ -55,10 +55,8 @@ class PoissonParameters
     Real G_Newton;
     Real phi_0;
     Real phi_amplitude;
-    Real phi_wavelength;
-    Real pi_0;
-    Real pi_amplitude;
-    Real pi_wavelength;
+    Real phi_kappa;
+    Real scalar_omega;
     Real bh1_bare_mass;
     Real bh2_bare_mass;
     RealVect bh1_spin;
@@ -67,8 +65,7 @@ class PoissonParameters
     RealVect bh2_momentum;
     RealVect bh1_offset;
     RealVect bh2_offset;
-    Real pot_Lambda;
-    Real pot_mu;
+    Real mu;
     Real psi_reg;
     Real tolerance;
     bool readin_matter_data;

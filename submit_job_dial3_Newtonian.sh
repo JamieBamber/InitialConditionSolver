@@ -55,9 +55,9 @@ do
         echo "omega_BH = ${omega_BH}"
 
 	# text_number=$(printf "%04d" ${run_number})
-        subdir=${run}_M${M}_d${d}_mu${mu}_dt_mult${dt_mult}_l${l}_m${m}_Al${Al}_L${L}_N${N1}_complex_rin_${r_inner}_reflecting
+        subdir=${run}_M${M}_d${d}_mu${mu}_dt_mult${dt_mult}_l${l}_m${m}_Al${Al}_L${L}_N${N1}_complex_rin_${r_inner}_max_level5
 
-	new_dir=Newtonian_${run}_G${G}_reflecting
+	new_dir=Newtonian_${run}_G${G}_max_level5
 	new_dir_path=${data_directory}/${new_dir}
 	#
 	mkdir -p ${new_dir_path}

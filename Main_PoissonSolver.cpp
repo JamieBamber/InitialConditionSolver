@@ -455,6 +455,8 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
     // for the GRChombo AMR time dependent runs
     output_final_data(multigrid_vars, a_grids, vectDx, vectDomains, a_params,
                       a_params.output_filename);
+    pout() << "output final data as " << a_params.output_filename << endl; 
+
 
     // clean up data
     for (int level = 0; level < multigrid_vars.size(); level++)

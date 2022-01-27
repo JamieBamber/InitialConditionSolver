@@ -68,16 +68,12 @@ void getPoissonParameters(PoissonParameters &a_params)
 
     // Initial conditions for the scalar field
     pp.get("G_Newton", a_params.G_Newton);
-    pp.get("phi_0", a_params.phi_0);
     pp.get("phi_amplitude", a_params.phi_amplitude);
-    pp.get("phi_wavelength", a_params.phi_wavelength);
-    pp.get("pi_0", a_params.pi_0);
-    pp.get("pi_amplitude", a_params.pi_amplitude);
-    pp.get("pi_wavelength", a_params.pi_wavelength);
+    pp.get("phi_kappa", a_params.phi_kappa);
+    pp.get("scalar_omega", a_params.scalar_omega);
 
     // Potential parameters
-    pp.get("pot_Lambda", a_params.pot_Lambda);
-    pp.get("pot_mu", a_params.pot_mu);
+    pp.get("mu", a_params.mu);
 
     if (abs(a_params.phi_amplitude) > 0.0)
     {
