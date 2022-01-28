@@ -36,7 +36,7 @@ max_iterations = 100 #max number of solver iterations
 max_NL_iterations = 11 #non linear outside loop iterations
 tolerance  = 1.0e-10  #solver tolerance for declaring convergence
 hang       = 1.0e-11  #solver tolerance for deciding when we're hung
-verbosity = 2 # higher number means more verbose output
+verbosity = 1 # higher number means more verbose output
 
 # how to average face-centered coefficients to coarser multigrid levels
 #coefficient_average_type = arithmetic
@@ -63,16 +63,12 @@ output_path = /scratch/dp092/dc-bamb1/GRChombo_data/InitialConditionSolver/OUTNA
 output_filename = InitialConditionsFinal.3d.hdf5
 
 # scalar field input params
-phi_0 = 0.0
-phi_amplitude = 1e-6
-phi_wavelength = 5.0
-pi_0 = 0.0
-pi_amplitude = 1e-6
-pi_wavelength = 5.0
+phi_amplitude = 1.0
+phi_kappa = 0.0
+scalar_omega = MUVAL
 
 # potential params
-pot_Lambda = 1e-6
-pot_mu = MUVAL
+mu = MUVAL
 
 # in asymptotically flat space set
 # initial scale factor a0 = psi_reg**2
@@ -85,7 +81,7 @@ sign_of_K = 1
 # if you don't want BHs just set masses and momenta/spins to zero
 
 # raw BH params
-center = 256 256 256 
+center = 256 256 0.0
 
 #BH1
 bh1_bare_mass = 0.48847892320123

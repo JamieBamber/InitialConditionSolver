@@ -36,6 +36,7 @@ G=0.0000000001
 r_inner=2
 L=512
 N1=128
+num="002500"
 
 for run in "${run_list[@]}"
 do
@@ -57,7 +58,7 @@ do
 	# text_number=$(printf "%04d" ${run_number})
         subdir=${run}_M${M}_d${d}_mu${mu}_dt_mult${dt_mult}_l${l}_m${m}_Al${Al}_L${L}_N${N1}_complex_rin_${r_inner}_max_level5
 
-	new_dir=Newtonian_${run}_G${G}_max_level5
+	new_dir=Newtonian_${run}_G${G}_max_level5_n${num}
 	new_dir_path=${data_directory}/${new_dir}
 	#
 	mkdir -p ${new_dir_path}
@@ -73,12 +74,13 @@ do
 	sed -i "s|OMEGAB|${omega_BH}|" ${new_dir_path}/params.txt
 	sed -i "s|OUTNAME|${new_dir}|" ${new_dir_path}/params.txt
 	sed -i "s|MUVAL|${mu}|" ${new_dir_path}/params.txt
+	sed -i "s|NPLOTFL|${num}|" ${new_dir_path}/params.txt
 
 	cd ${new_dir_path}
 	mkdir -p outputs
         cd outputs
 
-	sbatch ../pbs_submit
+	#sbatch ../pbs_submit
 	#
 	cd ${work_dir}
 done

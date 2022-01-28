@@ -58,21 +58,17 @@ G_Newton = GVAL
 
 # Read from hdf5 file?
 #input_filename = Outputs/SourceData_chk000001.3d.hdf5
-input_filename = /scratch/dp092/dc-bamb1/GRChombo_data/NewtonianBinaryBHSF/SUBDIR/Newton_plt003000.3d.hdf5
+input_filename = /scratch/dp092/dc-bamb1/GRChombo_data/NewtonianBinaryBHSF/SUBDIR/Newton_pltNPLOTFL.3d.hdf5
 output_path = /scratch/dp092/dc-bamb1/GRChombo_data/InitialConditionSolver/OUTNAME/
 output_filename = InitialConditionsFinal.3d.hdf5
 
 # scalar field input params
-phi_0 = 0.0
-phi_amplitude = 1e-6
-phi_wavelength = 5.0
-pi_0 = 0.0
-pi_amplitude = 1e-6
-pi_wavelength = 5.0
+phi_amplitude = 1.0
+phi_kappa = 0.0
+scalar_omega = MUVAL
 
 # potential params
-pot_Lambda = 1e-6
-pot_mu = MUVAL
+mu = MUVAL
 
 # in asymptotically flat space set
 # initial scale factor a0 = psi_reg**2
@@ -85,7 +81,7 @@ sign_of_K = 1
 # if you don't want BHs just set masses and momenta/spins to zero
 
 # raw BH params
-center = 256 256 256 
+center = 256 256 0.0 
 
 #BH1
 bh1_bare_mass = 0.48847892320123
