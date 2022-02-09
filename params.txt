@@ -14,9 +14,9 @@ beta  = -1.0
 
 # AMR grid params - grid length and number of cells by direction
 L = 512
-N = 128 128 64
+N = 64 64 32
 # number of AMR refinement levels is max_level + 1
-max_level = 5
+max_level = 9
 # Threshold for AMR refinement, based on magnitude of rhs
 refine_threshold = 0.5
 #min box size
@@ -26,6 +26,11 @@ max_grid_size = 32
 # how aggressively to regrid
 fill_ratio   = 0.8
 buffer_size  = 3
+
+# window parameters
+use_window_function = 0
+window_slope = 0.25
+window_radius = 50
 
 # Setup multigrid params
 numMGsmooth = 4 # number of GSRB smooths before and after MG coarsening
@@ -58,13 +63,13 @@ G_Newton = GVAL
 
 # Read from hdf5 file?
 #input_filename = Outputs/SourceData_chk000001.3d.hdf5
-input_filename = /scratch/dp092/dc-bamb1/GRChombo_data/NewtonianBinaryBHSF/SUBDIR/Newton_plt003000.3d.hdf5
+#input_filename = /scratch/dp092/dc-bamb1/GRChombo_data/NewtonianBinaryBHSF/SUBDIR/Newton_pltNPLOTFL.3d.hdf5
 output_path = /scratch/dp092/dc-bamb1/GRChombo_data/InitialConditionSolver/OUTNAME/
 output_filename = InitialConditionsFinal.3d.hdf5
 
 # scalar field input params
-phi_amplitude = 1.0
-phi_kappa = 0.0
+phi_amplitude = 10.0
+phi_kappa = 0.0125
 scalar_omega = MUVAL
 
 # potential params
@@ -81,7 +86,7 @@ sign_of_K = 1
 # if you don't want BHs just set masses and momenta/spins to zero
 
 # raw BH params
-center = 256 256 0.0
+center = 256 256 0.0 
 
 #BH1
 bh1_bare_mass = 0.48847892320123

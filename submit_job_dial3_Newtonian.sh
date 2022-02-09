@@ -31,12 +31,12 @@ run_list=(
 #params_file=params_ratio${ratio}.txt
 params_file=params_Newtonian_binary.txt
 
-G=0.0000000001
+G=0.0000000000001 # 10^{-13}
 
 r_inner=2
 L=512
-N1=128
-num="002500"
+N1=64
+num="001500"
 
 for run in "${run_list[@]}"
 do
@@ -56,9 +56,9 @@ do
         echo "omega_BH = ${omega_BH}"
 
 	# text_number=$(printf "%04d" ${run_number})
-        subdir=${run}_M${M}_d${d}_mu${mu}_dt_mult${dt_mult}_l${l}_m${m}_Al${Al}_L${L}_N${N1}_complex_rin_${r_inner}_max_level5
+        subdir=${run}_M${M}_d${d}_mu${mu}_dt_mult${dt_mult}_l${l}_m${m}_Al${Al}_L${L}_N${N1}_complex_rin_${r_inner}_max_level9
 
-	new_dir=Newtonian_${run}_G${G}_max_level5_n${num}
+	new_dir=Newtonian_${run}_G${G}_max_level9_wslope0.25_wradius50_n${num}
 	new_dir_path=${data_directory}/${new_dir}
 	#
 	mkdir -p ${new_dir_path}
@@ -80,7 +80,7 @@ do
 	mkdir -p outputs
         cd outputs
 
-	#sbatch ../pbs_submit
+	sbatch ../pbs_submit
 	#
 	cd ${work_dir}
 done

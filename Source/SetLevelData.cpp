@@ -88,6 +88,47 @@ void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
     }
 } // end set_initial_conditions
 
+// Window function to cut out the outer phi Pi
+void modify_matter_data(LevelData<FArrayBox> &a_multigrid_vars,
+                            const RealVect &a_dx,
+                            const PoissonParameters &a_params)
+{
+
+    DataIterator dit = a_multigrid_vars.dataIterator();
+    const DisjointBoxLayout &grids = a_multigrid_vars.disjointBoxLayout();
+    for (dit.begin(); dit.ok(); ++dit)
+    {
+        // These contain the vars in the boxes, set them all to zero
+        FArrayBox &multigrid_vars_box = a_multigrid_vars[dit()];
+
+        // Iterate over the box and set non zero comps
+        Box ghosted_box = multigrid_vars_box.box();
+        BoxIterator bit(ghosted_box);
+        for (bit.begin(); bit.ok(); ++bit)
+        {
+            // work out location on the grid
+            IntVect iv = bit();
+            RealVect loc;
+            get_loc(loc, iv, a_dx, a_params);
+
+            Real phi_Re_0 = multigrid_vars_box(iv, c_phi_Re_0);
+            Real phi_Im_0 = multigrid_vars_box(iv, c_phi_Im_0);
+            Real Pi_Re_0 = multigrid_vars_box(iv, c_Pi_Re_0);
+            Real Pi_Im_0 = multigrid_vars_box(iv, c_Pi_Im_0);
+
+	    // Window function to cut out the outer phi Pi
+	    double radius_squared = 0.0;
+    	    FOR(i) { radius_squared += loc[i] * loc[i]; }
+    	    double radius = sqrt(radius_squared);	    
+	    double window = 0.5*(1 + tanh(a_params.window_slope*(a_params.window_radius - radius)));	
+	    multigrid_vars_box(iv, c_phi_Re_0) = phi_Re_0 * window;
+	    multigrid_vars_box(iv, c_phi_Im_0) = phi_Im_0 * window;
+	    multigrid_vars_box(iv, c_Pi_Re_0) = Pi_Re_0 * window;
+	    multigrid_vars_box(iv, c_Pi_Im_0) = Pi_Im_0 * window;
+        }
+    }
+} // end modify_matter_data
+
 // Set values of K_ij - \bar Aij and K, based on current values
 void set_update_Kij(LevelData<FArrayBox> &a_multigrid_vars,
                     LevelData<FArrayBox> &a_rhs, const RealVect &a_dx,

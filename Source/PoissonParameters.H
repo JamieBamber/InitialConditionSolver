@@ -75,6 +75,10 @@ class PoissonParameters
     //
     Real omega_binary;
     Real time;
+    //
+    bool use_window_function;
+    Real window_slope;
+    Real window_radius;
 };
 
 /// get stuff from input file

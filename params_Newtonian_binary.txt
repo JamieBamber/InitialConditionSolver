@@ -14,9 +14,9 @@ beta  = -1.0
 
 # AMR grid params - grid length and number of cells by direction
 L = 512
-N = 128 128 64
+N = 64 64 32
 # number of AMR refinement levels is max_level + 1
-max_level = 5
+max_level = 9
 # Threshold for AMR refinement, based on magnitude of rhs
 refine_threshold = 0.5
 #min box size
@@ -27,6 +27,11 @@ max_grid_size = 32
 fill_ratio   = 0.8
 buffer_size  = 3
 
+# window parameters
+use_window_function = 1
+window_slope = 0.25
+window_radius = 50
+
 # Setup multigrid params
 numMGsmooth = 4 # number of GSRB smooths before and after MG coarsening
 #preCondSolverDepth = 1
@@ -36,7 +41,7 @@ max_iterations = 100 #max number of solver iterations
 max_NL_iterations = 11 #non linear outside loop iterations
 tolerance  = 1.0e-10  #solver tolerance for declaring convergence
 hang       = 1.0e-11  #solver tolerance for deciding when we're hung
-verbosity = 2 # higher number means more verbose output
+verbosity = 1 # higher number means more verbose output
 
 # how to average face-centered coefficients to coarser multigrid levels
 #coefficient_average_type = arithmetic

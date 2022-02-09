@@ -36,6 +36,10 @@ extern void set_initial_conditions(LevelData<FArrayBox> &a_multigrid_vars,
                                    const PoissonParameters &a_params,
                                    const bool set_matter = true);
 
+extern void modify_matter_data(LevelData<FArrayBox> &a_multigrid_vars,
+                                   const RealVect &a_dx,
+                                   const PoissonParameters &a_params);
+
 extern void set_update_Kij(LevelData<FArrayBox> &a_multigrid_vars,
                               LevelData<FArrayBox> &a_rhs,
                               const RealVect &a_dx,

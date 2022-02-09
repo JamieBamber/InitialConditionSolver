@@ -134,6 +134,12 @@ int poissonSolve(const Vector<DisjointBoxLayout> &a_grids,
 
         for (int ilev = 0; ilev < nlevels; ilev++)
         {
+	    // apply the window function
+	    if (a_params.use_window_function) {
+		    modify_matter_data(*multigrid_vars[ilev],
+        	                           vectDx[ilev], a_params);
+	    }
+
             pout() << "ilev = " << ilev << endl;
 	    // fill the boundary cells in case needed (eg, because no ghosts in
             // input)

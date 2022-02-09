@@ -75,6 +75,10 @@ void getPoissonParameters(PoissonParameters &a_params)
     // Potential parameters
     pp.get("mu", a_params.mu);
 
+    pp.get("use_window_function", a_params.use_window_function);
+    pp.get("window_slope", a_params.window_slope);
+    pp.get("window_radius", a_params.window_radius);
+
     if (abs(a_params.phi_amplitude) > 0.0)
     {
         pout() << "Spacetime contains scalar field of amplitude "
