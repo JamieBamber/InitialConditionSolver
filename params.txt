@@ -68,7 +68,8 @@ output_path = /scratch/dp092/dc-bamb1/GRChombo_data/InitialConditionSolver/OUTNA
 output_filename = InitialConditionsFinal.3d.hdf5
 
 # scalar field input params
-phi_amplitude = 10.0
+## For gaussian
+phi_amplitude = 0.000887856 # --> gives Mcloud = 0.1 Mtotal when mu = 0.34 and G = 1
 phi_kappa = 0.0125
 scalar_omega = MUVAL
 
