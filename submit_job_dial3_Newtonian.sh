@@ -31,7 +31,7 @@ run_list=(
 #params_file=params_ratio${ratio}.txt
 params_file=params_Newtonian_binary.txt
 
-G=1e-14 # 10^{-13}
+G="1e-12" # 10^{-13}
 #G=0
 
 r_inner=2
