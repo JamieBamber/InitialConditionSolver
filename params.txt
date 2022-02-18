@@ -13,19 +13,21 @@ alpha = 1.0
 beta  = -1.0
 
 # AMR grid params - grid length and number of cells by direction
-L = 512
-N = 64 64 32
+L = BOXLENGTH
+N = NBASIC NBASIC NSPACE3
 # number of AMR refinement levels is max_level + 1
-max_level = 9
+max_level = MXLEVEL
 # Threshold for AMR refinement, based on magnitude of rhs
 refine_threshold = 0.5
 #min box size
-block_factor = 32
+block_factor = BOXSIZE
 #max box size
-max_grid_size = 32
+max_grid_size = BOXSIZE
 # how aggressively to regrid
 fill_ratio   = 0.8
 buffer_size  = 3
+
+# buffer should be 20 for low, 24 for medium and 32 for high?
 
 # window parameters
 use_window_function = 0
@@ -87,7 +89,7 @@ sign_of_K = 1
 # if you don't want BHs just set masses and momenta/spins to zero
 
 # raw BH params
-center = 256 256 0.0 
+center = CENTERX CENTERY 0.0 
 
 #BH1
 bh1_bare_mass = 0.48847892320123

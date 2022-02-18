@@ -1,6 +1,6 @@
 #!/bin/bash -l
 #SBATCH -A dp092
-#SBATCH -p cosma7-pauper
+#SBATCH -p cosma7
 #SBATCH --nodes 1
 ### NB cosma6 has 16 cores per node so product of these = 16
 #SBATCH --ntasks-per-node=8
