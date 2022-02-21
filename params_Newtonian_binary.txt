@@ -20,9 +20,9 @@ max_level = 9
 # Threshold for AMR refinement, based on magnitude of rhs
 refine_threshold = 0.5
 #min box size
-block_factor = 32
+block_factor = 8
 #max box size
-max_grid_size = 32
+max_grid_size = 8
 # how aggressively to regrid
 fill_ratio   = 0.8
 buffer_size  = 3
@@ -30,7 +30,8 @@ buffer_size  = 3
 # window parameters
 use_window_function = 1
 window_slope = 0.25
-window_radius = 50
+window_radius = 60
+window_amplitude = 0.0004902894 # ---> the amplitude necessary for a Mcloud of 0.1M_BHtot for G=1
 
 # Setup multigrid params
 numMGsmooth = 4 # number of GSRB smooths before and after MG coarsening

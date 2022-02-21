@@ -14,7 +14,7 @@ beta  = -1.0
 
 # AMR grid params - grid length and number of cells by direction
 L = BOXLENGTH
-N = 256 256 128
+N = 128 128 64
 #NBASIC NBASIC NSPACE3
 # number of AMR refinement levels is max_level + 1
 max_level = MXLEVEL
@@ -33,7 +33,7 @@ buffer_size  = 3
 # window parameters
 use_window_function = 0
 window_slope = 0.25
-window_radius = 50
+window_radius = 60
 window_amplitude = 1
 
 # Setup multigrid params
@@ -73,7 +73,7 @@ output_filename = InitialConditionsFinal.3d.hdf5
 
 # scalar field input params
 ## For gaussian
-phi_amplitude = 0.000887856 # --> gives Mcloud = 0.1 Mtotal when mu = 0.34 and G = 1
+phi_amplitude = 0.00086499 # --> gives Mcloud = 0.1 Mtotal when mu = 0.34 and G = 1
 phi_kappa = 0.0125
 scalar_omega = MUVAL
 
@@ -94,21 +94,22 @@ sign_of_K = 1
 center = CENTERX CENTERY 0.0 
 
 #BH1
-bh1_bare_mass = 0.48847892320123
+bh1_bare_mass = 0.48711
 # spin about each axis (this is J_i)
 bh1_spin = 0.0 0.0 0.0
 # boost in each direction (this is P_i)
-bh1_momentum = -0.000510846 0.0841746 0.0
+
+bh1_momentum = 0.0 0.090189 0.0
 # offset from center in x direction
-bh1_offset = 6.10679 0.0 0.0
+bh1_offset = 5.5 0.0 0.0
 
 #BH2
-bh2_bare_mass = 0.48847892320123
+bh2_bare_mass = 0.48711
 # spin about each axis (this is J_i)
 bh2_spin = 0.0 0.0 0.0
 # boost in each direction (this is P_i)
-bh2_momentum = 0.000510846 -0.0841746 0.0
+bh2_momentum = 0.0 -0.090189 0.0
 # offset from center (coords x^i)
-bh2_offset = -6.10679 0.0 0.0
+bh2_offset = -5.5 0.0 0.0
 
-omega_binary = 0.0231565
+omega_binary = 0.027054499

@@ -79,6 +79,7 @@ class PoissonParameters
     bool use_window_function;
     Real window_slope;
     Real window_radius;
+    Real window_amplitude;
 };
 
 /// get stuff from input file

@@ -78,6 +78,7 @@ void getPoissonParameters(PoissonParameters &a_params)
     pp.get("use_window_function", a_params.use_window_function);
     pp.get("window_slope", a_params.window_slope);
     pp.get("window_radius", a_params.window_radius);
+    pp.get("window_amplitude", a_params.window_amplitude);
 
     if (abs(a_params.phi_amplitude) > 0.0)
     {

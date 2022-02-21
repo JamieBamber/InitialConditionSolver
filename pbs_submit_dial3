@@ -7,7 +7,7 @@
 #SBATCH -A dp092
 
 # Number of nodes
-#SBATCH --nodes=4
+#SBATCH --nodes=1
 # Dial3 has 128 cores per node so product of these = 128
 #SBATCH --tasks-per-node=64
 #SBATCH --cpus-per-task=2

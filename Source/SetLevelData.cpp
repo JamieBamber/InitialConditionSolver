@@ -120,7 +120,7 @@ void modify_matter_data(LevelData<FArrayBox> &a_multigrid_vars,
 	    double radius_squared = 0.0;
     	    FOR(i) { radius_squared += loc[i] * loc[i]; }
     	    double radius = sqrt(radius_squared);	    
-	    double window = 0.5*(1 + tanh(a_params.window_slope*(a_params.window_radius - radius)));	
+	    double window = a_params.window_amplitude*0.5*(1 + tanh(a_params.window_slope*(a_params.window_radius - radius)));	
 	    multigrid_vars_box(iv, c_phi_Re_0) = phi_Re_0 * window;
 	    multigrid_vars_box(iv, c_phi_Im_0) = phi_Im_0 * window;
 	    multigrid_vars_box(iv, c_Pi_Re_0) = Pi_Re_0 * window;
