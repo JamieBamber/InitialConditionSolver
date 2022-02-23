@@ -6,6 +6,8 @@
 # set by integrability conditions) or asymptotically flat (constant K=0,
 # dirichlet BCs should be set to dpsi=0)
 
+verbosity = 2
+
 # spatially-varying aCoef and bCoef are set in the example itself
 # see SetLevelData.cpp, we expect alpha = 1 and beta = -1
 # (for pure laplacian, alpha = 0, beta=-1)
@@ -14,24 +16,27 @@ beta  = -1.0
 
 # AMR grid params - grid length and number of cells by direction
 L = 512
-N = 64 64 32
+N = 128 128 64
 # number of AMR refinement levels is max_level + 1
 max_level = 9
 # Threshold for AMR refinement, based on magnitude of rhs
 refine_threshold = 0.5
 #min box size
-block_factor = 8
+block_factor = 16
 #max box size
-max_grid_size = 8
+max_grid_size = 16
 # how aggressively to regrid
 fill_ratio   = 0.8
 buffer_size  = 3
 
+# buffer should be 20 for low, 24 for medium and 32 for high?
+
 # window parameters
-use_window_function = 1
+use_window_function = 0
 window_slope = 0.25
 window_radius = 60
-window_amplitude = 0.0004902894 # ---> the amplitude necessary for a Mcloud of 0.1M_BHtot for G=1
+window_amplitude = 1
+use_dpsi_norm0_limit = 0
 
 # Setup multigrid params
 numMGsmooth = 4 # number of GSRB smooths before and after MG coarsening
@@ -39,7 +44,7 @@ numMGsmooth = 4 # number of GSRB smooths before and after MG coarsening
 num_mg     = 1
 numMGIterations = 4 #this is the number of MG v-cycles in the preconditioner
 max_iterations = 100 #max number of solver iterations
-max_NL_iterations = 11 #11 #non linear outside loop iterations
+max_NL_iterations = 11 #non linear outside loop iterations
 tolerance  = 1.0e-10  #solver tolerance for declaring convergence
 hang       = 1.0e-11  #solver tolerance for deciding when we're hung
 verbosity = 1 # higher number means more verbose output
@@ -64,17 +69,18 @@ G_Newton = GVAL
 
 # Read from hdf5 file?
 #input_filename = Outputs/SourceData_chk000001.3d.hdf5
-input_filename = /scratch/dp092/dc-bamb1/GRChombo_data/NewtonianBinaryBHSF/SUBDIR/Newton_pltNPLOTFL.3d.hdf5
-output_path = /scratch/dp092/dc-bamb1/GRChombo_data/InitialConditionSolver/OUTNAME/
+#input_filename = /scratch/dp092/dc-bamb1/GRChombo_data/NewtonianBinaryBHSF/SUBDIR/Newton_pltNPLOTFL.3d.hdf5
+output_path = /cosma6/data/dp174/dc-bamb1/GRChombo_data/InitialConditionSolver/OUTNAME/
 output_filename = InitialConditionsFinal.3d.hdf5
 
 # scalar field input params
-phi_amplitude = 1.0
-phi_kappa = 0.0
-scalar_omega = MUVAL
+## For gaussian
+phi_amplitude = 0.00086499 # --> gives Mcloud = 0.1 Mtotal when mu = 0.34 and G = 1
+phi_kappa = 0.0125
+scalar_omega = 0.37325898
 
 # potential params
-mu = MUVAL
+mu = 0.37325898
 
 # in asymptotically flat space set
 # initial scale factor a0 = psi_reg**2
@@ -87,24 +93,24 @@ sign_of_K = 1
 # if you don't want BHs just set masses and momenta/spins to zero
 
 # raw BH params
-center = 256 256 0.0 
+center = CENTERX CENTERY 0.0 
 
 #BH1
-bh1_bare_mass = 0.48847892320123
+bh1_bare_mass = 0.48711
 # spin about each axis (this is J_i)
 bh1_spin = 0.0 0.0 0.0
 # boost in each direction (this is P_i)
-bh1_momentum = -0.000510846 0.0841746 0.0
+bh1_momentum = 0.0 0.090189 0.0
 # offset from center in x direction
-bh1_offset = 6.10679 0.0 0.0
+bh1_offset = 5.5 0.0 0.0
 
 #BH2
-bh2_bare_mass = 0.48847892320123
+bh2_bare_mass = 0.48711
 # spin about each axis (this is J_i)
 bh2_spin = 0.0 0.0 0.0
 # boost in each direction (this is P_i)
-bh2_momentum = 0.000510846 -0.0841746 0.0
+bh2_momentum = 0.0 -0.090189 0.0
 # offset from center (coords x^i)
-bh2_offset = -6.10679 0.0 0.0
+bh2_offset = -5.5 0.0 0.0
 
-omega_binary = 0.0231565
+omega_binary = 0.027054499

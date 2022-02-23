@@ -10,21 +10,24 @@ cd $work_dir
 data_directory=/cosma6/data/dp174/dc-bamb1/GRChombo_data/InitialConditionSolver
 
 run0001=(0.48847892320123 12.21358 0.34 0.1356676906 0 0 0)
+run0002=(0.48711 11 0.37325898 0.1161208964 0 0 0)
 
 #params_file=params_ratio${ratio}.txt
-params_file=params.txt
+#params_file=params_cosma.txt
+params_file=params_Uli_cosma.txt
 
-G=1 # 10^{-10}
+G=0 # 10^{-10}
 
 run_list=(
-	run0001
+	run0002
 )
 
 r_inner=2
-L=1024
-N1=192
+L=512
+N1=128
 
-max_level=9
+max_level=8
+box_size=16
 
 for run in "${run_list[@]}"
 do
@@ -43,7 +46,9 @@ do
         #omega_BH=0.25
         echo "omega_BH = ${omega_BH}"
 
-	new_dir=gaussian_kappa0.0125_mu${mu}_l0_m0_G${G}_L${L}_N${N1}_max_level9
+	new_dir=6_orbits_test_mu${mu}_G${G}_L${L}_N${N1}_max_level8_boxsize16
+	#new_dir=run0002_gaussian_kappa0.0125_mu0.34_L512_N128_G1_max_level8_boxsize16_Mcloud0.1M
+	#gaussian_kappa0.0125_mu${mu}_l0_m0_G${G}_L${L}_N${N1}_max_level9_boxsize8
 	#Homogeneous_${run}_mu${mu}_l0_m0_G${G}_max_level9
 	#Newtonian_${run}_G${G}_max_level9_wslope0.25_wradius50_n${num}
 	new_dir_path=${data_directory}/${new_dir}
@@ -70,6 +75,7 @@ do
 	sed -i "s|MXLEVEL|${max_level}|" ${new_dir_path}/params.txt
 	sed -i "s|MUVAL|${mu}|" ${new_dir_path}/params.txt
 
+        sed -i "s|NBASIC|${N1}|" ${new_dir_path}/params.txt
         sed -i "s|NBASIC|${N1}|" ${new_dir_path}/params.txt
 	sed -i "s|NSPACE3|$((${N1}/2))|" ${new_dir_path}/params.txt
 

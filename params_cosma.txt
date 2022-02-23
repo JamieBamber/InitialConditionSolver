@@ -6,8 +6,6 @@
 # set by integrability conditions) or asymptotically flat (constant K=0,
 # dirichlet BCs should be set to dpsi=0)
 
-verbosity = 2
-
 # spatially-varying aCoef and bCoef are set in the example itself
 # see SetLevelData.cpp, we expect alpha = 1 and beta = -1
 # (for pure laplacian, alpha = 0, beta=-1)
@@ -15,16 +13,16 @@ alpha = 1.0
 beta  = -1.0
 
 # AMR grid params - grid length and number of cells by direction
-L = 512
-N = 128 128 64
+L = BOXLENGTH
+N = NBASIC NBASIC NSPACE3
 # number of AMR refinement levels is max_level + 1
-max_level = 9
+max_level = MXLEVEL
 # Threshold for AMR refinement, based on magnitude of rhs
 refine_threshold = 0.5
 #min box size
-block_factor = 8
+block_factor = BOXSIZE
 #max box size
-max_grid_size = 8
+max_grid_size = BOXSIZE
 # how aggressively to regrid
 fill_ratio   = 0.8
 buffer_size  = 3
@@ -34,8 +32,9 @@ buffer_size  = 3
 # window parameters
 use_window_function = 0
 window_slope = 0.25
-window_radius = 60
+window_radius = 50
 window_amplitude = 1
+use_dpsi_norm0_limit = 0
 
 # Setup multigrid params
 numMGsmooth = 4 # number of GSRB smooths before and after MG coarsening
@@ -69,17 +68,18 @@ G_Newton = GVAL
 # Read from hdf5 file?
 #input_filename = Outputs/SourceData_chk000001.3d.hdf5
 #input_filename = /scratch/dp092/dc-bamb1/GRChombo_data/NewtonianBinaryBHSF/SUBDIR/Newton_pltNPLOTFL.3d.hdf5
-output_path = /scratch/dp092/dc-bamb1/GRChombo_data/InitialConditionSolver/OUTNAME/
+output_path = /cosma6/data/dp174/dc-bamb1/GRChombo_data/InitialConditionSolver/OUTNAME/
+#/scratch/dp092/dc-bamb1/GRChombo_data/InitialConditionSolver/OUTNAME/
 output_filename = InitialConditionsFinal.3d.hdf5
 
 # scalar field input params
 ## For gaussian
-phi_amplitude = 0.00086499 # --> gives Mcloud = 0.1 Mtotal when mu = 0.34 and G = 1
+phi_amplitude = 0.000887856 # --> gives Mcloud = 0.1 Mtotal when mu = 0.34 and G = 1
 phi_kappa = 0.0125
-scalar_omega = 0.37325898
+scalar_omega = MUVAL
 
 # potential params
-mu = 0.37325898
+mu = MUVAL
 
 # in asymptotically flat space set
 # initial scale factor a0 = psi_reg**2
@@ -95,21 +95,21 @@ sign_of_K = 1
 center = CENTERX CENTERY 0.0 
 
 #BH1
-bh1_bare_mass = 0.48711
+bh1_bare_mass = 0.48847892320123
 # spin about each axis (this is J_i)
 bh1_spin = 0.0 0.0 0.0
 # boost in each direction (this is P_i)
-bh1_momentum = 0.0 0.090189 0.0
+bh1_momentum = -0.000510846 0.0841746 0.0
 # offset from center in x direction
-bh1_offset = 5.5 0.0 0.0
+bh1_offset = 6.10679 0.0 0.0
 
 #BH2
-bh2_bare_mass = 0.48711
+bh2_bare_mass = 0.48847892320123
 # spin about each axis (this is J_i)
 bh2_spin = 0.0 0.0 0.0
 # boost in each direction (this is P_i)
-bh2_momentum = 0.0 -0.090189 0.0
+bh2_momentum = 0.000510846 -0.0841746 0.0
 # offset from center (coords x^i)
-bh2_offset = -5.5 0.0 0.0
+bh2_offset = -6.10679 0.0 0.0
 
-omega_binary = 0.027054499
+omega_binary = 0.0231565

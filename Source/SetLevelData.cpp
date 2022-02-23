@@ -403,6 +403,18 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
                 8.0 * M_PI * a_params.G_Newton * (abs(Pi_Re_0) *
                     (abs(d1_phi_Re[0]) + abs(d1_phi_Re[1]) + abs(d1_phi_Re[2])) + abs(Pi_Im_0) *
                     (abs(d1_phi_Im[0]) + abs(d1_phi_Im[1]) + abs(d1_phi_Im[2])));
+
+            // make sure finest level covers both BHs
+            RealVect loc_bh1;
+            Real rbh1;
+            get_bh_coords(rbh1, loc_bh1, loc, a_params.bh1_offset, a_params.omega_binary, a_params.time);
+
+            RealVect loc_bh2;
+            Real rbh2;
+            get_bh_coords(rbh2, loc_bh2, loc, a_params.bh2_offset, a_params.omega_binary, a_params.time);
+	    if ((rbh1 < a_params.bh1_bare_mass * 2.0 * 1.2) || (rbh1 < a_params.bh1_bare_mass * 2.0 * 1.2)) {
+		condition_box(iv, 0) = 1000;	    
+	    }
         }
     }
 } // end set_regrid_condition

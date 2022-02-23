@@ -14,8 +14,7 @@ beta  = -1.0
 
 # AMR grid params - grid length and number of cells by direction
 L = BOXLENGTH
-N = 256 256 128
-#NBASIC NBASIC NSPACE3
+N = NBASIC NBASIC NSPACE3
 # number of AMR refinement levels is max_level + 1
 max_level = MXLEVEL
 # Threshold for AMR refinement, based on magnitude of rhs
@@ -35,6 +34,7 @@ use_window_function = 0
 window_slope = 0.25
 window_radius = 50
 window_amplitude = 1
+use_dpsi_norm0_limit = 0
 
 # Setup multigrid params
 numMGsmooth = 4 # number of GSRB smooths before and after MG coarsening

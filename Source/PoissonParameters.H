@@ -77,6 +77,7 @@ class PoissonParameters
     Real time;
     //
     bool use_window_function;
+    bool use_dpsi_norm0_limit;
     Real window_slope;
     Real window_radius;
     Real window_amplitude;

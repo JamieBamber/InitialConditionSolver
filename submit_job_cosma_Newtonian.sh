@@ -7,7 +7,7 @@
 
 work_dir=/cosma/home/dp174/dc-bamb1/InitialConditionSolver_complex
 cd $work_dir
-data_directory=/cosma6/data/dp174/dc-bamb1/GRChombo_data/
+data_directory=/cosma6/data/dp174/dc-bamb1/GRChombo_data/InitialConditionSolver
 
 run0031=(0.48847892320123 12.21358 0.34 0.1356676906 0 0 0)
 run0032=(0.48847892320123 12.21358 0.34 0.1356676906 1 1 0)
@@ -29,14 +29,15 @@ run_list=(
 )
 
 #params_file=params_ratio${ratio}.txt
-params_file=params_Newtonian_binary.txt
+params_file=params_Newtonian_binary_cosma.txt
 
-G=0.0000000001
+G="1" # 10^{-13}
+#G=0
 
 r_inner=2
 L=512
-N1=128
-num="003000"
+N1=64
+num="001500"
 
 for run in "${run_list[@]}"
 do
@@ -56,11 +57,12 @@ do
         echo "omega_BH = ${omega_BH}"
 
 	# text_number=$(printf "%04d" ${run_number})
-        subdir=${run}_M${M}_d${d}_mu${mu}_dt_mult${dt_mult}_l${l}_m${m}_Al${Al}_L${L}_N${N1}_complex_rin_${r_inner}_max_level5
+        subdir=${run}_M${M}_d${d}_mu${mu}_dt_mult${dt_mult}_l${l}_m${m}_L${L}_N${N1}_mxl9_Pimu
 
-	new_dir=Newtonian_${run}_G${G}_max_level5_n${num}
-	new_dir_path=${data_directory}InitialConditionSolver/${new_dir}
-	#
+	new_dir=Newtonian_${run}_G${G}_max_level9_n${num}_wslope0.25_wradius60_Mcloud0.1_boxsize8
+	#new_dir=Newtonian_${run}_G${G}_max_level9_n${num}_noICS
+	new_dir_path=${data_directory}/${new_dir}
+	#wslope0.25_wradius50
 	mkdir -p ${new_dir_path}
 	echo "made ${new_dir_path}"
 
@@ -75,13 +77,12 @@ do
 	sed -i "s|OUTNAME|${new_dir}|" ${new_dir_path}/params.txt
 	sed -i "s|MUVAL|${mu}|" ${new_dir_path}/params.txt
 	sed -i "s|NPLOTFL|${num}|" ${new_dir_path}/params.txt
-	sed -i "s|DATDIR|${data_directory}|" ${new_dir_path}/params.txt
 
 	cd ${new_dir_path}
-	#mkdir -p outputs
-        #cd outputs
+	mkdir -p outputs
+        cd outputs
 
-	sbatch slurm_submit
+	sbatch ../slurm_submit
 	#
 	cd ${work_dir}
 done
