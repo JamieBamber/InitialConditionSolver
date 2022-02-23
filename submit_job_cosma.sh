@@ -13,8 +13,8 @@ run0001=(0.48847892320123 12.21358 0.34 0.1356676906 0 0 0)
 run0002=(0.48711 11 0.37325898 0.1161208964 0 0 0)
 
 #params_file=params_ratio${ratio}.txt
-#params_file=params_cosma.txt
-params_file=params_Uli_cosma.txt
+params_file=params_cosma.txt
+#params_file=params_Uli_cosma.txt
 
 G=0 # 10^{-10}
 
@@ -46,8 +46,8 @@ do
         #omega_BH=0.25
         echo "omega_BH = ${omega_BH}"
 
-	new_dir=6_orbits_test_mu${mu}_G${G}_L${L}_N${N1}_max_level8_boxsize16
-	#new_dir=run0002_gaussian_kappa0.0125_mu0.34_L512_N128_G1_max_level8_boxsize16_Mcloud0.1M
+	#new_dir=6_orbits_test_mu${mu}_G${G}_L${L}_N${N1}_max_level8_boxsize16
+	new_dir=run0002_gaussian_kappa0.0125_mu0.34_L512_N128_G1_max_level8_boxsize16_Mcloud0.1M
 	#gaussian_kappa0.0125_mu${mu}_l0_m0_G${G}_L${L}_N${N1}_max_level9_boxsize8
 	#Homogeneous_${run}_mu${mu}_l0_m0_G${G}_max_level9
 	#Newtonian_${run}_G${G}_max_level9_wslope0.25_wradius50_n${num}

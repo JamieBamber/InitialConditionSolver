@@ -59,7 +59,7 @@ do
 	# text_number=$(printf "%04d" ${run_number})
         subdir=${run}_M${M}_d${d}_mu${mu}_dt_mult${dt_mult}_l${l}_m${m}_Al${Al}_L${L}_N${N1}_complex_rin_${r_inner}_max_level9
 
-	new_dir=Newtonian_${run}_G${G}_max_level9_n${num}_wslope0.25_wradius50_Mcloud0.1_boxsize8
+	new_dir=Newtonian_${run}_G${G}_max_level9_n${num}_wslope0.25_wradius60_Mcloud0.1_boxsize8
 	#new_dir=Newtonian_${run}_G${G}_max_level9_n${num}_noICS
 	new_dir_path=${data_directory}/${new_dir}
 	#wslope0.25_wradius50

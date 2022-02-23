@@ -412,7 +412,7 @@ void set_regrid_condition(LevelData<FArrayBox> &a_condition,
             RealVect loc_bh2;
             Real rbh2;
             get_bh_coords(rbh2, loc_bh2, loc, a_params.bh2_offset, a_params.omega_binary, a_params.time);
-	    if ((rbh1 < a_params.bh1_bare_mass * 2.0 * 1.2) || (rbh1 < a_params.bh1_bare_mass * 2.0 * 1.2)) {
+	    if ((rbh1 < a_params.bh1_bare_mass * 2.0 * 1.2) || (rbh2 < a_params.bh2_bare_mass * 2.0 * 1.2)) {
 		condition_box(iv, 0) = 1000;	    
 	    }
         }
