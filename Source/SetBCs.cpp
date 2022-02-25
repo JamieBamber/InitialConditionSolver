@@ -51,5 +51,11 @@ void ParseBC(FArrayBox &a_state, const Box &a_valid,
                                               Interval(c_psi, c_U));
         solver_boundaries.fill_constraint_box(Side::Hi, a_state,
                                               Interval(c_psi, c_U));
+        // Do it twice to catch corners... must be a better way
+        // but for now this works
+        solver_boundaries.fill_constraint_box(Side::Lo, a_state,
+                                              Interval(c_psi, c_U));
+        solver_boundaries.fill_constraint_box(Side::Hi, a_state,
+                                              Interval(c_psi, c_U));
     }
 }

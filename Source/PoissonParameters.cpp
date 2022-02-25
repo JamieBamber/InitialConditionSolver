@@ -90,6 +90,13 @@ void getPoissonParameters(PoissonParameters &a_params)
     pp.get("psi_reg", a_params.psi_reg);
     pp.get("sign_of_K", a_params.sign_of_K);
 
+    a_params.include_A2 = false;
+    pp.get("include_A2", a_params.include_A2);
+    a_params.method_compact = false;
+    pp.get("method_compact", a_params.method_compact);
+    a_params.deactivate_zero_mode = false;
+    pp.get("deactivate_zero_mode", a_params.deactivate_zero_mode);
+
     // Initial conditions for the black holes
     pp.get("omega_binary", a_params.omega_binary);
     pp.get("bh1_bare_mass", a_params.bh1_bare_mass);

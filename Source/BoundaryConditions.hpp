@@ -159,9 +159,10 @@ class BoundaryConditions
                                  const std::vector<int> &extrapolating_comps,
                                  const int order = 1) const;
 
-    void fill_zero_cell(FArrayBox &out_box, const IntVect iv,
-                        const Side::LoHiSide a_side, const int dir,
-                        const std::vector<int> &extrapolating_comps) const;
+    void fill_constant_cell(FArrayBox &out_box, const IntVect iv,
+                            const Side::LoHiSide a_side, const int dir,
+                            const std::vector<int> &extrapolating_comps,
+                            const double a_value = 0.0) const;
 
     void fill_reflective_cell(
         FArrayBox &out_box, const IntVect iv, const Side::LoHiSide a_side,

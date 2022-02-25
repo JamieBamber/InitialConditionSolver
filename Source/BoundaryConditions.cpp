@@ -302,6 +302,15 @@ void BoundaryConditions::fill_constraint_box(const Side::LoHiSide a_side,
     CH_assert(is_defined);
     CH_TIME("BoundaryConditions::fill_constraint_box");
 
+    std::vector<int> comps_vector;
+    comps_vector.resize(a_comps.size());
+    std::iota(comps_vector.begin(), comps_vector.end(), a_comps.begin());
+    std::vector<int> psi_comps = {c_psi};
+    std::vector<int> Vi_comps;
+    Interval vector_comps = Interval(c_V1, c_U);
+    Vi_comps.resize(vector_comps.size());
+    std::iota(Vi_comps.begin(), Vi_comps.end(), vector_comps.begin());
+
     // cycle through the directions
     FOR(idir)
     {
@@ -310,11 +319,6 @@ void BoundaryConditions::fill_constraint_box(const Side::LoHiSide a_side,
         if (!m_params.is_periodic[idir])
         {
             int boundary_condition = get_boundary_condition(a_side, idir);
-
-            std::vector<int> comps_vector;
-            comps_vector.resize(a_comps.size());
-            std::iota(comps_vector.begin(), comps_vector.end(),
-                      a_comps.begin());
 
             Box this_box = a_state.box();
             IntVect offset_lo = -this_box.smallEnd() + m_domain_box.smallEnd();
@@ -337,8 +341,17 @@ void BoundaryConditions::fill_constraint_box(const Side::LoHiSide a_side,
                 // simplest case - boundary values are extrapolated
                 case EXTRAPOLATING_BC:
                 {
-                    fill_zero_cell(a_state, iv, a_side, idir, comps_vector);
-		    // ideally we would do fill_extrapolating_cell here, but that gives NaNs
+                    // zero for dpsi
+                    fill_constant_cell(a_state, iv, a_side, idir, psi_comps,
+                                       0.0);
+
+                    // const extrapolating for V_i (means Aij = 0)
+                    // int extrapolation_order = 0;
+                    // fill_extrapolating_cell(a_state, iv, a_side, idir,
+                    //                        Vi_comps, extrapolation_order);
+
+                    fill_constant_cell(a_state, iv, a_side, idir, Vi_comps,
+                                       0.0);
                     break;
                 }
                 // Enforce a reflective symmetry in some direction
@@ -369,6 +382,11 @@ void BoundaryConditions::fill_boundary_cells_dir(
     std::vector<int> comps_vector;
     comps_vector.resize(a_comps.size());
     std::iota(comps_vector.begin(), comps_vector.end(), a_comps.begin());
+    std::vector<int> psi_comps = {c_psi};
+    std::vector<int> Vi_comps;
+    Interval vector_comps = Interval(c_V1_0, c_U_0);
+    Vi_comps.resize(vector_comps.size());
+    std::iota(Vi_comps.begin(), Vi_comps.end(), vector_comps.begin());
 
     // iterate through the boxes, shared amongst threads
     DataIterator dit = a_out.dataIterator();
@@ -378,7 +396,6 @@ void BoundaryConditions::fill_boundary_cells_dir(
     {
         DataIndex dind = dit[ibox];
         FArrayBox &out_box = a_out[dind];
-        const FArrayBox &soln_box = a_soln[dind];
         Box this_box = out_box.box();
         IntVect offset_lo = -this_box.smallEnd() + m_domain_box.smallEnd();
         IntVect offset_hi = +this_box.bigEnd() - m_domain_box.bigEnd();
@@ -402,7 +419,15 @@ void BoundaryConditions::fill_boundary_cells_dir(
             {
                 if (filling_solver_vars)
                 {
-                    fill_zero_cell(out_box, iv, a_side, dir, comps_vector);
+                    fill_constant_cell(out_box, iv, a_side, dir, psi_comps,
+                                       1.0);
+
+                    // int extrapolation_order = 0;
+                    // fill_extrapolating_cell(out_box, iv, a_side, dir,
+                    // Vi_comps,
+                    //                        extrapolation_order);
+
+                    fill_constant_cell(out_box, iv, a_side, dir, Vi_comps, 0.0);
                 }
                 else
                 {
@@ -455,14 +480,28 @@ void BoundaryConditions::fill_reflective_cell(
     }
 }
 
-void BoundaryConditions::fill_zero_cell(
+void BoundaryConditions::fill_constant_cell(
     FArrayBox &out_box, const IntVect iv, const Side::LoHiSide a_side,
-    const int dir, const std::vector<int> &zero_comps) const
+    const int dir, const std::vector<int> &a_comps, const double a_value) const
 {
-    // replace value with zero
-    for (int icomp : zero_comps)
+    // assume boundary is a negative reflection of values within the grid
+    // plus a constant. This imposes the value on the boundary face rather than
+    // in the boundary itself. No need for parity here.
+    IntVect iv_copy = iv;
+
+    /// where to copy the data from - mirror image in domain
+    if (a_side == Side::Lo)
     {
-        out_box(iv, icomp) = 0.0;
+        iv_copy[dir] = -iv[dir] - 1;
+    }
+    else
+    {
+        iv_copy[dir] = 2 * m_domain_box.bigEnd(dir) - iv[dir] + 1;
+    }
+    // replace value with a_value
+    for (int icomp : a_comps)
+    {
+        out_box(iv, icomp) = a_value - out_box(iv_copy, icomp);
     }
 }
 

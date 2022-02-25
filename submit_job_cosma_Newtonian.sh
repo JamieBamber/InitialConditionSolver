@@ -36,7 +36,7 @@ G="1" # 10^{-13}
 
 r_inner=2
 L=512
-N1=64
+N1=128
 num="001500"
 
 for run in "${run_list[@]}"
@@ -57,9 +57,9 @@ do
         echo "omega_BH = ${omega_BH}"
 
 	# text_number=$(printf "%04d" ${run_number})
-        subdir=${run}_M${M}_d${d}_mu${mu}_dt_mult${dt_mult}_l${l}_m${m}_L${L}_N${N1}_mxl9_Pimu
+        subdir=${run}_M${M}_d${d}_mu${mu}_dt_mult${dt_mult}_l${l}_m${m}_Al${Al}_L${L}_N${N1}_complex_rin_2_max_level8
 
-	new_dir=Newtonian_${run}_G${G}_max_level9_n${num}_wslope0.25_wradius60_Mcloud0.1_boxsize8
+	new_dir=Newtonian_${run}_G${G}_max_level8_n${num}_wslope0.25_wradius60_Mcloud0.1_boxsize16
 	#new_dir=Newtonian_${run}_G${G}_max_level9_n${num}_noICS
 	new_dir_path=${data_directory}/${new_dir}
 	#wslope0.25_wradius50

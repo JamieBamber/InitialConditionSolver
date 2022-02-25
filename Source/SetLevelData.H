@@ -49,6 +49,11 @@ extern void set_rhs(LevelData<FArrayBox> &a_rhs,
                     LevelData<FArrayBox> &a_multigrid_vars,
                     const RealVect &a_dx, const PoissonParameters &a_params);
 
+extern void set_error(LevelData<FArrayBox> &a_error,
+                    LevelData<FArrayBox> &a_rhs,
+                    LevelData<FArrayBox> &a_multigrid_vars,
+                    const RealVect &a_dx, const PoissonParameters &a_params);
+
 extern void set_regrid_condition(LevelData<FArrayBox> &a_condition,
                                  LevelData<FArrayBox> &a_multigrid_vars,
                                  const RealVect &a_dx,

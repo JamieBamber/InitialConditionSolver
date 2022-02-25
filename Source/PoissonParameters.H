@@ -68,6 +68,9 @@ class PoissonParameters
     Real mu;
     Real psi_reg;
     Real tolerance;
+    bool include_A2;
+    bool method_compact;
+    bool deactivate_zero_mode;
     bool readin_matter_data;
     std::string input_filename;
     std::string output_filename;

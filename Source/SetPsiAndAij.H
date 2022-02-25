@@ -114,15 +114,25 @@ void set_Aij_reg(Tensor<2, Real> &Aij,
                  const RealVect &a_dx,
                  const PoissonParameters &a_params)
 {
+    // work out location on the grid
+    RealVect loc;
+    get_loc(loc, iv, a_dx, a_params);
+
     // get the derivs
-    Tensor<2, Real, SpaceDim> d2_U = 
+    Tensor<2, Real, SpaceDim> d2_U =
         get_d2(iv, multigrid_vars_box, a_dx, c_U_0);
-    Tensor<1, Real, SpaceDim> d1_V1 = 
+    Tensor<1, Real, SpaceDim> d1_V1 =
         get_d1(iv, multigrid_vars_box, a_dx, c_V1_0);
-    Tensor<1, Real, SpaceDim> d1_V2 = 
+    Tensor<1, Real, SpaceDim> d1_V2 =
         get_d1(iv, multigrid_vars_box, a_dx, c_V2_0);
-    Tensor<1, Real, SpaceDim> d1_V3 = 
+    Tensor<1, Real, SpaceDim> d1_V3 =
         get_d1(iv, multigrid_vars_box, a_dx, c_V3_0);
+    Tensor<2, Real, SpaceDim> d2_V1 =
+        get_d2(iv, multigrid_vars_box, a_dx, c_V1_0);
+    Tensor<2, Real, SpaceDim> d2_V2 =
+        get_d2(iv, multigrid_vars_box, a_dx, c_V2_0);
+    Tensor<2, Real, SpaceDim> d2_V3 =
+        get_d2(iv, multigrid_vars_box, a_dx, c_V3_0);
 
     // note derivative index j is the last one
     using namespace TensorAlgebra;
@@ -134,20 +144,44 @@ void set_Aij_reg(Tensor<2, Real> &Aij,
                     + delta(i,2) * d1_V3[j];
     }
 
+    // Periodic: Use ansatz B.3 in B&S (p547) JCA TODO: We are not using this U
+    // when constructing Aij. Non-periodic: Compact ansatz B.7 in B&S (p547)
     Real trace = 0.0;
-    FOR1(i)
+    if (!a_params.method_compact)
     {
-        trace += d1_Vi[i][i];
-                 //+ d2_U[i][i];
-    }
+        FOR1(i)
+        {
+            trace += d1_Vi[i][i];
+            //+ d2_U[i][i];
+        }
 
-    // set the values of Aij
-    FOR2(i,j)
+        // set the values of Aij
+        FOR2(i, j)
+        {
+            Aij[i][j] = 0.75 * d1_Vi[i][j]   //+ d2_U[i][j]
+                        + 0.75 * d1_Vi[j][i] //+ d2_U[j][i]
+                        //- 2.0 / 3.0 * delta(i,j) * trace;
+                        - 0.5 * delta(i, j) * trace;
+        }
+    }
+    else
     {
-        Aij[i][j] = 0.75 * d1_Vi[i][j] //+ d2_U[i][j]
-                  + 0.75 * d1_Vi[j][i] //+ d2_U[j][i]
-                  //- 2.0 / 3.0 * delta(i,j) * trace;
-                  - 0.5 * delta(i,j) * trace;
+        FOR1(i)
+        {
+            trace += 0.75 * d1_Vi[i][i] -
+                     0.125 * (d2_U[i][i] + loc[0] * d2_V1[i][i] +
+                              loc[1] * d2_V2[i][i] + loc[2] * d2_V3[i][i]);
+        }
+        // set the values of Aij
+        FOR2(i, j)
+        {
+            Aij[i][j] = 0.75 * d1_Vi[i][j] - 0.125 * d2_U[i][j] +
+                        0.75 * d1_Vi[j][i] - 0.125 * d2_U[j][i] -
+                        0.125 * (loc[0] * (d2_V1[i][j] + d2_V1[j][i]) +
+                                 loc[1] * (d2_V2[i][j] + d2_V2[j][i]) +
+                                 loc[2] * (d2_V3[i][j] + d2_V3[j][i])) -
+                        2.0 / 3.0 * delta(i, j) * trace;
+        }
     }
 }
 

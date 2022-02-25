@@ -64,7 +64,7 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
 #endif
 
     char suffix[30];
-    sprintf(suffix, "_%d.hdf5", iter);
+    sprintf(suffix, "_0%04i.hdf5", iter);
     filename += suffix;
 
     int ndpsiComp = a_dpsi[0]->nComp();
@@ -76,15 +76,15 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
     // set names
     Vector<string> variable_names(totalComp);
     variable_names[0] = "dpsi_reg";
-    variable_names[1] = "dV1";
-    variable_names[2] = "dV2";
-    variable_names[3] = "dV3";
-    variable_names[4] = "dU";
-    variable_names[5] = "rhs_dpsi_reg";
-    variable_names[6] = "rhs_dV1";
-    variable_names[7] = "rhs_dV2";
-    variable_names[8] = "rhs_dV3";
-    variable_names[9] = "rhs_dU";
+    variable_names[1] = "V1";
+    variable_names[2] = "V2";
+    variable_names[3] = "V3";
+    variable_names[4] = "U";
+    variable_names[5] = "error_psi";
+    variable_names[6] = "error_V1";
+    variable_names[7] = "error_V2";
+    variable_names[8] = "error_V3";
+    variable_names[9] = "error_U";
 
     for (int icomp = 0; icomp < NUM_MULTIGRID_VARS; icomp++)
     {
@@ -100,7 +100,8 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
 
     for (int level = 0; level < a_dpsi.size(); level++)
     {
-        tempData[level] = new LevelData<FArrayBox>(a_grids[level], totalComp, ghosts);
+        tempData[level] =
+            new LevelData<FArrayBox>(a_grids[level], totalComp, ghosts);
         Interval dpsiComps(0, NUM_CONSTRAINT_VARS - 1);
         Interval rhsComps(NUM_CONSTRAINT_VARS, 2 * NUM_CONSTRAINT_VARS - 1);
         Interval mgComps(2 * NUM_CONSTRAINT_VARS,
@@ -109,17 +110,16 @@ void output_solver_data(const Vector<LevelData<FArrayBox> *> &a_dpsi,
         ProblemDomain grown_domain_box = a_grids[level].physDomain();
         grown_domain_box.grow(ghosts);
         Copier boundary_copier;
-        boundary_copier.ghostDefine(
-                a_dpsi[level]->getBoxes(),
-                a_dpsi[level]->getBoxes(), grown_domain_box,
-                ghosts, ghosts);
+        boundary_copier.ghostDefine(a_dpsi[level]->getBoxes(),
+                                    a_dpsi[level]->getBoxes(), grown_domain_box,
+                                    ghosts, ghosts);
         a_dpsi[level]->copyTo(a_dpsi[level]->interval(), *tempData[level],
                               dpsiComps, boundary_copier);
         a_rhs[level]->copyTo(a_rhs[level]->interval(), *tempData[level],
                              rhsComps);
         a_multigrid_vars[level]->copyTo(a_multigrid_vars[level]->interval(),
-                            *tempData[level], mgComps, boundary_copier);
-
+                                        *tempData[level], mgComps,
+                                        boundary_copier);
     }
     Real fakeTime = iter * 1.0;
     Real fakeDt = 1.0;
@@ -199,15 +199,14 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
         // fill the boundary cells in all directions (may have more ghosts
         // than in solver so will need to fill them appropriately)
         BoundaryConditions solver_boundaries;
-        solver_boundaries.define(a_vectDx[level][0],
-                                     a_params.boundary_params,
-                                     a_vectDomains[level], num_ghosts);
+        solver_boundaries.define(a_vectDx[level][0], a_params.boundary_params,
+                                 a_vectDomains[level], num_ghosts);
 
         // this will populate the grchombo boundaries according to the BCs
         solver_boundaries.fill_grchombo_boundaries(Side::Lo,
-                                                        *grchombo_vars[level]);
+                                                   *grchombo_vars[level]);
         solver_boundaries.fill_grchombo_boundaries(Side::Hi,
-                                                        *grchombo_vars[level]);
+                                                   *grchombo_vars[level]);
 
         DisjointBoxLayout grown_grids;
         if (a_params.boundary_params.nonperiodic_boundaries_exist)
@@ -222,16 +221,24 @@ void output_final_data(const Vector<LevelData<FArrayBox> *> &a_multigrid_vars,
         Copier exchange_copier;
         exchange_copier.exchangeDefine(grown_grids, ghost_vector);
         grchombo_vars[level]->exchange(grchombo_vars[level]->interval(),
-                                           exchange_copier);
+                                       exchange_copier);
 
         // fill interlevel ghosts from coarser level
         if (level > 0)
         {
-            QuadCFInterp quadCFI(a_grids[level], &a_grids[level - 1],
-                                     a_vectDx[level][0], a_params.refRatio[level],
-                                     NUM_GRCHOMBO_VARS, a_vectDomains[level]);
-            quadCFI.coarseFineInterp(*grchombo_vars[level],
-                                         *grchombo_vars[level - 1]);
+            // QuadCFInterp quadCFI(a_grids[level], &a_grids[level - 1],
+            //                      a_vectDx[level][0],
+            //                      a_params.refRatio[level], NUM_GRCHOMBO_VARS,
+            //                      a_vectDomains[level]);
+            // quadCFI.coarseFineInterp(*grchombo_vars[level],
+            //                          *grchombo_vars[level - 1]);
+            FourthOrderCFInterp m_patcher;
+            m_patcher.define(a_grids[level], a_grids[level - 1],
+                             NUM_GRCHOMBO_VARS, a_vectDomains[level - 1],
+                             a_params.refRatio[level], num_ghosts);
+            m_patcher.coarseFineInterp(*grchombo_vars[level],
+                                       *grchombo_vars[level - 1], 0, 0,
+                                       NUM_GRCHOMBO_VARS);
         }
     }
 
